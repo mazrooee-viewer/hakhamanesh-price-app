@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260909094408">
+  <meta name="x-build" content="20260909100616">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260909094408" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260909100616" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1012,24 +1012,64 @@
       });
     }
 
+    // دادهٔ فرم از خودِ کارت صف (inquiry داخل پاسخ getMazroueiInbox) — همان شکل خروجی getMazroueiInquiry
+    function inquiryFromCard(card) {
+      if (!card || !card.inquiry || !card.inquiry.values) return null;
+      return {
+        salesperson: card.salesperson,
+        row: card.row,
+        employer: card.employer,
+        attachment: card.attachment || '',
+        status: card.status || '',
+        note: card.note || '',
+        extraNote: card.extraNote || '',
+        date: card.date || '',
+        values: card.inquiry.values,
+        totals: {},
+        prices: {},
+        pdfs: card.inquiry.pdfs || [],
+        suggestedOutSheet: card.inquiry.suggestedOutSheet || ''
+      };
+    }
+
+    function inquiryFingerprint(d) {
+      return JSON.stringify([d.employer, d.values, d.note, d.extraNote, d.pdfs, d.attachment, d.status]);
+    }
+
     function openCard(card) {
       if (!state.bootstrap) return toast('گزینه‌های فرم هنوز بارگذاری نشده', true);
       state.salesperson = card.salesperson;
       state.row = card.row;
+      state.formDirty = false;
+      state.openToken = (state.openToken || 0) + 1;
+      var token = state.openToken;
       document.getElementById('form-title').textContent = card.employer;
       document.getElementById('form-meta').textContent = card.salesperson + ' — در حال خواندن فرم...';
       setHeaderDates(cardDate(card));
       showScreen('screen-form');
+      // ۱) فوری از دادهٔ همراه کارت (بدون تماس سرور)
+      var local = inquiryFromCard(card);
+      if (local) fillInquiryForm(local);
+      // ۲) تازه‌سازی در پس‌زمینه؛ فقط اگر مدیر هنوز چیزی را عوض نکرده باشد بازنویسی می‌شود
       google.script.run
         .withSuccessHandler(function (data) {
+          if (token !== state.openToken) return;
+          if (!local) { fillInquiryForm(data); return; }
+          if (inquiryFingerprint(data) === inquiryFingerprint(local)) return;
+          if (state.formDirty) { toast('نسخهٔ تازه‌تری از این کارت در شیت هست؛ برای دیدن، کارت را دوباره باز کنید'); return; }
           fillInquiryForm(data);
         })
         .withFailureHandler(function (err) {
+          if (token !== state.openToken) return;
+          if (local) return;
           toast(err.message || 'باز کردن کارت انجام نشد', true);
           showInbox();
         })
         .getMazroueiInquiry(card.salesperson, card.row);
     }
+
+    document.getElementById('screen-form').addEventListener('input', function () { state.formDirty = true; });
+    document.getElementById('screen-form').addEventListener('change', function () { state.formDirty = true; });
 
     function fillInquiryForm(data) {
       var b = state.bootstrap;
