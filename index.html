@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260909103639">
+  <meta name="x-build" content="20260909111259">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260909103639" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260909111259" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1569,14 +1569,15 @@
     });
   }
 
-  function pullInboxCards(timeoutMs) {
+  // filterQs: "&in_inbox=eq.true" (صف مدیر) یا "&salesperson=eq.<نام>" (اپ بازاریاب)
+  function pullCards(filterQs, timeoutMs) {
     if (!enabled()) return Promise.reject(new Error("fast layer off"));
     if (downUntil() > Date.now()) return Promise.reject(new Error("fast layer paused"));
     var c = cfg();
     var base = c.url.replace(/\/$/, "");
     var headers = { apikey: c.anon, Authorization: "Bearer " + c.anon };
     var t0 = Date.now();
-    var cardsReq = fetchWithTimeout(base + "/rest/v1/price_inbox_cards?select=card,sort_key&order=sort_key.desc",
+    var cardsReq = fetchWithTimeout(base + "/rest/v1/price_inbox_cards?select=card,sort_key&order=sort_key.desc" + (filterQs || ""),
       { headers: headers, credentials: "omit" }, timeoutMs || 1500);
     var metaReq = fetchWithTimeout(base + "/rest/v1/price_meta?key=eq.inbox&select=value,updated_at",
       { headers: headers, credentials: "omit" }, timeoutMs || 1500).then(function (r) { return r.ok ? r.json() : []; })
@@ -1604,6 +1605,16 @@
     });
   }
 
+  function pullInboxCards(timeoutMs) {
+    return pullCards("&in_inbox=eq.true", timeoutMs);
+  }
+
+  function pullSalesCards(salesperson, timeoutMs) {
+    var name = String(salesperson || "").trim();
+    if (!name) return Promise.reject(new Error("no salesperson"));
+    return pullCards("&salesperson=eq." + encodeURIComponent(name), timeoutMs);
+  }
+
   global.FastLayer = {
     enabled: enabled,
     cachedList: cachedList,
@@ -1611,6 +1622,7 @@
     submitTicket: submitTicket,
     pullTickets: pullTickets,
     pullInboxCards: pullInboxCards,
+    pullSalesCards: pullSalesCards,
     isPaused: function () { return downUntil() > Date.now(); }
   };
 })(typeof window !== "undefined" ? window : globalThis);

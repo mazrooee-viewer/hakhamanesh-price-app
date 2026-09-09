@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260909103639">
+  <meta name="x-build" content="20260909111259">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260909103639" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260909111259" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -533,6 +533,246 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 
+  <script>window.__FAST_LAYER__={};</script>
+  <script>/* Fast Layer: IndexedDB cache + optimistic UI + optional Supabase REST */
+(function (global) {
+  var DB_NAME = "hlift-fast-layer";
+  var DB_VERSION = 1;
+  var STORE = "tickets";
+
+  function cfg() {
+    return global.__FAST_LAYER__ || {};
+  }
+
+  function enabled() {
+    return !!(cfg().url && cfg().anon);
+  }
+
+  function projectName() {
+    return String(cfg().project || "").trim();
+  }
+
+  function openDb() {
+    return new Promise(function (resolve, reject) {
+      if (!global.indexedDB) {
+        resolve(null);
+        return;
+      }
+      var req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = function () {
+        var db = req.result;
+        if (!db.objectStoreNames.contains(STORE)) {
+          db.createObjectStore(STORE, { keyPath: "client_id" });
+        }
+      };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { resolve(null); };
+    });
+  }
+
+  function idbPut(row) {
+    return openDb().then(function (db) {
+      if (!db) return row;
+      return new Promise(function (resolve) {
+        var tx = db.transaction(STORE, "readwrite");
+        tx.objectStore(STORE).put(row);
+        tx.oncomplete = function () { resolve(row); };
+        tx.onerror = function () { resolve(row); };
+      });
+    });
+  }
+
+  function idbAll() {
+    return openDb().then(function (db) {
+      if (!db) return [];
+      return new Promise(function (resolve) {
+        var tx = db.transaction(STORE, "readonly");
+        var req = tx.objectStore(STORE).getAll();
+        req.onsuccess = function () { resolve(req.result || []); };
+        req.onerror = function () { resolve([]); };
+      });
+    });
+  }
+
+  function rest(path, options) {
+    var c = cfg();
+    options = options || {};
+    options.headers = Object.assign({
+      apikey: c.anon,
+      Authorization: "Bearer " + c.anon,
+      "Content-Type": "application/json"
+    }, options.headers || {});
+    return fetch(c.url.replace(/\/$/, "") + path, options).then(function (res) {
+      if (!res.ok) throw new Error("supabase " + res.status);
+      if (res.status === 204) return null;
+      return res.json();
+    });
+  }
+
+  function toView(row) {
+    return {
+      subject: row.subject,
+      detail: row.detail,
+      status: row.status || "در حال بررسی",
+      date: row.registered_on || row.date || "",
+      reporter: row.sender || row.reporter || "",
+      client_id: row.client_id
+    };
+  }
+
+  function cachedList(reporter) {
+    return idbAll().then(function (rows) {
+      var mine = String(reporter || "").trim();
+      var seeAll = ["مهندس مزروعی", "مدیر فروش", "داشبورد"].indexOf(mine) !== -1;
+      return rows
+        .filter(function (r) {
+          if (projectName() && r.project_name && r.project_name !== projectName()) return false;
+          if (!seeAll && mine && String(r.sender || "") !== mine) return false;
+          return true;
+        })
+        .sort(function (a, b) { return String(b.created_at || "").localeCompare(String(a.created_at || "")); })
+        .map(toView);
+    });
+  }
+
+  function optimisticAdd(ticket) {
+    var row = {
+      client_id: ticket.client_id || ("local-" + Date.now() + "-" + Math.random().toString(16).slice(2)),
+      project_name: projectName(),
+      sender: ticket.reporter || ticket.sender || "",
+      subject: ticket.subject,
+      detail: ticket.detail,
+      status: "در حال بررسی",
+      registered_on: ticket.date || "",
+      created_at: new Date().toISOString(),
+      send_flag: true
+    };
+    return idbPut(row).then(function () { return row; });
+  }
+
+  function submitTicket(ticket) {
+    return optimisticAdd(ticket).then(function (row) {
+      if (!enabled()) return row;
+      return rest("/rest/v1/tickets", {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify({
+          project_name: row.project_name,
+          sender: row.sender,
+          subject: row.subject,
+          detail: row.detail,
+          status: row.status,
+          registered_on: row.registered_on,
+          client_id: row.client_id,
+          send_flag: true
+        })
+      }).then(function () { return row; });
+    });
+  }
+
+  function pullTickets(reporter) {
+    if (!enabled()) return cachedList(reporter);
+    var qs = "?select=*&order=created_at.desc";
+    if (projectName()) qs += "&project_name=eq." + encodeURIComponent(projectName());
+    return rest("/rest/v1/tickets" + qs).then(function (rows) {
+      rows = rows || [];
+      var chain = Promise.resolve();
+      rows.forEach(function (r) {
+        if (!r.client_id) r.client_id = r.id;
+        chain = chain.then(function () { return idbPut(r); });
+      });
+      return chain.then(function () { return cachedList(reporter); });
+    }).catch(function () { return cachedList(reporter); });
+  }
+
+  /* ---- لیست قیمت: صف مدیر از آینهٔ Supabase (price_inbox_cards) ----
+     قرارداد: اگر Supabase پیکربندی نشده، در دسترس نیست، فیلتر شده یا دیر جواب داد (timeout)،
+     Promise رد می‌شود و صدازننده از مسیر قبلی (google.script.run + کش مرورگر) ادامه می‌دهد.
+     بعد از هر شکست، تا ۱۰ دقیقه Supabase را نمی‌زنیم تا کاربر جریمهٔ timeout نخورد. */
+  var DOWN_KEY = "fastLayerDownUntil";
+  var DOWN_MS = 10 * 60 * 1000;
+
+  function downUntil() {
+    try { return Number(localStorage.getItem(DOWN_KEY) || 0); } catch (e) { return 0; }
+  }
+  function markDown() {
+    try { localStorage.setItem(DOWN_KEY, String(Date.now() + DOWN_MS)); } catch (e) {}
+  }
+  function markUp() {
+    try { localStorage.removeItem(DOWN_KEY); } catch (e) {}
+  }
+
+  function fetchWithTimeout(url, options, ms) {
+    var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, ms) : null;
+    if (ctrl) options.signal = ctrl.signal;
+    return fetch(url, options).then(function (res) {
+      if (timer) clearTimeout(timer);
+      return res;
+    }, function (err) {
+      if (timer) clearTimeout(timer);
+      throw err;
+    });
+  }
+
+  // filterQs: "&in_inbox=eq.true" (صف مدیر) یا "&salesperson=eq.<نام>" (اپ بازاریاب)
+  function pullCards(filterQs, timeoutMs) {
+    if (!enabled()) return Promise.reject(new Error("fast layer off"));
+    if (downUntil() > Date.now()) return Promise.reject(new Error("fast layer paused"));
+    var c = cfg();
+    var base = c.url.replace(/\/$/, "");
+    var headers = { apikey: c.anon, Authorization: "Bearer " + c.anon };
+    var t0 = Date.now();
+    var cardsReq = fetchWithTimeout(base + "/rest/v1/price_inbox_cards?select=card,sort_key&order=sort_key.desc" + (filterQs || ""),
+      { headers: headers, credentials: "omit" }, timeoutMs || 1500);
+    var metaReq = fetchWithTimeout(base + "/rest/v1/price_meta?key=eq.inbox&select=value,updated_at",
+      { headers: headers, credentials: "omit" }, timeoutMs || 1500).then(function (r) { return r.ok ? r.json() : []; })
+      .catch(function () { return []; });
+    return Promise.all([cardsReq, metaReq]).then(function (arr) {
+      var res = arr[0];
+      if (!res.ok) throw new Error("supabase " + res.status);
+      return res.json().then(function (rows) {
+        if (!Array.isArray(rows)) throw new Error("supabase bad payload");
+        var meta = (arr[1] && arr[1][0]) || null;
+        var syncedAt = meta && meta.value && meta.value.synced_at ? Date.parse(meta.value.synced_at) : 0;
+        var updatedAt = meta && meta.updated_at ? Date.parse(meta.updated_at) : 0;
+        markUp();
+        return {
+          cards: rows.map(function (r) { return r.card; }).filter(function (x) { return x && x.salesperson; }),
+          syncedAt: syncedAt,
+          updatedAt: Math.max(syncedAt, updatedAt),
+          ms: Date.now() - t0,
+          source: "supabase"
+        };
+      });
+    }).catch(function (err) {
+      markDown();
+      throw err;
+    });
+  }
+
+  function pullInboxCards(timeoutMs) {
+    return pullCards("&in_inbox=eq.true", timeoutMs);
+  }
+
+  function pullSalesCards(salesperson, timeoutMs) {
+    var name = String(salesperson || "").trim();
+    if (!name) return Promise.reject(new Error("no salesperson"));
+    return pullCards("&salesperson=eq." + encodeURIComponent(name), timeoutMs);
+  }
+
+  global.FastLayer = {
+    enabled: enabled,
+    cachedList: cachedList,
+    optimisticAdd: optimisticAdd,
+    submitTicket: submitTicket,
+    pullTickets: pullTickets,
+    pullInboxCards: pullInboxCards,
+    pullSalesCards: pullSalesCards,
+    isPaused: function () { return downUntil() > Date.now(); }
+  };
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
   <script>
     var MAIN_KEYS = ['system', 'caps', 'stop'];
     var HIDDEN_KEYS = ['installIron'];
@@ -676,8 +916,26 @@
       renderSalesCards(cardsWithPending(list));
     }
 
+    // کارت‌ها: اول آینهٔ Supabase (زیر نیم ثانیه)؛ اگر پیکربندی نشده/فیلتر/کند بود → همان مسیر قبلی Apps Script.
+    var CARDS_MIRROR_STALE_MS = 15 * 60 * 1000;
+    function fetchSalesCards(name) {
+      var fl = window.FastLayer;
+      if (!(fl && fl.pullSalesCards && fl.enabled && fl.enabled())) return runGas('getSalespersonCards', name);
+      return fl.pullSalesCards(name, 1500).then(function (r) {
+        state.cardsSource = 'supabase ' + r.ms + 'ms';
+        if (!r.updatedAt || (Date.now() - r.updatedAt) > CARDS_MIRROR_STALE_MS) {
+          runGas('getSalespersonCards', name).then(function (cards) {
+            if (state.salesperson === name) applyServerCards(cards);
+          }).catch(function () {});
+        }
+        return r.cards;
+      }).catch(function () { state.cardsSource = 'apps-script'; return runGas('getSalespersonCards', name); });
+    }
+
     function silentRefreshCards() {
-      return runGas('getSalespersonCards', state.salesperson).then(function (cards) {
+      var name = state.salesperson;
+      return fetchSalesCards(name).then(function (cards) {
+        if (state.salesperson !== name) return;
         applyServerCards(cards);
       }).catch(function (e) {
         if (!pf() || !pf().readCards(state.salesperson).length) {
@@ -1036,14 +1294,15 @@
     });
   }
 
-  function pullInboxCards(timeoutMs) {
+  // filterQs: "&in_inbox=eq.true" (صف مدیر) یا "&salesperson=eq.<نام>" (اپ بازاریاب)
+  function pullCards(filterQs, timeoutMs) {
     if (!enabled()) return Promise.reject(new Error("fast layer off"));
     if (downUntil() > Date.now()) return Promise.reject(new Error("fast layer paused"));
     var c = cfg();
     var base = c.url.replace(/\/$/, "");
     var headers = { apikey: c.anon, Authorization: "Bearer " + c.anon };
     var t0 = Date.now();
-    var cardsReq = fetchWithTimeout(base + "/rest/v1/price_inbox_cards?select=card,sort_key&order=sort_key.desc",
+    var cardsReq = fetchWithTimeout(base + "/rest/v1/price_inbox_cards?select=card,sort_key&order=sort_key.desc" + (filterQs || ""),
       { headers: headers, credentials: "omit" }, timeoutMs || 1500);
     var metaReq = fetchWithTimeout(base + "/rest/v1/price_meta?key=eq.inbox&select=value,updated_at",
       { headers: headers, credentials: "omit" }, timeoutMs || 1500).then(function (r) { return r.ok ? r.json() : []; })
@@ -1071,6 +1330,16 @@
     });
   }
 
+  function pullInboxCards(timeoutMs) {
+    return pullCards("&in_inbox=eq.true", timeoutMs);
+  }
+
+  function pullSalesCards(salesperson, timeoutMs) {
+    var name = String(salesperson || "").trim();
+    if (!name) return Promise.reject(new Error("no salesperson"));
+    return pullCards("&salesperson=eq." + encodeURIComponent(name), timeoutMs);
+  }
+
   global.FastLayer = {
     enabled: enabled,
     cachedList: cachedList,
@@ -1078,6 +1347,7 @@
     submitTicket: submitTicket,
     pullTickets: pullTickets,
     pullInboxCards: pullInboxCards,
+    pullSalesCards: pullSalesCards,
     isPaused: function () { return downUntil() > Date.now(); }
   };
 })(typeof window !== "undefined" ? window : globalThis);
