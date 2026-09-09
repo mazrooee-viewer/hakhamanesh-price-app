@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260909100616">
+  <meta name="x-build" content="20260909101155">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260909100616" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260909101155" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1729,7 +1729,22 @@
 
 <script>
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function () { navigator.serviceWorker.register("./sw.js").catch(function () {}); });
+  (function () {
+    var hadController = !!navigator.serviceWorker.controller;
+    window.addEventListener("load", function () { navigator.serviceWorker.register("./sw.js").catch(function () {}); });
+    // نسخهٔ جدید نصب شد → وقتی کاربر روی صفحهٔ اول است و فرمی باز نیست، یک‌بار بازخوانی تا پوستهٔ تازه بیاید
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (!hadController) { hadController = true; return; }
+      var tryReload = function () {
+        var home = document.getElementById("screen-home") || document.getElementById("screen-people");
+        var formOpen = document.querySelector(".screen.active") && !(home && home.classList.contains("active"));
+        if (formOpen) return false;
+        location.reload();
+        return true;
+      };
+      if (!tryReload()) { var iv = setInterval(function () { if (tryReload()) clearInterval(iv); }, 2000); }
+    });
+  })();
 }
 </script>
 </body>
