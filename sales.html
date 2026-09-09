@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+  <link rel="manifest" href="./manifest-sales.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
+  <meta name="x-build" content="20260909094408">
+<script>
+/* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
+(function () {
+  var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","finishInquiry","markInquiryIncomplete","submitInquiry","getSalespersonCards","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig"];
+  var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 86400000 };
+  function call(fn, args) {
+    return fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ fn: fn, args: args }),
+      redirect: "follow",
+      credentials: "omit"
+    }).then(function (r) { return r.text(); }).then(function (t) {
+      var o;
+      try { o = JSON.parse(t); } catch (e) { throw new Error("پاسخ نامعتبر سرور"); }
+      if (!o || !o.ok) throw new Error((o && o.error) || "خطای سرور");
+      return o.result;
+    });
+  }
+  function store(key, v) { try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), v: v })); } catch (e) {} }
+  function cachedCall(fn, args) {
+    var ttl = TTL[fn];
+    if (!ttl || (args && args.length)) return call(fn, args);
+    var key = "gasrpc:" + fn;
+    try {
+      var raw = localStorage.getItem(key);
+      if (raw) {
+        var o = JSON.parse(raw);
+        if (o && (Date.now() - o.t) < ttl) {
+          call(fn, args).then(function (r) { store(key, r); }).catch(function () {});
+          return Promise.resolve(o.v);
+        }
+      }
+    } catch (e) {}
+    return call(fn, args).then(function (r) { store(key, r); return r; });
+  }
+  function Runner() { this.ok = null; this.fail = null; this.user = undefined; }
+  Runner.prototype.withSuccessHandler = function (f) { this.ok = f; return this; };
+  Runner.prototype.withFailureHandler = function (f) { this.fail = f; return this; };
+  Runner.prototype.withUserObject = function (u) { this.user = u; return this; };
+  FNS.forEach(function (fn) {
+    Runner.prototype[fn] = function () {
+      var args = Array.prototype.slice.call(arguments);
+      var self = this;
+      cachedCall(fn, args).then(function (r) {
+        if (self.ok) self.ok(r, self.user);
+      }, function (e) {
+        if (self.fail) self.fail(e, self.user); else console.error(e);
+      });
+    };
+  });
+  var run = {};
+  ["withSuccessHandler", "withFailureHandler", "withUserObject"].concat(FNS).forEach(function (m) {
+    run[m] = function () { var r = new Runner(); return r[m].apply(r, arguments); };
+  });
+  window.google = window.google || {};
+  window.google.script = window.google.script || {};
+  window.google.script.run = run;
+  window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
+  window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260909094408" };
+  // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
+  cachedCall("getFastLayerConfig", []).then(function (cfg) {
+    if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
+  }).catch(function () {});
+})();
+</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>استعلام قیمت — بازاریاب</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;800&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;800&display=swap"></noscript>
+  <style>
+    :root {
+      --navy: #0f172a;
+      --navy-2: #1e293b;
+      --gold: #c9a227;
+      --green: #16a34a;
+      --red: #dc2626;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --bg: #f8fafc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Vazirmatn, Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--navy);
+      min-height: 100vh;
+    }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .top {
+      position: sticky; top: 0; z-index: 5;
+      background: var(--navy); color: #fff;
+      padding: 14px 16px;
+    }
+    .top h1 { font-size: 17px; font-weight: 800; }
+    .top .meta { color: #cbd5e1; font-size: 12px; margin-top: 4px; }
+    .top-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .top-row > div:first-child { min-width: 0; }
+    .date-badge {
+      flex-shrink: 0; background: rgba(255,255,255,.12);
+      border: 1px solid rgba(201,162,39,.5); color: #f3e2b8;
+      border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 800;
+      white-space: nowrap; margin-top: 2px;
+    }
+    .card .date { color: #92400e; font-size: 12px; font-weight: 700; margin-top: 6px; }
+    .wrap { padding: 16px; padding-bottom: 32px; }
+    .people { display: flex; flex-direction: column; gap: 10px; }
+    .person, .card, .btn {
+      border: none; font-family: inherit; width: 100%;
+    }
+    .person {
+      background: #fff; border: 1px solid var(--line); border-radius: 16px;
+      padding: 16px; text-align: right; font-size: 17px; font-weight: 800;
+      color: var(--navy); cursor: pointer;
+    }
+    .person:active { background: #f1f5f9; }
+    .btn {
+      border-radius: 14px; padding: 13px 14px; font-size: 15px; font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-main { background: var(--navy); color: #fff; }
+    .btn-gold { background: var(--gold); color: #111; }
+    .btn-ghost { background: #fff; color: var(--navy); border: 1px solid var(--line); }
+    .btn:disabled { opacity: .55; cursor: default; }
+    .list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+    .card {
+      background: #fff; border: 1px solid var(--line); border-radius: 16px;
+      padding: 14px; text-align: right;
+    }
+    .card .name { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+    .card .spec { color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .badge {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      background: #dcfce7; color: #166534; border-radius: 999px; padding: 3px 8px;
+    }
+    .empty { text-align: center; color: var(--muted); padding: 40px 12px; }
+    label { display: block; font-weight: 700; margin: 14px 0 6px; }
+    input, select, textarea {
+      width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 12px;
+      font-family: inherit; font-size: 16px; background: #fff;
+    }
+    textarea.note { min-height: 88px; resize: vertical; text-align: center; }
+    .req { color: var(--red); }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    details {
+      background: #fff; border: 1px solid var(--line); border-radius: 16px;
+      padding: 12px 14px; margin-top: 16px;
+    }
+    details summary { font-weight: 800; cursor: pointer; }
+    .toast {
+      position: fixed; bottom: 18px; right: 16px; left: 16px;
+      background: var(--navy); color: #fff; padding: 12px 14px;
+      border-radius: 12px; display: none; z-index: 9; text-align: center;
+    }
+    .toast.bad { background: var(--red); }
+    .back {
+      background: none; border: 0; color: #fff; font-family: inherit;
+      font-size: 13px; font-weight: 700; margin-bottom: 6px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+
+  <section id="screen-people" class="screen active">
+    <div class="top">
+      <div class="top-row">
+        <div>
+          <h1>استعلام قیمت</h1>
+          <div class="meta">نام خود را انتخاب کنید</div>
+        </div>
+        <div class="date-badge" data-date-slot></div>
+      </div>
+    </div>
+    <div class="wrap">
+      <div id="people" class="people"></div>
+    </div>
+  </section>
+
+  <section id="screen-cards" class="screen">
+    <div class="top">
+      <div class="top-row">
+        <div>
+          <h1 id="cards-title">درخواست‌ها</h1>
+          <div class="meta">کارت‌های استعلام شما</div>
+        </div>
+        <div class="date-badge" data-date-slot></div>
+      </div>
+    </div>
+    <div class="wrap">
+      <button class="btn btn-gold" type="button" onclick="openNew()">درخواست استعلام جدید</button>
+      <div id="cards" class="list"></div>
+    </div>
+  </section>
+
+  <section id="screen-form" class="screen">
+    <div class="top">
+      <div class="top-row">
+        <div>
+          <button class="back" type="button" onclick="showCards()">بازگشت به کارت‌ها</button>
+          <h1>استعلام جدید</h1>
+          <div class="meta" id="form-meta"></div>
+        </div>
+        <div class="date-badge" data-date-slot></div>
+      </div>
+    </div>
+    <div class="wrap">
+      <label>نام کارفرما <span class="req">*</span></label>
+      <input id="employer" type="text" placeholder="نام کارفرما را وارد کنید">
+
+      <label>نوع آسانسور <span class="req">*</span></label>
+      <select id="system"></select>
+
+      <label>ظرفیت <span class="req">*</span></label>
+      <select id="caps"></select>
+
+      <label>تعداد توقف <span class="req">*</span></label>
+      <select id="stop"></select>
+
+      <details>
+        <summary>سایر مشخصات (اختیاری — در غیر این صورت پیش‌فرض می‌ماند)</summary>
+        <div id="extra-fields"></div>
+      </details>
+
+      <label>پیوست فایل</label>
+      <input id="file" type="file">
+      <div class="hint">اختیاری است. لینک فایل در ستون پیوست ذخیره می‌شود.</div>
+
+      <label>توضیحات اضافی</label>
+      <textarea id="extra-note" class="note" placeholder="اگر توضیح بیشتری دارید بنویسید"></textarea>
+
+      <button id="send" class="btn btn-main" type="button" style="margin-top:18px" onclick="submitForm()">ارسال برای مهندس مزروعی</button>
+    </div>
+  </section>
+
+  ﻿<script>
+/**
+ * لایه سریع استعلام پرایس — فقط روی گوشی.
+ * دادهٔ مشتری به سوپابیس نمی‌رود؛ صدور PDF و نوشتن فرم محاسبه همان مسیر شیت می‌ماند.
+ */
+(function (global) {
+  var INBOX_KEY = 'priceInboxCache';
+  var BOOT_KEY = 'priceBootstrapCache';
+  var CARDS_PREFIX = 'priceSalesCards_';
+  var SUBMIT_PREFIX = 'pricePendingSubmit_';
+  var STATUS_KEY = 'pricePendingStatus';
+  var memoryStore = {};
+
+  function storage() {
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage) return localStorage;
+    } catch (e) {}
+    return {
+      getItem: function (k) { return Object.prototype.hasOwnProperty.call(memoryStore, k) ? memoryStore[k] : null; },
+      setItem: function (k, v) { memoryStore[k] = String(v); },
+      removeItem: function (k) { delete memoryStore[k]; }
+    };
+  }
+
+  function clone(obj) {
+    return JSON.parse(JSON.stringify(obj == null ? null : obj));
+  }
+
+  function readJson(key, fallback) {
+    try {
+      var raw = storage().getItem(key);
+      if (!raw) return fallback;
+      var val = JSON.parse(raw);
+      return val == null ? fallback : val;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function writeJson(key, val) {
+    try { storage().setItem(key, JSON.stringify(val)); } catch (e) {}
+  }
+
+  function readInbox() {
+    var list = readJson(INBOX_KEY, []);
+    return Array.isArray(list) ? list : [];
+  }
+
+  function writeInbox(list) {
+    writeJson(INBOX_KEY, list || []);
+  }
+
+  function readBootstrap() {
+    return readJson(BOOT_KEY, null);
+  }
+
+  function writeBootstrap(data) {
+    writeJson(BOOT_KEY, data || null);
+  }
+
+  function cardsKey(name) {
+    return CARDS_PREFIX + String(name || '').trim();
+  }
+
+  function readCards(name) {
+    var list = readJson(cardsKey(name), []);
+    return Array.isArray(list) ? list : [];
+  }
+
+  function writeCards(name, list) {
+    writeJson(cardsKey(name), list || []);
+  }
+
+  function submitKey(name) {
+    return SUBMIT_PREFIX + String(name || '').trim();
+  }
+
+  function readSubmitQueue(name) {
+    var list = readJson(submitKey(name), []);
+    return Array.isArray(list) ? list : [];
+  }
+
+  function writeSubmitQueue(name, jobs) {
+    writeJson(submitKey(name), jobs || []);
+  }
+
+  function persistablePayload(payload) {
+    var next = clone(payload || {});
+    delete next.file;
+    return next;
+  }
+
+  function enqueueSubmit(name, payload) {
+    var jobs = readSubmitQueue(name);
+    var job = {
+      id: Date.now() + '-' + String((payload && payload.employer) || 'job'),
+      payload: persistablePayload(payload),
+      hasFile: !!(payload && payload.file && payload.file.data),
+      createdAt: Date.now()
+    };
+    jobs.push(job);
+    writeSubmitQueue(name, jobs);
+    return job;
+  }
+
+  function dequeueSubmit(name, id) {
+    var jobs = readSubmitQueue(name).filter(function (j) { return j.id !== id; });
+    writeSubmitQueue(name, jobs);
+    return jobs;
+  }
+
+  function applyOptimisticSubmit(list, payload, tempId) {
+    var next = clone(list) || [];
+    next.unshift({
+      row: tempId || ('tmp-' + Date.now()),
+      salesperson: payload && payload.salesperson,
+      employer: payload && payload.employer,
+      system: payload && payload.system,
+      caps: payload && payload.caps,
+      stop: payload && payload.stop,
+      extraNote: payload && payload.extraNote,
+      status: 'در صف بررسی',
+      sent: true,
+      pendingSync: true
+    });
+    return next;
+  }
+
+  function restoreSubmit(list, employer) {
+    var want = String(employer || '').trim();
+    return (list || []).filter(function (c) {
+      return !(c.pendingSync && String(c.employer || '').trim() === want);
+    });
+  }
+
+  function sameCard(a, b) {
+    return String(a && a.salesperson || '') === String(b && b.salesperson || '') &&
+      Number(a && a.row) === Number(b && b.row);
+  }
+
+  function applyOptimisticStatus(list, salesperson, row, status) {
+    var next = [];
+    (list || []).forEach(function (c) {
+      if (String(c.salesperson || '') !== String(salesperson || '') || Number(c.row) !== Number(row)) {
+        next.push(clone(c));
+        return;
+      }
+      if (status === 'اتمام') return;
+      var item = clone(c);
+      item.status = status;
+      item.sent = status === 'در صف بررسی';
+      item.pendingSync = true;
+      next.push(item);
+    });
+    return next;
+  }
+
+  function restoreStatus(list, prev) {
+    if (!prev) return list || [];
+    var next = clone(list) || [];
+    var found = false;
+    next = next.map(function (c) {
+      if (!sameCard(c, prev)) return c;
+      found = true;
+      return clone(prev);
+    });
+    if (!found) next.unshift(clone(prev));
+    return next;
+  }
+
+  function readStatusQueue() {
+    var list = readJson(STATUS_KEY, []);
+    return Array.isArray(list) ? list : [];
+  }
+
+  function writeStatusQueue(jobs) {
+    writeJson(STATUS_KEY, jobs || []);
+  }
+
+  function enqueueStatus(payload, prev) {
+    var jobs = readStatusQueue().filter(function (j) {
+      return !sameCard(j.payload, payload);
+    });
+    var job = {
+      id: Date.now() + '-' + String(payload && payload.row),
+      payload: persistablePayload(payload),
+      prev: prev || null,
+      createdAt: Date.now()
+    };
+    jobs.push(job);
+    writeStatusQueue(jobs);
+    return job;
+  }
+
+  function dequeueStatus(id) {
+    var jobs = readStatusQueue().filter(function (j) { return j.id !== id; });
+    writeStatusQueue(jobs);
+    return jobs;
+  }
+
+  function markPendingOnInbox(list, statusJobs, submitJobs) {
+    var next = clone(list) || [];
+    (statusJobs || []).forEach(function (job) {
+      var p = job && job.payload;
+      if (!p) return;
+      next = applyOptimisticStatus(next, p.salesperson, p.row, p.statusAction);
+    });
+    (submitJobs || []).forEach(function (job) {
+      var p = job && job.payload;
+      if (!p) return;
+      var exists = false;
+      next.forEach(function (c) {
+        if (String(c.employer || '') === String(p.employer || '') && c.pendingSync) exists = true;
+      });
+      if (!exists) next = applyOptimisticSubmit(next, p, 'tmp-' + job.id);
+    });
+    return next;
+  }
+
+  function dropSyncedSubmit(jobs, serverCards) {
+    var cards = serverCards || [];
+    return (jobs || []).filter(function (job) {
+      var p = job && job.payload;
+      if (!p) return false;
+      for (var i = 0; i < cards.length; i++) {
+        var c = cards[i];
+        if (String(c.employer || '') === String(p.employer || '') &&
+          String(c.system || '') === String(p.system || '') &&
+          String(c.salesperson || c.owner || '') === String(p.salesperson || '')) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }
+
+  function dropSyncedStatus(jobs, serverCards) {
+    var cards = serverCards || [];
+    return (jobs || []).filter(function (job) {
+      var p = job && job.payload;
+      if (!p) return false;
+      var found = null;
+      for (var i = 0; i < cards.length; i++) {
+        if (sameCard(cards[i], p)) { found = cards[i]; break; }
+      }
+      if (p.statusAction === 'اتمام') return !!found;
+      if (p.statusAction === 'ناقص') {
+        if (!found) return false;
+        return String(found.status || '').trim() !== 'ناقص';
+      }
+      return true;
+    });
+  }
+
+  global.PriceFast = {
+    INBOX_KEY: INBOX_KEY,
+    clone: clone,
+    readInbox: readInbox,
+    writeInbox: writeInbox,
+    readBootstrap: readBootstrap,
+    writeBootstrap: writeBootstrap,
+    readCards: readCards,
+    writeCards: writeCards,
+    readSubmitQueue: readSubmitQueue,
+    writeSubmitQueue: writeSubmitQueue,
+    enqueueSubmit: enqueueSubmit,
+    dequeueSubmit: dequeueSubmit,
+    persistablePayload: persistablePayload,
+    applyOptimisticSubmit: applyOptimisticSubmit,
+    restoreSubmit: restoreSubmit,
+    applyOptimisticStatus: applyOptimisticStatus,
+    restoreStatus: restoreStatus,
+    readStatusQueue: readStatusQueue,
+    writeStatusQueue: writeStatusQueue,
+    enqueueStatus: enqueueStatus,
+    dequeueStatus: dequeueStatus,
+    markPendingOnInbox: markPendingOnInbox,
+    dropSyncedSubmit: dropSyncedSubmit,
+    dropSyncedStatus: dropSyncedStatus,
+    _memoryStore: memoryStore
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
+  <script>
+    var MAIN_KEYS = ['system', 'caps', 'stop'];
+    var HIDDEN_KEYS = ['installIron'];
+    var state = { salesperson: '', bootstrap: null, extraKeys: [], inflight: {} };
+
+    function toast(msg, bad) {
+      var el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = 'toast' + (bad ? ' bad' : '');
+      el.style.display = 'block';
+      setTimeout(function () { el.style.display = 'none'; }, 2800);
+    }
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); });
+      document.getElementById(id).classList.add('active');
+      window.scrollTo(0, 0);
+    }
+
+    function fillSelect(id, options, selected) {
+      var el = document.getElementById(id);
+      var opts = options || [];
+      var html = '';
+      var found = false;
+      if (!selected) html = '<option value="" selected></option>';
+      opts.forEach(function (opt) {
+        if (String(opt) === String(selected)) found = true;
+        html += '<option value="' + escapeHtml(opt) + '"' + (String(opt) === String(selected) ? ' selected' : '') + '>' + escapeHtml(opt) + '</option>';
+      });
+      if (selected && !found) {
+        html = '<option value="' + escapeHtml(selected) + '" selected>' + escapeHtml(selected) + '</option>' + html;
+      }
+      el.innerHTML = html;
+    }
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function todayJalali() {
+      if (state.bootstrap && state.bootstrap.todayJalali) return state.bootstrap.todayJalali;
+      try {
+        var parts = new Intl.DateTimeFormat('en-u-ca-persian', {
+          timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit'
+        }).formatToParts(new Date());
+        var y = '', m = '', d = '';
+        parts.forEach(function (p) {
+          if (p.type === 'year') y = p.value;
+          if (p.type === 'month') m = p.value;
+          if (p.type === 'day') d = p.value;
+        });
+        return y && m && d ? y + '/' + m + '/' + d : '';
+      } catch (e) { return ''; }
+    }
+
+    function isIssuedCard(c) {
+      var s = String((c && c.status) || '').trim();
+      return s === 'صادر شد' || s === 'صادر شده';
+    }
+
+    function cardDate(c) {
+      if (isIssuedCard(c) && c.date) return c.date;
+      return todayJalali();
+    }
+
+    function setHeaderDates(value) {
+      var text = value || todayJalali();
+      document.querySelectorAll('[data-date-slot]').forEach(function (el) {
+        el.textContent = text;
+      });
+    }
+
+    function pf() { return window.PriceFast || null; }
+
+    function runGas(fn) {
+      var args = Array.prototype.slice.call(arguments, 1);
+      return new Promise(function (resolve, reject) {
+        var r = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
+        r[fn].apply(r, args);
+      });
+    }
+
+    function taggedCards(cards) {
+      return (cards || []).map(function (c) {
+        var item = pf() ? pf().clone(c) : c;
+        item.salesperson = state.salesperson;
+        return item;
+      });
+    }
+
+    function renderPeople(data) {
+      if (!data || !data.people) return;
+      document.getElementById('people').innerHTML = data.people.map(function (name) {
+        return '<button class="person" type="button">' + escapeHtml(name) + '</button>';
+      }).join('');
+      document.querySelectorAll('#people .person').forEach(function (btn, i) {
+        btn.onclick = function () { pickPerson(data.people[i]); };
+      });
+    }
+
+    function applyBootstrap(data) {
+      state.bootstrap = data;
+      if (pf()) pf().writeBootstrap(data);
+      setHeaderDates(todayJalali());
+      renderPeople(data);
+    }
+
+    function renderSalesCards(cards) {
+      var box = document.getElementById('cards');
+      if (!cards || !cards.length) {
+        box.innerHTML = '<div class="empty">هنوز استعلامی ثبت نشده است.</div>';
+        return;
+      }
+      box.innerHTML = cards.map(function (c) {
+        return '<div class="card"><div class="name">' + escapeHtml(c.employer) + '</div>' +
+          '<div class="spec">' + escapeHtml(c.system) + ' — ظرفیت ' + escapeHtml(c.caps) + ' — توقف ' + escapeHtml(c.stop) + '</div>' +
+          '<div class="date">' + escapeHtml(cardDate(c)) + '</div>' +
+          (c.status || c.sent ? '<div style="margin-top:8px"><span class="badge">' + escapeHtml(c.status || 'در صف بررسی') + '</span></div>' : '') +
+          (c.extraNote ? '<div class="spec" style="margin-top:6px">' + escapeHtml(c.extraNote) + '</div>' : '') +
+          (c.note ? '<div class="spec" style="margin-top:6px">' + escapeHtml(c.note) + '</div>' : '') +
+          '</div>';
+      }).join('');
+    }
+
+    function cardsWithPending(cards) {
+      var list = cards || [];
+      if (!pf()) return list;
+      pf().readSubmitQueue(state.salesperson).forEach(function (job) {
+        list = pf().applyOptimisticSubmit(list, job.payload, 'tmp-' + job.id);
+      });
+      return list;
+    }
+
+    function applyServerCards(cards) {
+      var list = cards || [];
+      if (pf()) {
+        pf().writeSubmitQueue(state.salesperson, pf().dropSyncedSubmit(pf().readSubmitQueue(state.salesperson), taggedCards(list)));
+        pf().writeCards(state.salesperson, list);
+      }
+      renderSalesCards(cardsWithPending(list));
+    }
+
+    function silentRefreshCards() {
+      return runGas('getSalespersonCards', state.salesperson).then(function (cards) {
+        applyServerCards(cards);
+      }).catch(function (e) {
+        if (!pf() || !pf().readCards(state.salesperson).length) {
+          document.getElementById('cards').innerHTML = '<div class="empty">' + escapeHtml((e && e.message) || 'بارگذاری انجام نشد') + '</div>';
+        }
+      });
+    }
+
+    function showPeople() {
+      showScreen('screen-people');
+    }
+
+    function pickPerson(name) {
+      state.salesperson = name;
+      if (window.ticketBoxSetReporter) ticketBoxSetReporter(name);
+      document.getElementById('cards-title').textContent = name;
+      document.getElementById('form-meta').textContent = name;
+      showCards();
+    }
+
+    function showCards() {
+      setHeaderDates(todayJalali());
+      showScreen('screen-cards');
+      var cached = pf() ? pf().readCards(state.salesperson) : [];
+      if (cached.length) renderSalesCards(cardsWithPending(cached));
+      else document.getElementById('cards').innerHTML = '<div class="empty">در حال بارگذاری...</div>';
+      flushSubmitQueue();
+      silentRefreshCards();
+    }
+
+    function openNew() {
+      var b = state.bootstrap;
+      fillSelect('system', b.options.system, b.defaults.system);
+      fillSelect('caps', b.options.caps, b.defaults.caps);
+      fillSelect('stop', b.options.stop, b.defaults.stop);
+      document.getElementById('employer').value = '';
+      document.getElementById('file').value = '';
+      document.getElementById('extra-note').value = '';
+      var extra = document.getElementById('extra-fields');
+      extra.innerHTML = '';
+      state.extraKeys = [];
+      b.fields.forEach(function (f) {
+        if (MAIN_KEYS.indexOf(f.key) >= 0) return;
+        if (HIDDEN_KEYS.indexOf(f.key) >= 0) return;
+        state.extraKeys.push(f.key);
+        extra.innerHTML += '<label>' + escapeHtml(f.header) + '</label><select id="f-' + f.key + '"></select>';
+      });
+      state.extraKeys.forEach(function (key) {
+        fillSelect('f-' + key, b.options[key], b.defaults[key]);
+      });
+      function applySystemLists(systemType) {
+        var motor = document.getElementById('f-motorType');
+        var panel = document.getElementById('f-panelType');
+        var motorBrand = document.getElementById('f-motorBrand');
+        var panelBrand = document.getElementById('f-panelBrand');
+        if (motor) fillSelect('f-motorType', b.options.motorType, systemType);
+        if (panel) fillSelect('f-panelType', b.options.panelType, systemType);
+        if (motorBrand) {
+          var motorBrands = (b.motorBrandsBySystem && b.motorBrandsBySystem[systemType]) || b.options.motorBrand || [];
+          var motorPref = (motorBrands.indexOf(b.defaults.motorBrand) >= 0) ? b.defaults.motorBrand : motorBrands[0];
+          fillSelect('f-motorBrand', motorBrands, motorPref);
+        }
+        if (panelBrand) {
+          var panelBrands = (b.panelBrandsBySystem && b.panelBrandsBySystem[systemType]) || b.options.panelBrand || [];
+          var panelPref = (panelBrands.indexOf(b.defaults.panelBrand) >= 0) ? b.defaults.panelBrand : panelBrands[0];
+          fillSelect('f-panelBrand', panelBrands, panelPref);
+        }
+      }
+      applySystemLists(document.getElementById('system').value);
+      document.getElementById('system').onchange = function () {
+        applySystemLists(this.value);
+      };
+      showScreen('screen-form');
+    }
+
+    function submitForm() {
+      var employer = document.getElementById('employer').value.trim();
+      var system = document.getElementById('system').value;
+      var caps = document.getElementById('caps').value;
+      var stop = document.getElementById('stop').value;
+      if (!employer) return toast('نام کارفرما را وارد کنید', true);
+      if (!system || !caps || !stop) return toast('نوع آسانسور، ظرفیت و توقف را پر کنید', true);
+
+      var payload = {
+        salesperson: state.salesperson,
+        employer: employer,
+        system: system,
+        caps: caps,
+        stop: stop,
+        extraNote: document.getElementById('extra-note').value.trim()
+      };
+      state.extraKeys.forEach(function (key) {
+        var el = document.getElementById('f-' + key);
+        if (el) payload[key] = el.value;
+      });
+
+      var btn = document.getElementById('send');
+      btn.disabled = true;
+      btn.textContent = 'در حال ارسال...';
+
+      var fileEl = document.getElementById('file');
+      var file = fileEl.files && fileEl.files[0];
+      if (!file) return sendPayload(payload, btn);
+
+      if (file.size > 4 * 1024 * 1024) {
+        btn.disabled = false;
+        btn.textContent = 'ارسال برای مهندس مزروعی';
+        return toast('حجم فایل بیشتر از ۴ مگابایت است', true);
+      }
+      var reader = new FileReader();
+      reader.onload = function () {
+        var result = String(reader.result || '');
+        var base64 = result.indexOf(',') >= 0 ? result.split(',')[1] : result;
+        payload.file = { name: file.name, mimeType: file.type, data: base64 };
+        sendPayload(payload, btn);
+      };
+      reader.onerror = function () {
+        btn.disabled = false;
+        btn.textContent = 'ارسال برای مهندس مزروعی';
+        toast('خواندن فایل انجام نشد', true);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function sendSubmitJob(job, livePayload) {
+      if (!job || state.inflight[job.id]) return;
+      state.inflight[job.id] = true;
+      var toSend = livePayload || job.payload;
+      runGas('submitInquiry', toSend).then(function () {
+        delete state.inflight[job.id];
+        if (pf()) pf().dequeueSubmit(state.salesperson, job.id);
+        silentRefreshCards();
+      }).catch(function (e) {
+        delete state.inflight[job.id];
+        var msg = String((e && e.message) || '');
+        if (msg.indexOf('وارد کنید') !== -1 || msg.indexOf('پر کنید') !== -1) {
+          if (pf()) {
+            pf().dequeueSubmit(state.salesperson, job.id);
+            pf().writeCards(state.salesperson, pf().restoreSubmit(pf().readCards(state.salesperson), job.payload.employer));
+          }
+          toast(msg || 'ارسال انجام نشد', true);
+          if (document.getElementById('screen-cards').classList.contains('active')) showCards();
+          return;
+        }
+        toast('ذخیره در شیت بعداً تکرار می‌شود', true);
+      });
+    }
+
+    function flushSubmitQueue() {
+      if (!pf() || !state.salesperson) return;
+      pf().readSubmitQueue(state.salesperson).forEach(function (job) {
+        if (job.hasFile && !job.liveFile) return;
+        sendSubmitJob(job, job.payload);
+      });
+    }
+
+    function sendPayload(payload, btn) {
+      var job = pf() ? pf().enqueueSubmit(state.salesperson, payload) : { id: String(Date.now()), payload: payload };
+      if (payload.file) job.liveFile = payload.file;
+      if (pf()) {
+        pf().writeCards(state.salesperson, pf().applyOptimisticSubmit(pf().readCards(state.salesperson), payload, 'tmp-' + job.id));
+      }
+      btn.disabled = false;
+      btn.textContent = 'ارسال برای مهندس مزروعی';
+      toast('برای مهندس مزروعی ارسال شد');
+      showCards();
+      sendSubmitJob(job, payload);
+    }
+
+    var cachedBoot = pf() ? pf().readBootstrap() : null;
+    if (cachedBoot) applyBootstrap(cachedBoot);
+    runGas('getSalesBootstrap').then(applyBootstrap).catch(function (err) {
+      if (!cachedBoot) toast((err && err.message) || 'بارگذاری انجام نشد', true);
+    });
+    setHeaderDates(todayJalali());
+  </script>
+  <script>window.__FAST_LAYER__={};</script>
+  <script>/* Fast Layer: IndexedDB cache + optimistic UI + optional Supabase REST */
+(function (global) {
+  var DB_NAME = "hlift-fast-layer";
+  var DB_VERSION = 1;
+  var STORE = "tickets";
+
+  function cfg() {
+    return global.__FAST_LAYER__ || {};
+  }
+
+  function enabled() {
+    return !!(cfg().url && cfg().anon);
+  }
+
+  function projectName() {
+    return String(cfg().project || "").trim();
+  }
+
+  function openDb() {
+    return new Promise(function (resolve, reject) {
+      if (!global.indexedDB) {
+        resolve(null);
+        return;
+      }
+      var req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = function () {
+        var db = req.result;
+        if (!db.objectStoreNames.contains(STORE)) {
+          db.createObjectStore(STORE, { keyPath: "client_id" });
+        }
+      };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { resolve(null); };
+    });
+  }
+
+  function idbPut(row) {
+    return openDb().then(function (db) {
+      if (!db) return row;
+      return new Promise(function (resolve) {
+        var tx = db.transaction(STORE, "readwrite");
+        tx.objectStore(STORE).put(row);
+        tx.oncomplete = function () { resolve(row); };
+        tx.onerror = function () { resolve(row); };
+      });
+    });
+  }
+
+  function idbAll() {
+    return openDb().then(function (db) {
+      if (!db) return [];
+      return new Promise(function (resolve) {
+        var tx = db.transaction(STORE, "readonly");
+        var req = tx.objectStore(STORE).getAll();
+        req.onsuccess = function () { resolve(req.result || []); };
+        req.onerror = function () { resolve([]); };
+      });
+    });
+  }
+
+  function rest(path, options) {
+    var c = cfg();
+    options = options || {};
+    options.headers = Object.assign({
+      apikey: c.anon,
+      Authorization: "Bearer " + c.anon,
+      "Content-Type": "application/json"
+    }, options.headers || {});
+    return fetch(c.url.replace(/\/$/, "") + path, options).then(function (res) {
+      if (!res.ok) throw new Error("supabase " + res.status);
+      if (res.status === 204) return null;
+      return res.json();
+    });
+  }
+
+  function toView(row) {
+    return {
+      subject: row.subject,
+      detail: row.detail,
+      status: row.status || "در حال بررسی",
+      date: row.registered_on || row.date || "",
+      reporter: row.sender || row.reporter || "",
+      client_id: row.client_id
+    };
+  }
+
+  function cachedList(reporter) {
+    return idbAll().then(function (rows) {
+      var mine = String(reporter || "").trim();
+      var seeAll = ["مهندس مزروعی", "مدیر فروش", "داشبورد"].indexOf(mine) !== -1;
+      return rows
+        .filter(function (r) {
+          if (projectName() && r.project_name && r.project_name !== projectName()) return false;
+          if (!seeAll && mine && String(r.sender || "") !== mine) return false;
+          return true;
+        })
+        .sort(function (a, b) { return String(b.created_at || "").localeCompare(String(a.created_at || "")); })
+        .map(toView);
+    });
+  }
+
+  function optimisticAdd(ticket) {
+    var row = {
+      client_id: ticket.client_id || ("local-" + Date.now() + "-" + Math.random().toString(16).slice(2)),
+      project_name: projectName(),
+      sender: ticket.reporter || ticket.sender || "",
+      subject: ticket.subject,
+      detail: ticket.detail,
+      status: "در حال بررسی",
+      registered_on: ticket.date || "",
+      created_at: new Date().toISOString(),
+      send_flag: true
+    };
+    return idbPut(row).then(function () { return row; });
+  }
+
+  function submitTicket(ticket) {
+    return optimisticAdd(ticket).then(function (row) {
+      if (!enabled()) return row;
+      return rest("/rest/v1/tickets", {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify({
+          project_name: row.project_name,
+          sender: row.sender,
+          subject: row.subject,
+          detail: row.detail,
+          status: row.status,
+          registered_on: row.registered_on,
+          client_id: row.client_id,
+          send_flag: true
+        })
+      }).then(function () { return row; });
+    });
+  }
+
+  function pullTickets(reporter) {
+    if (!enabled()) return cachedList(reporter);
+    var qs = "?select=*&order=created_at.desc";
+    if (projectName()) qs += "&project_name=eq." + encodeURIComponent(projectName());
+    return rest("/rest/v1/tickets" + qs).then(function (rows) {
+      rows = rows || [];
+      var chain = Promise.resolve();
+      rows.forEach(function (r) {
+        if (!r.client_id) r.client_id = r.id;
+        chain = chain.then(function () { return idbPut(r); });
+      });
+      return chain.then(function () { return cachedList(reporter); });
+    }).catch(function () { return cachedList(reporter); });
+  }
+
+  global.FastLayer = {
+    enabled: enabled,
+    cachedList: cachedList,
+    optimisticAdd: optimisticAdd,
+    submitTicket: submitTicket,
+    pullTickets: pullTickets
+  };
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+  <style>
+  #tb-fab {
+    position: fixed; left: 16px; bottom: 24px; z-index: 80;
+    width: 58px; height: 58px; border: 0; border-radius: 18px;
+    background: #0f172a; color: #fff; font-family: Vazirmatn, Tahoma, sans-serif;
+    font-size: 13px; font-weight: 800; cursor: pointer;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, .28);
+    text-align: center;
+  }
+  body:has(.nav) #tb-fab { bottom: 88px; }
+  #tb-layer {
+    display: none; position: fixed; inset: 0; z-index: 90;
+    background: #f8fafc; overflow: auto;
+    font-family: Vazirmatn, Tahoma, sans-serif; color: #0f172a;
+  }
+  #tb-layer.on { display: block; }
+  #tb-layer .tb-top {
+    position: sticky; top: 0; background: #fff; border-bottom: 1px solid #e2e8f0;
+    padding: 14px 16px; text-align: center;
+  }
+  #tb-layer h2 { margin: 0; font-size: 17px; font-weight: 800; }
+  #tb-layer .tb-wrap { max-width: 520px; margin: 0 auto; padding: 16px; text-align: center; }
+  #tb-layer label { display: block; font-weight: 700; margin: 14px 0 6px; text-align: center; }
+  #tb-layer input, #tb-layer textarea {
+    width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #e2e8f0;
+    border-radius: 12px; font-family: inherit; font-size: 16px; text-align: center;
+  }
+  #tb-layer textarea { min-height: 140px; resize: vertical; }
+  #tb-layer .tb-btn {
+    width: 100%; margin-top: 16px; border: 0; border-radius: 14px; padding: 13px;
+    font-family: inherit; font-size: 15px; font-weight: 800; cursor: pointer;
+  }
+  #tb-layer .tb-main { background: #0f172a; color: #fff; }
+  #tb-layer .tb-ghost { background: #fff; color: #0f172a; border: 1px solid #e2e8f0; }
+  #tb-layer .tb-btn:disabled { opacity: .55; cursor: default; }
+  #tb-layer .tb-err { color: #dc2626; font-size: 13px; margin-top: 8px; min-height: 18px; }
+  #tb-layer .tb-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+    padding: 14px; margin-bottom: 10px; text-align: center;
+  }
+  #tb-layer .tb-st {
+    display: inline-block; margin-top: 8px; border-radius: 999px;
+    padding: 3px 10px; font-size: 12px; font-weight: 700;
+  }
+  #tb-layer .tb-st.review { background: #fef3c7; color: #92400e; }
+  #tb-layer .tb-st.done { background: #dcfce7; color: #166534; }
+  #tb-layer .tb-muted { color: #64748b; font-size: 13px; }
+  #tb-form, #tb-list { display: none; }
+  #tb-form.on, #tb-list.on { display: block; }
+</style>
+<button id="tb-fab" type="button" onclick="ticketBoxOpenForm()">تیکت</button>
+<div id="tb-layer" dir="rtl">
+  <div id="tb-form">
+    <div class="tb-top"><h2>ارسال تیکت</h2></div>
+    <div class="tb-wrap">
+      <label for="tb-subject">موضوع</label>
+      <input id="tb-subject" type="text" maxlength="120" placeholder="موضوع مشکل">
+      <label for="tb-body">شرح مشکل</label>
+      <textarea id="tb-body" maxlength="2000" placeholder="شرح مشکل را بنویسید"></textarea>
+      <div class="tb-err" id="tb-err"></div>
+      <button class="tb-btn tb-main" id="tb-send" type="button" onclick="ticketBoxSend()">ارسال تیکت</button>
+      <button class="tb-btn tb-ghost" type="button" onclick="ticketBoxClose()">بستن</button>
+    </div>
+  </div>
+  <div id="tb-list">
+    <div class="tb-top"><h2>تیکت‌ها</h2></div>
+    <div class="tb-wrap">
+      <div id="tb-cards"></div>
+      <button class="tb-btn tb-main" type="button" onclick="ticketBoxOpenForm()">تیکت جدید</button>
+      <button class="tb-btn tb-ghost" type="button" onclick="ticketBoxClose()">بستن</button>
+    </div>
+  </div>
+</div>
+<script>
+  window.__ticketReporter = window.__ticketReporter || '';
+  // لیست تیکت فقط برای همین کاربر فرستاده می‌شود
+  window.ticketBoxSetReporter = function (name) {
+    window.__ticketReporter = String(name || '').trim();
+  };
+  function ticketBoxEl(id) { return document.getElementById(id); }
+  function ticketBoxOpenForm() {
+    ticketBoxEl('tb-err').textContent = '';
+    ticketBoxEl('tb-subject').value = '';
+    ticketBoxEl('tb-body').value = '';
+    ticketBoxEl('tb-send').disabled = false;
+    ticketBoxEl('tb-layer').classList.add('on');
+    ticketBoxEl('tb-form').classList.add('on');
+    ticketBoxEl('tb-list').classList.remove('on');
+    window.scrollTo(0, 0);
+  }
+  function ticketBoxClose() {
+    ticketBoxEl('tb-layer').classList.remove('on');
+    ticketBoxEl('tb-form').classList.remove('on');
+    ticketBoxEl('tb-list').classList.remove('on');
+  }
+  function ticketBoxEsc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function ticketBoxStClass(st) {
+    return String(st || '').trim() === 'انجام شد' ? 'done' : 'review';
+  }
+  function ticketBoxShowList(items) {
+    var box = ticketBoxEl('tb-cards');
+    if (!items || !items.length) {
+      var mine = ['مهندس مزروعی', 'مدیر فروش', 'داشبورد'].indexOf(window.__ticketReporter || '') < 0;
+      box.innerHTML = '<div class="tb-muted">' + (mine ? 'هنوز تیکتی از طرف شما ثبت نشده است.' : 'هنوز تیکتی ثبت نشده است.') + '</div>';
+    } else {
+      box.innerHTML = items.map(function (t) {
+        return '<div class="tb-card">' +
+          '<div style="font-weight:800">' + ticketBoxEsc(t.subject) + '</div>' +
+          '<div class="tb-muted" style="margin-top:6px">' + ticketBoxEsc(t.detail) + '</div>' +
+          (t.reporter ? '<div class="tb-muted" style="margin-top:6px">' + ticketBoxEsc(t.reporter) + '</div>' : '') +
+          (t.date ? '<div class="tb-muted" style="margin-top:4px">' + ticketBoxEsc(t.date) + '</div>' : '') +
+          '<div class="tb-st ' + ticketBoxStClass(t.status) + '">' + ticketBoxEsc(t.status || 'در حال بررسی') + '</div>' +
+          '</div>';
+      }).join('');
+    }
+    ticketBoxEl('tb-layer').classList.add('on');
+    ticketBoxEl('tb-form').classList.remove('on');
+    ticketBoxEl('tb-list').classList.add('on');
+    window.scrollTo(0, 0);
+  }
+  function ticketBoxSend() {
+    var subject = ticketBoxEl('tb-subject').value.trim();
+    var detail = ticketBoxEl('tb-body').value.trim();
+    var err = ticketBoxEl('tb-err');
+    var btn = ticketBoxEl('tb-send');
+    err.textContent = '';
+    if (!subject || !detail) {
+      err.textContent = 'موضوع و شرح مشکل را بنویسید';
+      return;
+    }
+    if (!(window.__ticketReporter || '').trim()) {
+      err.textContent = 'ابتدا نام خود را انتخاب کنید';
+      return;
+    }
+    btn.disabled = true;
+    var payload = { subject: subject, detail: detail, reporter: window.__ticketReporter || '' };
+    function showFromSheet() {
+      google.script.run
+        .withSuccessHandler(ticketBoxShowList)
+        .withFailureHandler(function () { ticketBoxShowList([]); })
+        .webListProblemTickets(window.__ticketReporter || '');
+    }
+    function sendSheetBackground() {
+      google.script.run
+        .withSuccessHandler(function () {})
+        .withFailureHandler(function () {})
+        .webSubmitProblemTicket(subject, detail, window.__ticketReporter || '');
+    }
+    if (window.FastLayer) {
+      window.FastLayer.submitTicket(payload)
+        .then(function () { return window.FastLayer.cachedList(payload.reporter); })
+        .then(function (items) {
+          ticketBoxShowList(items);
+          sendSheetBackground();
+          if (window.FastLayer.enabled()) {
+            window.FastLayer.pullTickets(payload.reporter).then(ticketBoxShowList);
+          }
+        })
+        .catch(function () {
+          google.script.run
+            .withSuccessHandler(function (res) {
+              if (!res || !res.ok) {
+                err.textContent = (res && res.error) ? res.error : 'ارسال نشد';
+                btn.disabled = false;
+                return;
+              }
+              showFromSheet();
+            })
+            .withFailureHandler(function (e) {
+              err.textContent = e && e.message ? e.message : 'ارتباط برقرار نشد';
+              btn.disabled = false;
+            })
+            .webSubmitProblemTicket(subject, detail, window.__ticketReporter || '');
+        });
+      return;
+    }
+    google.script.run
+      .withSuccessHandler(function (res) {
+        if (!res || !res.ok) {
+          err.textContent = (res && res.error) ? res.error : 'ارسال نشد';
+          btn.disabled = false;
+          return;
+        }
+        showFromSheet();
+      })
+      .withFailureHandler(function (e) {
+        err.textContent = e && e.message ? e.message : 'ارتباط برقرار نشد';
+        btn.disabled = false;
+      })
+      .webSubmitProblemTicket(subject, detail, window.__ticketReporter || '');
+  }
+</script>
+
+
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () { navigator.serviceWorker.register("./sw.js").catch(function () {}); });
+}
+</script>
+</body>
+</html>
