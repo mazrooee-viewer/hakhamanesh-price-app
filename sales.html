@@ -7,13 +7,13 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260909101155">
+  <meta name="x-build" content="20260909103639">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
   var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","finishInquiry","markInquiryIncomplete","submitInquiry","getSalespersonCards","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig"];
-  var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 86400000 };
+  var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   function call(fn, args) {
     return fetch(API, {
       method: "POST",
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260909101155" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260909103639" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1006,12 +1006,79 @@
     }).catch(function () { return cachedList(reporter); });
   }
 
+  /* ---- لیست قیمت: صف مدیر از آینهٔ Supabase (price_inbox_cards) ----
+     قرارداد: اگر Supabase پیکربندی نشده، در دسترس نیست، فیلتر شده یا دیر جواب داد (timeout)،
+     Promise رد می‌شود و صدازننده از مسیر قبلی (google.script.run + کش مرورگر) ادامه می‌دهد.
+     بعد از هر شکست، تا ۱۰ دقیقه Supabase را نمی‌زنیم تا کاربر جریمهٔ timeout نخورد. */
+  var DOWN_KEY = "fastLayerDownUntil";
+  var DOWN_MS = 10 * 60 * 1000;
+
+  function downUntil() {
+    try { return Number(localStorage.getItem(DOWN_KEY) || 0); } catch (e) { return 0; }
+  }
+  function markDown() {
+    try { localStorage.setItem(DOWN_KEY, String(Date.now() + DOWN_MS)); } catch (e) {}
+  }
+  function markUp() {
+    try { localStorage.removeItem(DOWN_KEY); } catch (e) {}
+  }
+
+  function fetchWithTimeout(url, options, ms) {
+    var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, ms) : null;
+    if (ctrl) options.signal = ctrl.signal;
+    return fetch(url, options).then(function (res) {
+      if (timer) clearTimeout(timer);
+      return res;
+    }, function (err) {
+      if (timer) clearTimeout(timer);
+      throw err;
+    });
+  }
+
+  function pullInboxCards(timeoutMs) {
+    if (!enabled()) return Promise.reject(new Error("fast layer off"));
+    if (downUntil() > Date.now()) return Promise.reject(new Error("fast layer paused"));
+    var c = cfg();
+    var base = c.url.replace(/\/$/, "");
+    var headers = { apikey: c.anon, Authorization: "Bearer " + c.anon };
+    var t0 = Date.now();
+    var cardsReq = fetchWithTimeout(base + "/rest/v1/price_inbox_cards?select=card,sort_key&order=sort_key.desc",
+      { headers: headers, credentials: "omit" }, timeoutMs || 1500);
+    var metaReq = fetchWithTimeout(base + "/rest/v1/price_meta?key=eq.inbox&select=value,updated_at",
+      { headers: headers, credentials: "omit" }, timeoutMs || 1500).then(function (r) { return r.ok ? r.json() : []; })
+      .catch(function () { return []; });
+    return Promise.all([cardsReq, metaReq]).then(function (arr) {
+      var res = arr[0];
+      if (!res.ok) throw new Error("supabase " + res.status);
+      return res.json().then(function (rows) {
+        if (!Array.isArray(rows)) throw new Error("supabase bad payload");
+        var meta = (arr[1] && arr[1][0]) || null;
+        var syncedAt = meta && meta.value && meta.value.synced_at ? Date.parse(meta.value.synced_at) : 0;
+        var updatedAt = meta && meta.updated_at ? Date.parse(meta.updated_at) : 0;
+        markUp();
+        return {
+          cards: rows.map(function (r) { return r.card; }).filter(function (x) { return x && x.salesperson; }),
+          syncedAt: syncedAt,
+          updatedAt: Math.max(syncedAt, updatedAt),
+          ms: Date.now() - t0,
+          source: "supabase"
+        };
+      });
+    }).catch(function (err) {
+      markDown();
+      throw err;
+    });
+  }
+
   global.FastLayer = {
     enabled: enabled,
     cachedList: cachedList,
     optimisticAdd: optimisticAdd,
     submitTicket: submitTicket,
-    pullTickets: pullTickets
+    pullTickets: pullTickets,
+    pullInboxCards: pullInboxCards,
+    isPaused: function () { return downUntil() > Date.now(); }
   };
 })(typeof window !== "undefined" ? window : globalThis);
 </script>
