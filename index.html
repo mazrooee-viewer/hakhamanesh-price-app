@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260909111259">
+  <meta name="x-build" content="20260910094722">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","finishInquiry","markInquiryIncomplete","submitInquiry","getSalespersonCards","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","finishInquiry","markInquiryIncomplete","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   function call(fn, args) {
     return fetch(API, {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260909111259" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260910094722" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -119,6 +119,11 @@
       white-space: nowrap; margin-top: 2px;
     }
     .card .date { color: #92400e; font-size: 12px; font-weight: 700; margin-top: 6px; }
+    .card .dates { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; }
+    .card .dates .date { margin-top: 0; }
+    .card .date.edit { color: #1e3a8a; }
+    .notify-box { text-align: center; margin-top: 14px; }
+    .notify-box .hint { font-size: 12px; color: var(--muted); margin-top: 6px; font-weight: 700; }
     .wrap { padding: 16px; padding-bottom: 36px; }
     .list { display: flex; flex-direction: column; gap: 10px; }
     .card {
@@ -157,6 +162,16 @@
       background: #fff; border: 1px solid var(--line); border-radius: 16px;
       overflow: hidden; margin-top: 16px;
     }
+    .calc-legend {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 14px;
+      margin-top: 8px; font-size: 12px; color: var(--muted); font-weight: 700;
+    }
+    .calc-legend .swatch {
+      display: inline-block; width: 16px; height: 12px; border-radius: 4px;
+      vertical-align: middle; margin-left: 6px; border: 1px solid var(--line);
+    }
+    .calc-legend .swatch.formula { background: #cfe2f3; }
+    .calc-legend .swatch.changed { background: #fff2cc; }
     .calc-head, .calc-row {
       display: grid;
       grid-template-columns: 0.7fr 1.49fr 1.41fr;
@@ -185,9 +200,11 @@
     }
     .calc-row .price {
       font-size: 13px;
-      text-align: left; direction: ltr;
+      text-align: center; direction: ltr;
       font-variant-numeric: tabular-nums;
     }
+    .calc-row input.price[readonly].price-formula { background: #cfe2f3; }
+    .calc-row input.price[readonly].price-changed { background: #fff2cc; }
     .totals {
       background: #fff; border: 1px solid var(--line); border-radius: 16px;
       padding: 14px; margin-top: 18px;
@@ -203,11 +220,12 @@
     .back {
       background: none; border: 0; color: #fff; font-family: inherit;
       font-size: 13px; font-weight: 700; margin-bottom: 6px; cursor: pointer;
+      padding: 8px 0;
     }
     .toast {
-      position: fixed; bottom: 18px; right: 16px; left: 16px;
+      position: fixed; bottom: 72px; right: 16px; left: 16px;
       background: var(--navy); color: #fff; padding: 12px 14px;
-      border-radius: 12px; display: none; z-index: 9; text-align: center;
+      border-radius: 12px; display: none; z-index: 95; text-align: center;
     }
     .toast.bad { background: var(--red); }
     .pdfs { margin-top: 10px; font-size: 13px; }
@@ -221,6 +239,37 @@
     .home-queue { background: #f3e2b8; color: #4a3208; border-color: #b8892a; }
     .home-issued { background: #cfe8d4; color: #0d3a22; border-color: #3d7a52; }
     .home-bad { background: #f0d4d4; color: #5c1212; border-color: #a34a4a; }
+    .home-short { background: #d7e4f2; color: #16324d; border-color: #3d6a8a; }
+    .home-pkg { background: #efe7f8; color: #3b2060; border-color: #6b4c9a; }
+    .pkg-card { cursor: pointer; text-align: center; }
+    .pkg-card .name { margin-bottom: 4px; }
+    .pkg-meta { color: var(--muted); font-size: 13px; font-weight: 700; line-height: 1.7; }
+    .pkg-badges { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+    .pkg-badge {
+      display: inline-block; font-size: 11px; font-weight: 800;
+      border-radius: 999px; padding: 3px 8px;
+    }
+    .pkg-badge.active { background: #dcfce7; color: #166534; }
+    .pkg-badge.archive { background: #e5e7eb; color: #374151; }
+    .pkg-badge.invalid { background: #fee2e2; color: #991b1b; }
+    .pkg-card.archived { background: #f3f4f6; }
+    .pkg-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .pkg-actions .btn { flex: 1; }
+    .pkg-section-title {
+      text-align: center; font-size: 15px; font-weight: 800; margin: 18px 0 10px;
+    }
+    #screen-form.package-preview .inquiry-only { display: none; }
+    .short-table .calc-head,
+    .short-table .short-row {
+      grid-template-columns: 1.45fr 1fr;
+    }
+    .short-table .calc-head span,
+    .short-table .short-row .part,
+    .short-table .short-row .price { text-align: center; }
+    .short-hint {
+      text-align: center; color: var(--muted); font-size: 12px; font-weight: 700;
+      margin-top: 8px;
+    }
     .home-btn .count { display: block; font-size: 12px; font-weight: 700; opacity: 1; margin-top: 4px; }
     .home-logo-area { display: flex; justify-content: center; margin-top: 22px; padding: 20px 0 28px; overflow: visible; }
     .home-logo { position: relative; width: min(150px, 40vw); }
@@ -273,6 +322,18 @@
           ناقص
           <span class="count" id="count-bad">—</span>
         </button>
+        <button class="home-btn home-short" type="button" onclick="openShortPath()">
+          مسیر کوتاه
+          <span class="count">ویرایش قیمت قطعات</span>
+        </button>
+        <button class="home-btn home-pkg" type="button" onclick="openPackages()">
+          پکیج‌ها
+          <span class="count">صدور و آرشیو لیست قیمت</span>
+        </button>
+      </div>
+      <div class="notify-box">
+        <button class="btn btn-ghost" type="button" onclick="enablePhoneNotify()">فعال‌سازی اعلان گوشی</button>
+        <div class="hint" id="notify-hint"></div>
       </div>
       <div class="home-logo-area">
         <div class="home-logo">
@@ -304,7 +365,7 @@
     <div class="top">
       <div class="top-row">
         <div>
-          <button class="back" type="button" onclick="showInbox()">بازگشت به صف</button>
+          <button class="back" type="button" id="form-back" onclick="backFromForm()">بازگشت به صف</button>
           <h1 id="form-title">فرم محاسبه</h1>
           <div class="meta" id="form-meta"></div>
         </div>
@@ -312,8 +373,10 @@
       </div>
     </div>
     <div class="wrap">
+      <div class="inquiry-only">
       <label>نام کارفرما</label>
       <input id="employer" type="text">
+      </div>
 
       <div class="calc-table">
         <div class="calc-head">
@@ -322,6 +385,10 @@
           <span>قیمت(تومان)</span>
         </div>
         <div id="form-fields"></div>
+      </div>
+      <div class="calc-legend">
+        <span><span class="swatch formula"></span>قیمت محاسبه‌ای شیت</span>
+        <span><span class="swatch changed"></span>تغییر نسبت به پیش‌فرض</span>
       </div>
 
       <div class="totals">
@@ -344,18 +411,68 @@
         <button type="button" data-sheet="Door&amp;Cabin">Door&amp;Cabin</button>
       </div>
 
+      <div class="inquiry-only">
       <label>توضیحات بازاریاب</label>
       <textarea id="sales-extra-note" class="note" readonly></textarea>
 
       <label>نظر مدیریت</label>
       <textarea id="manager-note" class="note" placeholder="نظر خود را بنویسید"></textarea>
+      </div>
 
       <div class="actions">
-        <button class="btn btn-main" id="issue" type="button" onclick="issuePdf()">صدور لیست قیمت</button>
-        <button class="btn btn-ghost" id="finish" type="button" onclick="finishProcess()">اتمام فرایند</button>
-        <button class="btn btn-bad" id="incomplete" type="button" onclick="markIncomplete()">ناقص</button>
+        <button class="btn btn-main inquiry-only" id="issue" type="button" onclick="issuePdf()">صدور لیست قیمت</button>
+        <button class="btn btn-ghost inquiry-only" id="finish" type="button" onclick="finishProcess()">اتمام فرایند</button>
+        <button class="btn btn-bad inquiry-only" id="incomplete" type="button" onclick="markIncomplete()">ناقص</button>
       </div>
       <div id="pdfs" class="pdfs"></div>
+    </div>
+  </section>
+
+  <section id="screen-short" class="screen">
+    <div class="top">
+      <div class="top-row">
+        <div>
+          <button class="back" type="button" onclick="event.preventDefault(); showHome();">بازگشت</button>
+          <h1>مسیر کوتاه</h1>
+          <div class="meta">قیمت قطعات این جدول را ویرایش کنید و ذخیره بزنید</div>
+        </div>
+        <div class="date-badge" data-date-slot></div>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="calc-table short-table">
+        <div class="calc-head">
+          <span>نام قطعه</span>
+          <span>قیمت(تومان)</span>
+        </div>
+        <div id="short-path-rows"><div class="empty">در حال بارگذاری...</div></div>
+      </div>
+      <div class="short-hint">فقط ستون قیمت ذخیره می‌شود؛ نام قطعات همان شیت مسیر کوتاه است</div>
+      <div class="actions">
+        <button class="btn btn-main" id="save-short-path" type="button" onclick="saveShortPath()" disabled>ذخیره قیمت‌ها</button>
+        <button class="btn btn-ghost" type="button" onclick="loadShortPath()">بازخوانی</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-packages" class="screen">
+    <div class="top">
+      <div class="top-row">
+        <div>
+          <button class="back" type="button" onclick="event.preventDefault(); showHome();">بازگشت</button>
+          <h1>قیمت پکیج‌ها</h1>
+          <div class="meta">صدور مثل شیت فرم محاسبه؛ آرشیو در اپ یا شیت Base Price</div>
+        </div>
+        <div class="date-badge" data-date-slot></div>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="short-hint">برای پیش‌نمایش فرم محاسبه روی کارت پکیج بزنید؛ صدور PDF کامل همان دکمه صدور قیمت است</div>
+      <div class="pkg-section-title">پکیج‌های فرم محاسبه</div>
+      <div id="package-catalog" class="list"><div class="empty">در حال بارگذاری...</div></div>
+      <div class="pkg-section-title">لیست‌های صادرشده</div>
+      <div id="package-lists" class="list"><div class="empty">در حال بارگذاری...</div></div>
+      <button class="btn btn-ghost" type="button" style="width:100%;margin-top:12px" onclick="loadPackages()">بازخوانی</button>
     </div>
   </section>
 
@@ -657,7 +774,14 @@
       finishQueued: false,
       filter: 'در صف بررسی',
       allCards: [],
-      inflight: {}
+      inflight: {},
+      shortPathRows: [],
+      shortPathDirty: false,
+      shortPathSaving: false,
+      packageCatalog: [],
+      packageLists: [],
+      packageIssuing: '',
+      formMode: 'inquiry'
     };
 
     function parseNum(v) {
@@ -835,6 +959,7 @@
       var prices = computeLocalPrices(payload.values);
       state.lastPrices = prices;
       applyCalcState({ prices: prices, totals: computeLocalTotals(prices, payload.profitPct) });
+      applyPriceHighlight(payload.values);
     }
 
     function toast(msg, bad) {
@@ -895,9 +1020,26 @@
       } catch (e) { return ''; }
     }
 
+    function cardCreatedDate(c) {
+      return String((c && (c.date || c.createdDate)) || '').trim();
+    }
+
+    function cardEditedDate(c) {
+      return String((c && (c.editedDate || c.editDate)) || '').trim();
+    }
+
     function cardDate(c) {
-      if (normalizeStatus(c) === 'صادر شده' && c.date) return c.date;
-      return todayJalali();
+      return cardCreatedDate(c);
+    }
+
+    function cardDatesHtml(c) {
+      var created = cardCreatedDate(c);
+      var edited = cardEditedDate(c);
+      var parts = [];
+      if (created) parts.push('<span class="date">ایجاد ' + escapeHtml(created) + '</span>');
+      if (edited) parts.push('<span class="date edit">ویرایش ' + escapeHtml(edited) + '</span>');
+      if (!parts.length) return '';
+      return '<div class="dates">' + parts.join('') + '</div>';
     }
 
     function setHeaderDates(value) {
@@ -948,7 +1090,7 @@
           '<div class="who">' + escapeHtml(c.salesperson) + '</div>' +
           '<div class="name">' + escapeHtml(c.employer) + '</div>' +
           '<div class="spec">' + escapeHtml(c.system) + ' — ظرفیت ' + escapeHtml(c.caps) + ' — توقف ' + escapeHtml(c.stop) + '</div>' +
-          '<div class="date">' + escapeHtml(cardDate(c)) + '</div>' +
+          cardDatesHtml(c) +
           (c.extraNote ? '<div class="spec">' + escapeHtml(c.extraNote) + '</div>' : '') +
           (cleanNote(c.note) ? '<div class="spec">' + escapeHtml(cleanNote(c.note)) + '</div>' : '') +
           attach + pdf +
@@ -1014,6 +1156,217 @@
       }).catch(function () { return runGasInbox(); });
     }
 
+    function formatShortPathPrice(value) {
+      if (value === '' || value == null) return '';
+      var n = parseNum(value);
+      if (!isFinite(n)) return '';
+      return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    function openShortPath() {
+      setHeaderDates(todayJalali());
+      showScreen('screen-short');
+      loadShortPath();
+    }
+
+    function renderShortPath() {
+      var box = document.getElementById('short-path-rows');
+      var rows = state.shortPathRows || [];
+      if (!rows.length) {
+        box.innerHTML = '<div class="empty">ردیفی در شیت مسیر کوتاه نیست</div>';
+        document.getElementById('save-short-path').disabled = true;
+        return;
+      }
+      box.innerHTML = rows.map(function (r) {
+        return '<div class="calc-row short-row">' +
+          '<div class="part">' + escapeHtml(r.name) + '</div>' +
+          '<input class="price" id="sp-' + r.row + '" type="text" inputmode="numeric" value="' +
+          escapeHtml(formatShortPathPrice(r.price)) + '">' +
+          '</div>';
+      }).join('');
+      box.querySelectorAll('input.price').forEach(function (el) {
+        el.addEventListener('input', function () {
+          state.shortPathDirty = true;
+          document.getElementById('save-short-path').disabled = false;
+        });
+        el.addEventListener('focus', function () {
+          el.value = String(el.value || '').replace(/[,،٬\s]/g, '');
+        });
+        el.addEventListener('blur', function () {
+          el.value = formatShortPathPrice(el.value);
+        });
+      });
+      document.getElementById('save-short-path').disabled = !state.shortPathDirty;
+    }
+
+    function loadShortPath() {
+      var box = document.getElementById('short-path-rows');
+      var btn = document.getElementById('save-short-path');
+      box.innerHTML = '<div class="empty">در حال بارگذاری...</div>';
+      btn.disabled = true;
+      runGas('getShortPathTable').then(function (data) {
+        state.shortPathRows = (data && data.rows) || [];
+        state.shortPathDirty = false;
+        renderShortPath();
+      }).catch(function (err) {
+        box.innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری انجام نشد') + '</div>';
+        toast((err && err.message) || 'بارگذاری انجام نشد', true);
+      });
+    }
+
+    function openPackages() {
+      setHeaderDates(todayJalali());
+      showScreen('screen-packages');
+      loadPackages();
+    }
+
+    function packageBadgesHtml(item, archived) {
+      if (archived) {
+        return '<div class="pkg-badges">' +
+          '<span class="pkg-badge archive">آرشیو</span>' +
+          '<span class="pkg-badge invalid">فاقد اعتبار</span>' +
+          '</div>';
+      }
+      return '<div class="pkg-badges"><span class="pkg-badge active">فعال</span></div>';
+    }
+
+    function renderPackageCatalog() {
+      var box = document.getElementById('package-catalog');
+      var rows = state.packageCatalog || [];
+      if (!rows.length) {
+        box.innerHTML = '<div class="empty">پکیجی در فرم محاسبه نیست</div>';
+        return;
+      }
+      box.innerHTML = rows.map(function (pkg) {
+        var last = pkg.lastIssue;
+        var busy = state.packageIssuing === pkg.packageName;
+        return '<div class="card pkg-card" data-preview="' + escapeHtml(pkg.packageName) + '">' +
+          '<div class="name">' + escapeHtml(pkg.displayName || pkg.packageName) + '</div>' +
+          (last ? '<div class="pkg-meta">آخرین صدور: ' + escapeHtml(last.issueDate || '') +
+            (last.expiryDate ? ' — اعتبار تا ' + escapeHtml(last.expiryDate) : '') + '</div>' : '<div class="pkg-meta">هنوز صادر نشده</div>') +
+          (last ? packageBadgesHtml(last, !!last.archived) : '') +
+          '<div class="pkg-actions">' +
+          '<button class="btn btn-main" type="button" data-issue="' + escapeHtml(pkg.packageName) + '"' +
+          (busy ? ' disabled' : '') + '>' + (busy ? 'در حال صدور...' : 'صدور قیمت') + '</button>' +
+          '</div></div>';
+      }).join('');
+      box.querySelectorAll('[data-preview]').forEach(function (card) {
+        card.onclick = function () { openPackagePreview(card.getAttribute('data-preview')); };
+      });
+      box.querySelectorAll('[data-issue]').forEach(function (btn) {
+        btn.onclick = function (ev) {
+          if (ev) ev.stopPropagation();
+          issuePackageFromApp(btn.getAttribute('data-issue'));
+        };
+      });
+    }
+
+    function renderPackageLists(canArchive) {
+      var box = document.getElementById('package-lists');
+      var rows = state.packageLists || [];
+      if (!rows.length) {
+        box.innerHTML = '<div class="empty">لیست صادرشده‌ای نیست</div>';
+        return;
+      }
+      box.innerHTML = rows.slice().reverse().map(function (item) {
+        return '<div class="card pkg-card' + (item.archived ? ' archived' : '') + '" data-preview="' +
+          escapeHtml(item.packageName) + '">' +
+          '<div class="name">' + escapeHtml(item.displayName || item.packageName) + '</div>' +
+          '<div class="pkg-meta">ظرفیت ' + escapeHtml(item.caps || '—') + '</div>' +
+          '<div class="pkg-meta">صدور ' + escapeHtml(item.issueDate || '—') +
+            (item.expiryDate ? ' — اعتبار تا ' + escapeHtml(item.expiryDate) : '') + '</div>' +
+          packageBadgesHtml(item, !!item.archived) +
+          (item.folderUrl ? '<a class="pdf-link" href="' + escapeHtml(item.folderUrl) + '" target="_blank" rel="noopener">مشاهده پوشه قیمت</a>' : '') +
+          (canArchive && !item.archived ? '<div class="pkg-actions"><button class="btn btn-bad" type="button" data-archive="' +
+            item.row + '">آرشیو</button></div>' : '') +
+          '</div>';
+      }).join('');
+      box.querySelectorAll('[data-preview]').forEach(function (card) {
+        card.onclick = function () { openPackagePreview(card.getAttribute('data-preview')); };
+      });
+      box.querySelectorAll('a.pdf-link').forEach(function (link) {
+        link.onclick = function (ev) { if (ev) ev.stopPropagation(); };
+      });
+      if (canArchive) {
+        box.querySelectorAll('[data-archive]').forEach(function (btn) {
+          btn.onclick = function (ev) {
+            if (ev) ev.stopPropagation();
+            archivePackageFromApp(Number(btn.getAttribute('data-archive')));
+          };
+        });
+      }
+    }
+
+    function loadPackages() {
+      var catalogBox = document.getElementById('package-catalog');
+      var listBox = document.getElementById('package-lists');
+      catalogBox.innerHTML = '<div class="empty">در حال بارگذاری...</div>';
+      listBox.innerHTML = '<div class="empty">در حال بارگذاری...</div>';
+      runGas('getPackageCatalog').then(function (data) {
+        state.packageCatalog = (data && data.packages) || [];
+        state.packageLists = (data && data.lists) || [];
+        renderPackageCatalog();
+        renderPackageLists(true);
+      }).catch(function (err) {
+        catalogBox.innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری انجام نشد') + '</div>';
+        listBox.innerHTML = '';
+        toast((err && err.message) || 'بارگذاری انجام نشد', true);
+      });
+    }
+
+    function issuePackageFromApp(packageName) {
+      if (state.packageIssuing) return toast('صبر کنید تا صدور پکیج جاری تمام شود', true);
+      state.packageIssuing = packageName;
+      renderPackageCatalog();
+      toast('صدور پکیج شروع شد؛ چند دقیقه صبر کنید');
+      runGas('issuePackagePrice', packageName).then(function (res) {
+        var failed = (res && res.failed) || [];
+        if (failed.length) toast('صادر شد ولی ناقص: ' + failed.join(' و '), true);
+        else toast('لیست قیمت پکیج صادر شد');
+        state.packageIssuing = '';
+        loadPackages();
+      }).catch(function (err) {
+        state.packageIssuing = '';
+        renderPackageCatalog();
+        toast((err && err.message) || 'صدور انجام نشد', true);
+      });
+    }
+
+    function archivePackageFromApp(row) {
+      if (!row) return;
+      runGas('archiveBasePrice', { row: row }).then(function () {
+        toast('پکیج آرشیو و فاقد اعتبار شد');
+        loadPackages();
+      }).catch(function (err) {
+        toast((err && err.message) || 'آرشیو انجام نشد', true);
+      });
+    }
+
+    function saveShortPath() {
+      if (state.shortPathSaving) return;
+      var btn = document.getElementById('save-short-path');
+      var rows = (state.shortPathRows || []).map(function (r) {
+        var el = document.getElementById('sp-' + r.row);
+        return { row: r.row, price: el ? el.value : r.price };
+      });
+      state.shortPathSaving = true;
+      btn.disabled = true;
+      btn.textContent = 'در حال ذخیره...';
+      runGas('saveShortPathPrices', { rows: rows }).then(function () {
+        state.shortPathDirty = false;
+        toast('قیمت‌های مسیر کوتاه ذخیره شد');
+        loadShortPath();
+      }).catch(function (err) {
+        toast((err && err.message) || 'ذخیره انجام نشد', true);
+        btn.disabled = false;
+      }).then(function () {
+        state.shortPathSaving = false;
+        btn.textContent = 'ذخیره قیمت‌ها';
+        if (state.shortPathDirty) btn.disabled = false;
+      });
+    }
+    }
+
     function loadInbox(stayHome) {
       if (!stayHome) showScreen('screen-inbox');
       var box = document.getElementById('list');
@@ -1055,8 +1408,43 @@
       return JSON.stringify([d.employer, d.values, d.note, d.extraNote, d.pdfs, d.attachment, d.status]);
     }
 
+    function openPackagePreview(packageName) {
+      if (!state.bootstrap) return toast('گزینه‌های فرم هنوز بارگذاری نشده', true);
+      if (!packageName) return;
+      state.formMode = 'package';
+      state.salesperson = '';
+      state.row = 0;
+      document.getElementById('screen-form').classList.add('package-preview');
+      document.getElementById('form-back').textContent = 'بازگشت به پکیج‌ها';
+      document.getElementById('form-title').textContent = packageName;
+      document.getElementById('form-meta').textContent = 'پیش‌نمایش دستی — در حال همگام‌سازی با Data_Offers...';
+      setHeaderDates(todayJalali());
+      showScreen('screen-form');
+      toast('پیش‌نمایش پکیج مثل حالت دستی شیت');
+      runGas('previewPackageForm', packageName).then(function (data) {
+        fillInquiryForm(data);
+      }).catch(function (err) {
+        toast((err && err.message) || 'پیش‌نمایش انجام نشد', true);
+        openPackages();
+      });
+    }
+
+    function backFromForm() {
+      if (state.formMode === 'package') {
+        state.formMode = 'inquiry';
+        document.getElementById('screen-form').classList.remove('package-preview');
+        document.getElementById('form-back').textContent = 'بازگشت به صف';
+        openPackages();
+        return;
+      }
+      showInbox();
+    }
+
     function openCard(card) {
       if (!state.bootstrap) return toast('گزینه‌های فرم هنوز بارگذاری نشده', true);
+      state.formMode = 'inquiry';
+      document.getElementById('screen-form').classList.remove('package-preview');
+      document.getElementById('form-back').textContent = 'بازگشت به صف';
       state.salesperson = card.salesperson;
       state.row = card.row;
       state.formDirty = false;
@@ -1093,9 +1481,16 @@
     function fillInquiryForm(data) {
       var b = state.bootstrap;
       state.attachment = data.attachment || '';
+      state.formMode = data.preview ? 'package' : 'inquiry';
+      document.getElementById('screen-form').classList.toggle('package-preview', !!data.preview);
+      document.getElementById('form-back').textContent = data.preview ? 'بازگشت به پکیج‌ها' : 'بازگشت به صف';
       document.getElementById('employer').value = data.employer || '';
-      document.getElementById('form-title').textContent = data.employer || 'فرم محاسبه';
-      document.getElementById('form-meta').textContent = data.salesperson;
+      document.getElementById('form-title').textContent = data.preview
+        ? ('پیش‌نمایش ' + (data.displayName || data.packageName || data.employer || ''))
+        : (data.employer || 'فرم محاسبه');
+      document.getElementById('form-meta').textContent = data.preview
+        ? 'حالت دستی فرم محاسبه — همگام با جدول پکیج Data_Offers'
+        : data.salesperson;
       setHeaderDates(cardDate(data));
       document.getElementById('sales-extra-note').value = data.extraNote || '';
       document.getElementById('manager-note').value = cleanNote(data.note);
@@ -1120,7 +1515,39 @@
       applySystemLists(document.getElementById('f-system').value, data.values || {});
       bindPriceRecalc();
       setOutSheet(data.suggestedOutSheet || 'Traction');
-      if (state.engine) applyLocalCalc();
+      if (state.engine && !data.preview) applyLocalCalc();
+      else applyPriceHighlight(data.values || {});
+    }
+
+    function currentFormValues() {
+      var values = {};
+      (state.bootstrap.fields || []).forEach(function (f) {
+        var el = document.getElementById('f-' + f.key);
+        values[f.key] = el ? el.value : '';
+      });
+      return values;
+    }
+
+    function applyPriceHighlight(values) {
+      var b = state.bootstrap || {};
+      var defaults = b.defaults || {};
+      var cells = b.priceCells || {};
+      values = values || currentFormValues();
+      (b.fields || []).forEach(function (f) {
+        var el = document.getElementById('p-' + f.key);
+        if (!el) return;
+        var meta = cells[f.key] || {};
+        el.classList.remove('price-formula', 'price-changed');
+        el.style.backgroundColor = '';
+        if (meta.blue) {
+          el.classList.add('price-formula');
+          if (meta.bg && meta.bg !== '#ffffff' && meta.bg !== 'white') el.style.backgroundColor = meta.bg;
+          return;
+        }
+        var cur = String((values && values[f.key]) || '').trim();
+        var def = String(defaults[f.key] || '').trim();
+        if (cur !== def && (cur || def)) el.classList.add('price-changed');
+      });
     }
 
     function bindPriceRecalc() {
@@ -1129,7 +1556,8 @@
         if (!el) return;
         el.onchange = function () {
           if (f.key === 'system') applySystemLists(this.value, {});
-          if (state.engine) applyLocalCalc();
+          if (state.engine && state.formMode !== 'package') applyLocalCalc();
+          else applyPriceHighlight(currentFormValues());
         };
       });
       var pct = document.getElementById('profitPct');
@@ -1383,8 +1811,48 @@
       })
       .getPriceEngineData();
 
+    var notifyWatch = 0;
+    function notifyRole() { return 'manager'; }
+    function notifyName() { return ''; }
+    function showNotifyHint(data) {
+      var el = document.getElementById('notify-hint');
+      if (!el || !data) return;
+      el.textContent = data.hint || '';
+    }
+    function enablePhoneNotify() {
+      if (window.Notification && Notification.permission === 'default') {
+        try { Notification.requestPermission(); } catch (e) {}
+      }
+      runGas('getNotifyStatus', { role: notifyRole(), name: notifyName() }).then(function (data) {
+        showNotifyHint(data);
+        if (data && data.startUrl) window.open(data.startUrl, '_blank');
+        else toast((data && data.hint) || 'ربات تلگرام آماده نیست', true);
+      }).catch(function (err) {
+        toast((err && err.message) || 'اعلان فعال نشد', true);
+      });
+    }
+    function showAppNotice(item) {
+      if (!item) return;
+      if (window.Notification && Notification.permission === 'granted') {
+        try { new Notification(item.title || 'اعلان', { body: item.body || '', dir: 'rtl' }); } catch (e) {}
+      }
+      toast((item.title || '') + (item.body ? (' — ' + item.body) : ''));
+    }
+    function pollAppNotices() {
+      runGas('getPendingAppNotices', { role: notifyRole(), name: notifyName() }).then(function (items) {
+        (items || []).forEach(showAppNotice);
+      }).catch(function () {});
+    }
+    function startNoticeWatch() {
+      if (notifyWatch) return;
+      pollAppNotices();
+      notifyWatch = setInterval(pollAppNotices, 25000);
+      runGas('getNotifyStatus', { role: notifyRole(), name: notifyName() }).then(showNotifyHint).catch(function () {});
+    }
+
     setHeaderDates(todayJalali());
     loadInbox(true);
+    startNoticeWatch();
     window.__ticketReporter = 'مهندس مزروعی';
   </script>
   <script>window.__FAST_LAYER__={};</script>
@@ -1758,6 +2226,12 @@
     err.textContent = '';
     if (!subject || !detail) {
       err.textContent = 'موضوع و شرح مشکل را بنویسید';
+      return;
+    }
+    if (detail.length < 100) {
+      var shortMsg = 'شرح تیکت کم است، باید حداقل سه جمله یا صد حرف باشد، ضمنا برای بهتر شدن نتیجه میتوانید از مثال زدن هم استفاده کنید';
+      err.textContent = shortMsg;
+      try { window.alert(shortMsg); } catch (eAlert) {}
       return;
     }
     if (!(window.__ticketReporter || '').trim()) {
