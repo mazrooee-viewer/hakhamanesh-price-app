@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260910100237">
+  <meta name="x-build" content="20260910105346">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260910100237" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260910105346" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -261,6 +261,8 @@
       text-align: center; font-size: 15px; font-weight: 800; margin: 18px 0 10px;
     }
     #screen-form.package-preview .inquiry-only { display: none; }
+    .package-only { display: none; }
+    #screen-form.package-preview .package-only { display: block; }
     .short-table .calc-head,
     .short-table .short-row {
       grid-template-columns: 1.45fr 1fr;
@@ -427,6 +429,7 @@
         <button class="btn btn-main inquiry-only" id="issue" type="button" onclick="issuePdf()">صدور لیست قیمت</button>
         <button class="btn btn-ghost inquiry-only" id="finish" type="button" onclick="finishProcess()">اتمام فرایند</button>
         <button class="btn btn-bad inquiry-only" id="incomplete" type="button" onclick="markIncomplete()">ناقص</button>
+        <button class="btn btn-main package-only" id="issue-base-prices" type="button" onclick="issueBasePricesFromPreview()">صدور لیست قیمت های پایه</button>
       </div>
       <div id="pdfs" class="pdfs"></div>
     </div>
@@ -471,7 +474,7 @@
       </div>
     </div>
     <div class="wrap">
-      <div class="short-hint">برای پیش‌نمایش فرم محاسبه روی کارت پکیج بزنید؛ صدور PDF کامل همان دکمه صدور قیمت است</div>
+      <div class="short-hint">برای پیش‌نمایش فرم و صدور لیست قیمت پایه، روی کارت پکیج بزنید</div>
       <div class="pkg-section-title">پکیج‌های فرم محاسبه</div>
       <div id="package-catalog" class="list"><div class="empty">در حال بارگذاری...</div></div>
       <div class="pkg-section-title">لیست‌های صادرشده</div>
@@ -1243,25 +1246,15 @@
       }
       box.innerHTML = rows.map(function (pkg) {
         var last = pkg.lastIssue;
-        var busy = state.packageIssuing === pkg.packageName;
         return '<div class="card pkg-card" data-preview="' + escapeHtml(pkg.packageName) + '">' +
           '<div class="name">' + escapeHtml(pkg.displayName || pkg.packageName) + '</div>' +
           (last ? '<div class="pkg-meta">آخرین صدور: ' + escapeHtml(last.issueDate || '') +
             (last.expiryDate ? ' — اعتبار تا ' + escapeHtml(last.expiryDate) : '') + '</div>' : '<div class="pkg-meta">هنوز صادر نشده</div>') +
           (last ? packageBadgesHtml(last, !!last.archived) : '') +
-          '<div class="pkg-actions">' +
-          '<button class="btn btn-main" type="button" data-issue="' + escapeHtml(pkg.packageName) + '"' +
-          (busy ? ' disabled' : '') + '>' + (busy ? 'در حال صدور...' : 'صدور قیمت') + '</button>' +
-          '</div></div>';
+          '</div>';
       }).join('');
       box.querySelectorAll('[data-preview]').forEach(function (card) {
         card.onclick = function () { openPackagePreview(card.getAttribute('data-preview')); };
-      });
-      box.querySelectorAll('[data-issue]').forEach(function (btn) {
-        btn.onclick = function (ev) {
-          if (ev) ev.stopPropagation();
-          issuePackageFromApp(btn.getAttribute('data-issue'));
-        };
       });
     }
 
@@ -1318,20 +1311,32 @@
       });
     }
 
+    function setBasePriceIssueBtn(busy) {
+      var btn = document.getElementById('issue-base-prices');
+      if (!btn) return;
+      btn.disabled = !!busy;
+      btn.textContent = busy ? 'در حال صدور...' : 'صدور لیست قیمت های پایه';
+    }
+
+    function issueBasePricesFromPreview() {
+      issuePackageFromApp(state.previewPackageName);
+    }
+
     function issuePackageFromApp(packageName) {
+      if (!packageName) return toast('پکیج انتخاب نشده', true);
       if (state.packageIssuing) return toast('صبر کنید تا صدور پکیج جاری تمام شود', true);
       state.packageIssuing = packageName;
-      renderPackageCatalog();
+      setBasePriceIssueBtn(true);
       toast('صدور پکیج شروع شد؛ چند دقیقه صبر کنید');
       runGas('issuePackagePrice', packageName).then(function (res) {
         var failed = (res && res.failed) || [];
         if (failed.length) toast('صادر شد ولی ناقص: ' + failed.join(' و '), true);
         else toast('لیست قیمت پکیج صادر شد');
         state.packageIssuing = '';
-        loadPackages();
+        setBasePriceIssueBtn(false);
       }).catch(function (err) {
         state.packageIssuing = '';
-        renderPackageCatalog();
+        setBasePriceIssueBtn(false);
         toast((err && err.message) || 'صدور انجام نشد', true);
       });
     }
@@ -1415,6 +1420,7 @@
       if (!state.bootstrap) return toast('گزینه‌های فرم هنوز بارگذاری نشده', true);
       if (!packageName) return;
       state.formMode = 'package';
+      state.previewPackageName = packageName;
       state.salesperson = '';
       state.row = 0;
       document.getElementById('screen-form').classList.add('package-preview');
@@ -1435,8 +1441,10 @@
     function backFromForm() {
       if (state.formMode === 'package') {
         state.formMode = 'inquiry';
+        state.previewPackageName = '';
         document.getElementById('screen-form').classList.remove('package-preview');
         document.getElementById('form-back').textContent = 'بازگشت به صف';
+        setBasePriceIssueBtn(false);
         openPackages();
         return;
       }
@@ -1446,6 +1454,7 @@
     function openCard(card) {
       if (!state.bootstrap) return toast('گزینه‌های فرم هنوز بارگذاری نشده', true);
       state.formMode = 'inquiry';
+      state.previewPackageName = '';
       document.getElementById('screen-form').classList.remove('package-preview');
       document.getElementById('form-back').textContent = 'بازگشت به صف';
       state.salesperson = card.salesperson;
@@ -1485,6 +1494,7 @@
       var b = state.bootstrap;
       state.attachment = data.attachment || '';
       state.formMode = data.preview ? 'package' : 'inquiry';
+      if (data.preview && data.packageName) state.previewPackageName = data.packageName;
       document.getElementById('screen-form').classList.toggle('package-preview', !!data.preview);
       document.getElementById('form-back').textContent = data.preview ? 'بازگشت به پکیج‌ها' : 'بازگشت به صف';
       document.getElementById('employer').value = data.employer || '';
