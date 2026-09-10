@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260910112144">
+  <meta name="x-build" content="20260910121056">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260910112144" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260910121056" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1296,6 +1296,7 @@
         return '<div class="card pkg-card" data-preview="' + escapeHtml(pkg.packageName) + '">' +
           '<div class="name">' + escapeHtml(pkg.displayName || pkg.packageName) + '</div>' +
           (last ? '<div class="pkg-meta">آخرین صدور: ' + escapeHtml(last.issueDate || '') +
+            (last.version ? ' — ورژن ' + escapeHtml(String(last.version)) : '') +
             (last.expiryDate ? ' — اعتبار تا ' + escapeHtml(last.expiryDate) : '') + '</div>' : '<div class="pkg-meta">هنوز صادر نشده</div>') +
           (last ? packageBadgesHtml(last, !!last.archived) : '') +
           '</div>';
@@ -1318,6 +1319,7 @@
           '<div class="name">' + escapeHtml(item.displayName || item.packageName) + '</div>' +
           '<div class="pkg-meta">ظرفیت ' + escapeHtml(item.caps || '—') + '</div>' +
           '<div class="pkg-meta">صدور ' + escapeHtml(item.issueDate || '—') +
+            (item.version ? ' — ورژن ' + escapeHtml(String(item.version)) : '') +
             (item.expiryDate ? ' — اعتبار تا ' + escapeHtml(item.expiryDate) : '') + '</div>' +
           packageBadgesHtml(item, !!item.archived) +
           (item.folderUrl ? '<a class="pdf-link" href="' + escapeHtml(item.folderUrl) + '" target="_blank" rel="noopener">مشاهده پوشه قیمت</a>' : '') +
