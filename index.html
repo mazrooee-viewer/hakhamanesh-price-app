@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260910095024">
+  <meta name="x-build" content="20260910100237">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260910095024" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260910100237" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -209,7 +209,9 @@
       background: #fff; border: 1px solid var(--line); border-radius: 16px;
       padding: 14px; margin-top: 18px;
     }
-    .totals h2 { font-size: 15px; margin-bottom: 8px; }
+    .totals h2 { font-size: 15px; margin-bottom: 8px; text-align: center; }
+    .totals label { text-align: center; }
+    .totals input { text-align: center; }
     .seg { display: flex; gap: 8px; }
     .seg button {
       flex: 1; border: 1px solid var(--line); background: #fff; color: var(--navy);
@@ -397,6 +399,8 @@
         <input id="total" type="text" readonly>
         <label>درصد سود را وارد کنید</label>
         <input id="profitPct" type="number" step="any">
+        <label>سود شرکت (تومان)</label>
+        <input id="profitAmount" type="text" readonly>
         <label>بهای تمام شده (تومان)</label>
         <input id="costToman" type="text" readonly>
         <label>بهای تمام شده (ریال)</label>
@@ -1592,6 +1596,8 @@
     function setTotals(t) {
       document.getElementById('total').value = t.total || '';
       if (t.profitPct) document.getElementById('profitPct').value = t.profitPct;
+      var profitEl = document.getElementById('profitAmount');
+      if (profitEl) profitEl.value = t.profitAmount || '';
       document.getElementById('costToman').value = t.costToman || '';
       document.getElementById('costRial').value = t.costRial || '';
     }
