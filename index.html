@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260910110812">
+  <meta name="x-build" content="20260910111031">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260910110812" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260910111031" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -205,13 +205,11 @@
     }
     .calc-row input.price[readonly].price-formula { background: #cfe2f3; }
     .calc-row input.price[readonly].price-changed { background: #fff2cc; }
-    .totals {
-      background: #fff; border: 1px solid var(--line); border-radius: 16px;
-      padding: 14px; margin-top: 18px;
+    .calc-row input[type="number"] {
+      text-align: center; font-size: 13px;
     }
-    .totals h2 { font-size: 15px; margin-bottom: 8px; text-align: center; }
-    .totals label { text-align: center; }
-    .totals input { text-align: center; }
+    .calc-row.calc-actions { display: block; padding: 8px 4px; }
+    .calc-row.calc-actions .btn { width: 100%; }
     .seg { display: flex; gap: 8px; }
     .seg button {
       flex: 1; border: 1px solid var(--line); background: #fff; color: var(--navy);
@@ -389,25 +387,33 @@
           <span>اجزاء</span>
         </div>
         <div id="form-fields"></div>
+        <div class="calc-row">
+          <input class="price" id="total" type="text" readonly>
+          <div></div>
+          <div class="part">مجموع</div>
+        </div>
+        <div class="calc-row">
+          <input class="price" id="profitAmount" type="text" readonly>
+          <input id="profitPct" type="number" step="any" title="درصد سود">
+          <div class="part">درصد سود</div>
+        </div>
+        <div class="calc-row">
+          <input class="price" id="costToman" type="text" readonly>
+          <div></div>
+          <div class="part">بهای تمام شده (تومان)</div>
+        </div>
+        <div class="calc-row">
+          <input class="price" id="costRial" type="text" readonly>
+          <div></div>
+          <div class="part">بهای تمام شده (ریال)</div>
+        </div>
+        <div class="calc-row calc-actions">
+          <button class="btn btn-ghost" type="button" onclick="refreshTotals()">به‌روز کردن مبالغ</button>
+        </div>
       </div>
       <div class="calc-legend">
         <span><span class="swatch formula"></span>قیمت محاسبه‌ای شیت</span>
         <span><span class="swatch changed"></span>تغییر نسبت به پیش‌فرض</span>
-      </div>
-
-      <div class="totals">
-        <h2>سه ردیف پایانی فرم</h2>
-        <label>مجموع</label>
-        <input id="total" type="text" readonly>
-        <label>درصد سود را وارد کنید</label>
-        <input id="profitPct" type="number" step="any">
-        <label>سود شرکت (تومان)</label>
-        <input id="profitAmount" type="text" readonly>
-        <label>بهای تمام شده (تومان)</label>
-        <input id="costToman" type="text" readonly>
-        <label>بهای تمام شده (ریال)</label>
-        <input id="costRial" type="text" readonly>
-        <button class="btn btn-ghost" type="button" style="width:100%;margin-top:12px" onclick="refreshTotals()">به‌روز کردن مبالغ</button>
       </div>
 
       <label>شیت لیست قیمت</label>
