@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260910105346">
+  <meta name="x-build" content="20260910110430">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260910105346" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260910110430" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -174,7 +174,7 @@
     .calc-legend .swatch.changed { background: #fff2cc; }
     .calc-head, .calc-row {
       display: grid;
-      grid-template-columns: 0.7fr 1.49fr 1.41fr;
+      grid-template-columns: 1.41fr 1.49fr 0.7fr;
       gap: 2px;
       align-items: center;
       padding: 3px 4px;
@@ -183,8 +183,8 @@
       background: var(--navy); color: #fff;
       font-size: 12px; font-weight: 800;
     }
-    .calc-head span:nth-child(2),
-    .calc-head span:nth-child(3) { text-align: center; }
+    .calc-table:not(.short-table) .calc-head span:nth-child(1),
+    .calc-table:not(.short-table) .calc-head span:nth-child(2) { text-align: center; }
     .calc-row { border-top: 1px solid var(--line); }
     .calc-row:nth-child(odd) { background: #f8fafc; }
     .calc-row .part {
@@ -384,9 +384,9 @@
 
       <div class="calc-table">
         <div class="calc-head">
-          <span>اجزاء</span>
-          <span>ویژگی</span>
           <span>قیمت(تومان)</span>
+          <span>ویژگی</span>
+          <span>اجزاء</span>
         </div>
         <div id="form-fields"></div>
       </div>
@@ -1515,9 +1515,9 @@
       box.innerHTML = '';
       b.fields.forEach(function (f) {
         box.innerHTML += '<div class="calc-row">' +
-          '<div class="part">' + escapeHtml(f.header) + (f.required ? ' *' : '') + '</div>' +
-          '<select id="f-' + f.key + '"></select>' +
           '<input class="price" id="p-' + f.key + '" type="text" readonly>' +
+          '<select id="f-' + f.key + '"></select>' +
+          '<div class="part">' + escapeHtml(f.header) + (f.required ? ' *' : '') + '</div>' +
           '</div>';
       });
       b.fields.forEach(function (f) {
