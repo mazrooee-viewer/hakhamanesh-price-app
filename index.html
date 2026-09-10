@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260910111031">
+  <meta name="x-build" content="20260910112008">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","finishInquiry","markInquiryIncomplete","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","finishInquiry","markInquiryIncomplete","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   function call(fn, args) {
     return fetch(API, {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260910111031" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260910112008" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -272,6 +272,16 @@
       text-align: center; color: var(--muted); font-size: 12px; font-weight: 700;
       margin-top: 8px;
     }
+    .profit-bump-grid {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px;
+    }
+    .profit-bump {
+      flex: 1; min-width: 220px;
+      background: #fff; border: 1px solid var(--line); border-radius: 16px;
+      padding: 12px; text-align: center;
+    }
+    .profit-bump label { margin-top: 0; }
+    .profit-bump .btn { width: 100%; margin-top: 10px; }
     .home-btn .count { display: block; font-size: 12px; font-weight: 700; opacity: 1; margin-top: 4px; }
     .home-logo-area { display: flex; justify-content: center; margin-top: 22px; padding: 20px 0 28px; overflow: visible; }
     .home-logo { position: relative; width: min(150px, 40vw); }
@@ -414,6 +424,33 @@
       <div class="calc-legend">
         <span><span class="swatch formula"></span>قیمت محاسبه‌ای شیت</span>
         <span><span class="swatch changed"></span>تغییر نسبت به پیش‌فرض</span>
+      </div>
+
+      <div class="package-only profit-table-box">
+        <div class="pkg-section-title">جدول سود این پکیج</div>
+        <div class="calc-table short-table">
+          <div class="calc-head">
+            <span>توقف</span>
+            <span>سود (میلیون تومان)</span>
+          </div>
+          <div id="profit-table-rows"><div class="empty">در حال بارگذاری...</div></div>
+        </div>
+        <div class="short-hint">عددها همان واحد شیت‌اند. سلول خالی با افزایش مبلغ یا درصد عوض نمی‌شود</div>
+        <div class="profit-bump-grid">
+          <div class="profit-bump">
+            <label>افزایش مبلغ به همه ردیف‌ها</label>
+            <input id="profit-bump-amount" type="text" inputmode="decimal" placeholder="مثلاً ۱۰">
+            <button class="btn btn-ghost" type="button" onclick="bumpPackageProfit('amount')">اعمال مبلغ</button>
+          </div>
+          <div class="profit-bump">
+            <label>افزایش درصد به همه ردیف‌ها</label>
+            <input id="profit-bump-pct" type="text" inputmode="decimal" placeholder="مثلاً ۱۰">
+            <button class="btn btn-ghost" type="button" onclick="bumpPackageProfit('percent')">اعمال درصد</button>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-main" id="save-profit-table" type="button" onclick="savePackageProfitTableFromApp()" disabled>ذخیره جدول سود</button>
+        </div>
       </div>
 
       <label>شیت لیست قیمت</label>
@@ -794,7 +831,11 @@
       packageCatalog: [],
       packageLists: [],
       packageIssuing: '',
-      formMode: 'inquiry'
+      formMode: 'inquiry',
+      profitTableRows: [],
+      profitTableDirty: false,
+      profitTableSaving: false,
+      profitLoadToken: 0
     };
 
     function parseNum(v) {
@@ -1381,6 +1422,127 @@
       });
     }
 
+    function formatProfitCell(value) {
+      if (value === '' || value == null) return '';
+      var n = Number(String(value).replace(/[,،٬\s]/g, ''));
+      if (!isFinite(n)) return '';
+      return String(n);
+    }
+
+    function collectProfitTableRows() {
+      return (state.profitTableRows || []).map(function (r) {
+        var el = document.getElementById('pt-' + r.index);
+        var raw = el ? el.value : r.value;
+        var empty = String(raw == null ? '' : raw).trim() === '';
+        return {
+          stop: r.stop,
+          index: r.index,
+          value: empty ? '' : Number(String(raw).replace(/[,،٬\s]/g, '')),
+          formula: !!r.formula
+        };
+      });
+    }
+
+    function markProfitTableDirty() {
+      state.profitTableDirty = true;
+      var btn = document.getElementById('save-profit-table');
+      if (btn && !state.profitTableSaving) btn.disabled = false;
+    }
+
+    function renderPackageProfitTable() {
+      var box = document.getElementById('profit-table-rows');
+      var btn = document.getElementById('save-profit-table');
+      var rows = state.profitTableRows || [];
+      if (!rows.length) {
+        box.innerHTML = '<div class="empty">ستون جدول سود این پکیج در شیت پیدا نشد</div>';
+        if (btn) btn.disabled = true;
+        return;
+      }
+      box.innerHTML = rows.map(function (r) {
+        return '<div class="calc-row short-row">' +
+          '<div class="part">' + escapeHtml(r.stop) + '</div>' +
+          '<input class="price" id="pt-' + r.index + '" type="text" inputmode="decimal" ' +
+          (r.formula ? 'readonly ' : '') +
+          'value="' + escapeHtml(formatProfitCell(r.value)) + '">' +
+          '</div>';
+      }).join('');
+      box.querySelectorAll('input.price:not([readonly])').forEach(function (el) {
+        el.addEventListener('input', markProfitTableDirty);
+      });
+      if (btn) btn.disabled = !state.profitTableDirty || state.profitTableSaving;
+    }
+
+    function loadPackageProfitTable(packageName) {
+      var box = document.getElementById('profit-table-rows');
+      var btn = document.getElementById('save-profit-table');
+      state.profitLoadToken = (state.profitLoadToken || 0) + 1;
+      var token = state.profitLoadToken;
+      state.profitTableRows = [];
+      state.profitTableDirty = false;
+      box.innerHTML = '<div class="empty">در حال بارگذاری...</div>';
+      if (btn) btn.disabled = true;
+      runGas('getPackageProfitTable', packageName).then(function (data) {
+        if (token !== state.profitLoadToken) return;
+        state.profitTableRows = (data && data.rows) || [];
+        state.profitTableDirty = false;
+        renderPackageProfitTable();
+        if (data && data.missing) toast('ستون جدول سود این پکیج در شیت نیست', true);
+      }).catch(function (err) {
+        if (token !== state.profitLoadToken) return;
+        box.innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری جدول سود انجام نشد') + '</div>';
+        toast((err && err.message) || 'بارگذاری جدول سود انجام نشد', true);
+      });
+    }
+
+    function bumpProfitRowsLocal_(rows, kind, amount) {
+      var n = Number(amount);
+      if (!isFinite(n)) throw new Error('عدد نامعتبر است');
+      return (rows || []).map(function (row) {
+        var next = { stop: row.stop, index: row.index, value: row.value, formula: !!row.formula };
+        if (next.formula) return next;
+        if (next.value === '' || next.value == null || (typeof next.value === 'number' && !isFinite(next.value))) return next;
+        var cur = Number(next.value);
+        if (!isFinite(cur)) return next;
+        if (kind === 'percent') next.value = Math.round(cur * (1 + n / 100) * 10000) / 10000;
+        else next.value = Math.round((cur + n) * 10000) / 10000;
+        return next;
+      });
+    }
+
+    function bumpPackageProfit(kind) {
+      var input = document.getElementById(kind === 'percent' ? 'profit-bump-pct' : 'profit-bump-amount');
+      var raw = input ? String(input.value || '').replace(/[,،٬\s]/g, '') : '';
+      var n = Number(raw);
+      if (!raw || !isFinite(n)) return toast('عدد افزایش را وارد کنید', true);
+      if (!(state.profitTableRows || []).length) return toast('جدول سود این پکیج بارگذاری نشده', true);
+      state.profitTableRows = bumpProfitRowsLocal_(collectProfitTableRows(), kind, n);
+      state.profitTableDirty = true;
+      renderPackageProfitTable();
+      toast(kind === 'percent' ? 'درصد روی جدول اعمال شد؛ ذخیره را بزنید' : 'مبلغ روی جدول اعمال شد؛ ذخیره را بزنید');
+    }
+
+    function savePackageProfitTableFromApp() {
+      if (state.profitTableSaving) return;
+      if (!state.previewPackageName) return toast('پکیج انتخاب نشده', true);
+      var rows = collectProfitTableRows();
+      var btn = document.getElementById('save-profit-table');
+      state.profitTableSaving = true;
+      btn.disabled = true;
+      btn.textContent = 'در حال ذخیره...';
+      runGas('savePackageProfitTable', { packageName: state.previewPackageName, rows: rows }).then(function () {
+        state.profitTableDirty = false;
+        toast('جدول سود ذخیره شد');
+        loadPackageProfitTable(state.previewPackageName);
+      }).catch(function (err) {
+        toast((err && err.message) || 'ذخیره جدول سود انجام نشد', true);
+        btn.disabled = false;
+      }).then(function () {
+        state.profitTableSaving = false;
+        btn.textContent = 'ذخیره جدول سود';
+        if (state.profitTableDirty) btn.disabled = false;
+      });
+    }
+
     function loadInbox(stayHome) {
       if (!stayHome) showScreen('screen-inbox');
       var box = document.getElementById('list');
@@ -1436,6 +1598,7 @@
       setHeaderDates(todayJalali());
       showScreen('screen-form');
       toast('پیش‌نمایش پکیج مثل حالت دستی شیت');
+      loadPackageProfitTable(packageName);
       runGas('previewPackageForm', packageName).then(function (data) {
         fillInquiryForm(data);
       }).catch(function (err) {
