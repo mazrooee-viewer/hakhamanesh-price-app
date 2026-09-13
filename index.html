@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260913214605">
+  <meta name="x-build" content="20260913220627">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260913214605" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260913220627" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -474,6 +474,7 @@
         <button class="btn btn-bad inquiry-only" id="incomplete" type="button" onclick="markIncomplete()">ناقص</button>
         <button class="btn btn-bad inquiry-only" id="revoke-inquiry" type="button" onclick="markRevoked()">ابطال</button>
         <button class="btn btn-main package-only" id="issue-base-prices" type="button" onclick="issueBasePricesFromPreview()">صدور لیست قیمت های پایه</button>
+        <button class="btn btn-bad package-only" id="revoke-base-price" type="button" onclick="revokeBasePriceFromPreview()">ابطال</button>
       </div>
       <div id="pdfs" class="pdfs"></div>
     </div>
@@ -518,11 +519,8 @@
       </div>
     </div>
     <div class="wrap">
-      <div class="short-hint">برای پیش‌نمایش فرم و صدور لیست قیمت پایه، روی کارت پکیج بزنید</div>
-      <div class="pkg-section-title">پکیج‌های فرم محاسبه</div>
+      <div class="short-hint">برای پیش‌نمایش فرم و صدور یا ابطال لیست قیمت پایه، روی کارت پکیج بزنید</div>
       <div id="package-catalog" class="list"><div class="empty">در حال بارگذاری...</div></div>
-      <div class="pkg-section-title">لیست‌های صادرشده</div>
-      <div id="package-lists" class="list"><div class="empty">در حال بارگذاری...</div></div>
       <button class="btn btn-ghost" type="button" style="width:100%;margin-top:12px" onclick="loadPackages()">بازخوانی</button>
     </div>
   </section>
@@ -1276,18 +1274,16 @@
       loadPackages();
     }
 
-    function packageBadgesHtml(item, archived) {
+    function packageBadgesHtml(archived) {
       if (archived) {
-        return '<div class="pkg-badges">' +
-          '<span class="pkg-badge archive">آرشیو</span>' +
-          '<span class="pkg-badge invalid">ابطال شد</span>' +
-          '</div>';
+        return '<div class="pkg-badges"><span class="pkg-badge invalid">ابطال شد</span></div>';
       }
       return '<div class="pkg-badges"><span class="pkg-badge active">فعال</span></div>';
     }
 
     function renderPackageCatalog() {
       var box = document.getElementById('package-catalog');
+      if (!box) return;
       var rows = state.packageCatalog || [];
       if (!rows.length) {
         box.innerHTML = '<div class="empty">پکیجی در فرم محاسبه نیست</div>';
@@ -1295,70 +1291,56 @@
       }
       box.innerHTML = rows.map(function (pkg) {
         var last = pkg.lastIssue;
-        return '<div class="card pkg-card" data-preview="' + escapeHtml(pkg.packageName) + '">' +
+        var isArchived = !!pkg.archived;
+        return '<div class="card pkg-card' + (isArchived ? ' archived' : '') + '" data-preview="' + escapeHtml(pkg.packageName) + '">' +
           '<div class="name">' + escapeHtml(pkg.displayName || pkg.packageName) + '</div>' +
           (last ? '<div class="pkg-meta">آخرین صدور: ' + escapeHtml(last.issueDate || '') +
             (last.version ? ' — ورژن ' + escapeHtml(String(last.version)) : '') +
             (last.expiryDate ? ' — اعتبار تا ' + escapeHtml(last.expiryDate) : '') + '</div>' : '<div class="pkg-meta">هنوز صادر نشده</div>') +
-          (last ? packageBadgesHtml(last, !!last.archived) : '') +
+          packageBadgesHtml(isArchived) +
           '</div>';
       }).join('');
       box.querySelectorAll('[data-preview]').forEach(function (card) {
         card.onclick = function () { openPackagePreview(card.getAttribute('data-preview')); };
       });
-    }
-
-    function renderPackageLists(canArchive) {
-      var box = document.getElementById('package-lists');
-      var rows = state.packageLists || [];
-      if (!rows.length) {
-        box.innerHTML = '<div class="empty">لیست صادرشده‌ای نیست</div>';
-        return;
-      }
-      box.innerHTML = rows.slice().reverse().map(function (item) {
-        return '<div class="card pkg-card' + (item.archived ? ' archived' : '') + '" data-preview="' +
-          escapeHtml(item.packageName) + '">' +
-          '<div class="name">' + escapeHtml(item.displayName || item.packageName) + '</div>' +
-          '<div class="pkg-meta">ظرفیت ' + escapeHtml(item.caps || '—') + '</div>' +
-          '<div class="pkg-meta">صدور ' + escapeHtml(item.issueDate || '—') +
-            (item.version ? ' — ورژن ' + escapeHtml(String(item.version)) : '') +
-            (item.expiryDate ? ' — اعتبار تا ' + escapeHtml(item.expiryDate) : '') + '</div>' +
-          packageBadgesHtml(item, !!item.archived) +
-          (item.folderUrl ? '<a class="pdf-link" href="' + escapeHtml(item.folderUrl) + '" target="_blank" rel="noopener">مشاهده پوشه قیمت</a>' : '') +
-          (canArchive && !item.archived ? '<div class="pkg-actions"><button class="btn btn-bad" type="button" data-archive="' +
-            item.row + '">ابطال</button></div>' : '') +
-          '</div>';
-      }).join('');
-      box.querySelectorAll('[data-preview]').forEach(function (card) {
-        card.onclick = function () { openPackagePreview(card.getAttribute('data-preview')); };
-      });
-      box.querySelectorAll('a.pdf-link').forEach(function (link) {
-        link.onclick = function (ev) { if (ev) ev.stopPropagation(); };
-      });
-      if (canArchive) {
-        box.querySelectorAll('[data-archive]').forEach(function (btn) {
-          btn.onclick = function (ev) {
-            if (ev) ev.stopPropagation();
-            archivePackageFromApp(Number(btn.getAttribute('data-archive')));
-          };
-        });
-      }
     }
 
     function loadPackages() {
       var catalogBox = document.getElementById('package-catalog');
-      var listBox = document.getElementById('package-lists');
-      catalogBox.innerHTML = '<div class="empty">در حال بارگذاری...</div>';
-      listBox.innerHTML = '<div class="empty">در حال بارگذاری...</div>';
+      if (catalogBox) catalogBox.innerHTML = '<div class="empty">در حال بارگذاری...</div>';
       runGas('getPackageCatalog').then(function (data) {
         state.packageCatalog = (data && data.packages) || [];
         state.packageLists = (data && data.lists) || [];
         renderPackageCatalog();
-        renderPackageLists(true);
       }).catch(function (err) {
-        catalogBox.innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری انجام نشد') + '</div>';
-        listBox.innerHTML = '';
+        if (catalogBox) catalogBox.innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری انجام نشد') + '</div>';
         toast((err && err.message) || 'بارگذاری انجام نشد', true);
+      });
+    }
+
+    function revokeBasePriceFromPreview() {
+      var name = state.previewPackageName;
+      if (!name) return toast('پکیجی انتخاب نشده است', true);
+      var lastRow = 0;
+      if (state.packageCatalog) {
+        for (var i = 0; i < state.packageCatalog.length; i++) {
+          var item = state.packageCatalog[i];
+          if (item.packageName === name || item.displayName === name) {
+            if (item.lastIssue && item.lastIssue.row) lastRow = item.lastIssue.row;
+            break;
+          }
+        }
+      }
+      var btn = document.getElementById('revoke-base-price');
+      if (btn) btn.disabled = true;
+      runGas('archiveBasePrice', { packageName: name, row: lastRow }).then(function () {
+        toast('پکیج ابطال شد');
+        loadPackages();
+        backFromForm();
+      }).catch(function (err) {
+        toast((err && err.message) || 'ابطال پکیج انجام نشد', true);
+      }).then(function () {
+        if (btn) btn.disabled = false;
       });
     }
 

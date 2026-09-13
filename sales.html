@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260913214605">
+  <meta name="x-build" content="20260913220627">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260913214605" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260913220627" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1088,24 +1088,25 @@
     function loadSalesPackages() {
       var box = document.getElementById('sales-package-lists');
       box.innerHTML = '<div class="empty">در حال بارگذاری...</div>';
-      runGas('getBasePriceLists').then(function (data) {
-        var rows = (data && data.lists) || [];
-        if (!rows.length) {
-          box.innerHTML = '<div class="empty">هنوز لیست قیمت پکیجی صادر نشده است.</div>';
+      runGas('getPackageCatalog').then(function (data) {
+        var packages = (data && data.packages) || [];
+        if (!packages.length) {
+          box.innerHTML = '<div class="empty">پکیجی یافت نشد.</div>';
           return;
         }
-        box.innerHTML = rows.slice().reverse().map(function (item) {
-          return '<div class="card pkg-card' + (item.archived ? ' archived' : '') + '">' +
-            '<div class="name">' + escapeHtml(item.displayName || item.packageName) + '</div>' +
-            '<div class="pkg-meta">ظرفیت ' + escapeHtml(item.caps || '—') + '</div>' +
-            '<div class="pkg-meta">صدور ' + escapeHtml(item.issueDate || '—') +
-              (item.version ? ' — ورژن ' + escapeHtml(String(item.version)) : '') +
-              (item.expiryDate ? ' — اعتبار تا ' + escapeHtml(item.expiryDate) : '') + '</div>' +
-            (item.archived
-              ? '<div class="pkg-badges"><span class="pkg-badge archive">آرشیو</span><span class="pkg-badge invalid">ابطال شد</span></div>'
+        box.innerHTML = packages.map(function (pkg) {
+          var last = pkg.lastIssue;
+          var isArchived = !!pkg.archived;
+          return '<div class="card pkg-card' + (isArchived ? ' archived' : '') + '">' +
+            '<div class="name">' + escapeHtml(pkg.displayName || pkg.packageName) + '</div>' +
+            (last ? '<div class="pkg-meta">آخرین صدور: ' + escapeHtml(last.issueDate || '—') +
+              (last.version ? ' — ورژن ' + escapeHtml(String(last.version)) : '') +
+              (last.expiryDate ? ' — اعتبار تا ' + escapeHtml(last.expiryDate) : '') + '</div>' : '<div class="pkg-meta">هنوز صادر نشده</div>') +
+            (isArchived
+              ? '<div class="pkg-badges"><span class="pkg-badge invalid">ابطال شد</span></div>'
               : '<div class="pkg-badges"><span class="pkg-badge active">فعال</span></div>') +
-            (item.folderUrl && !item.archived
-              ? '<a class="pdf-link" href="' + escapeHtml(item.folderUrl) + '" target="_blank" rel="noopener">مشاهده پوشه قیمت</a>'
+            (last && last.folderUrl && !isArchived
+              ? '<a class="pdf-link" href="' + escapeHtml(last.folderUrl) + '" target="_blank" rel="noopener">مشاهده پوشه قیمت</a>'
               : '') +
             '</div>';
         }).join('');
