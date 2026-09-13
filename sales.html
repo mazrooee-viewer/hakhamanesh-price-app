@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260910121056">
+  <meta name="x-build" content="20260913214605">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260910121056" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260913214605" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -883,7 +883,7 @@
 
     function isIssuedCard(c) {
       var s = String((c && c.status) || '').trim();
-      return s === 'صادر شد' || s === 'صادر شده';
+      return s === 'صادر شد' || s === 'صادر شده' || s === 'ابطال' || s === 'ابطال شد';
     }
 
     function canMutateCard(c) {
@@ -1102,7 +1102,7 @@
               (item.version ? ' — ورژن ' + escapeHtml(String(item.version)) : '') +
               (item.expiryDate ? ' — اعتبار تا ' + escapeHtml(item.expiryDate) : '') + '</div>' +
             (item.archived
-              ? '<div class="pkg-badges"><span class="pkg-badge archive">آرشیو</span><span class="pkg-badge invalid">فاقد اعتبار</span></div>'
+              ? '<div class="pkg-badges"><span class="pkg-badge archive">آرشیو</span><span class="pkg-badge invalid">ابطال شد</span></div>'
               : '<div class="pkg-badges"><span class="pkg-badge active">فعال</span></div>') +
             (item.folderUrl && !item.archived
               ? '<a class="pdf-link" href="' + escapeHtml(item.folderUrl) + '" target="_blank" rel="noopener">مشاهده پوشه قیمت</a>'

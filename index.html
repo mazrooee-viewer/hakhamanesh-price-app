@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260910121056">
+  <meta name="x-build" content="20260913214605">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260910121056" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260913214605" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -472,6 +472,7 @@
         <button class="btn btn-main inquiry-only" id="issue" type="button" onclick="issuePdf()">صدور لیست قیمت</button>
         <button class="btn btn-ghost inquiry-only" id="finish" type="button" onclick="finishProcess()">اتمام فرایند</button>
         <button class="btn btn-bad inquiry-only" id="incomplete" type="button" onclick="markIncomplete()">ناقص</button>
+        <button class="btn btn-bad inquiry-only" id="revoke-inquiry" type="button" onclick="markRevoked()">ابطال</button>
         <button class="btn btn-main package-only" id="issue-base-prices" type="button" onclick="issueBasePricesFromPreview()">صدور لیست قیمت های پایه</button>
       </div>
       <div id="pdfs" class="pdfs"></div>
@@ -1106,6 +1107,7 @@
     function normalizeStatus(c) {
       var s = String((c && c.status) || '').trim();
       if (s === 'صادر شد' || s === 'صادر شده') return 'صادر شده';
+      if (s === 'ابطال' || s === 'ابطال شد') return 'ابطال شد';
       if (s === 'ناقص') return 'ناقص';
       return 'در صف بررسی';
     }
@@ -1278,7 +1280,7 @@
       if (archived) {
         return '<div class="pkg-badges">' +
           '<span class="pkg-badge archive">آرشیو</span>' +
-          '<span class="pkg-badge invalid">فاقد اعتبار</span>' +
+          '<span class="pkg-badge invalid">ابطال شد</span>' +
           '</div>';
       }
       return '<div class="pkg-badges"><span class="pkg-badge active">فعال</span></div>';
@@ -1324,7 +1326,7 @@
           packageBadgesHtml(item, !!item.archived) +
           (item.folderUrl ? '<a class="pdf-link" href="' + escapeHtml(item.folderUrl) + '" target="_blank" rel="noopener">مشاهده پوشه قیمت</a>' : '') +
           (canArchive && !item.archived ? '<div class="pkg-actions"><button class="btn btn-bad" type="button" data-archive="' +
-            item.row + '">آرشیو</button></div>' : '') +
+            item.row + '">ابطال</button></div>' : '') +
           '</div>';
       }).join('');
       box.querySelectorAll('[data-preview]').forEach(function (card) {
@@ -1393,10 +1395,10 @@
     function archivePackageFromApp(row) {
       if (!row) return;
       runGas('archiveBasePrice', { row: row }).then(function () {
-        toast('پکیج آرشیو و فاقد اعتبار شد');
+        toast('پکیج ابطال شد');
         loadPackages();
       }).catch(function (err) {
-        toast((err && err.message) || 'آرشیو انجام نشد', true);
+        toast((err && err.message) || 'ابطال انجام نشد', true);
       });
     }
 
@@ -1928,7 +1930,8 @@
       if (!pf()) return;
       pf().readStatusQueue().forEach(function (job) {
         var action = job.payload && job.payload.statusAction;
-        sendStatusJob(job, action === 'ناقص' ? 'markInquiryIncomplete' : 'finishInquiry');
+        var handler = action === 'ناقص' ? 'markIncomplete' : (action === 'ابطال شد' ? 'revokeOfferInquiry' : 'finishInquiry');
+        sendStatusJob(job, handler);
       });
     }
 
@@ -1962,6 +1965,22 @@
       toast('به‌عنوان ناقص ثبت شد');
       showHome();
       sendStatusJob(job, 'markInquiryIncomplete');
+    }
+
+    function markRevoked() {
+      if (state.issuing) return toast('صبر کنید تا صدور لیست قیمت تمام شود', true);
+      if (state.finishing) return;
+      var payload = collectPayload();
+      payload.statusAction = 'ابطال شد';
+      var prev = snapshotCard();
+      var job = pf() ? pf().enqueueStatus(payload, prev) : { id: String(Date.now()), payload: payload, prev: prev };
+      if (pf()) {
+        state.allCards = pf().applyOptimisticStatus(state.allCards, payload.salesperson, payload.row, 'ابطال شد');
+        pf().writeInbox(state.allCards);
+      }
+      toast('درخواست ابطال شد');
+      showHome();
+      sendStatusJob(job, 'revokeOfferInquiry');
     }
 
     function showInbox() {
