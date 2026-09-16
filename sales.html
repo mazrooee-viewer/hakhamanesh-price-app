@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260916213304">
+  <meta name="x-build" content="20260916213837">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916213304" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916213837" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1197,9 +1197,14 @@
       if (!c) return 'در دست بررسی';
       var s = String(c.status || '').trim();
       var note = String(c.note || '').trim();
+      var extra = String(c.extraNote || '').trim();
       if (s === 'صادر شد' || s === 'صادر شده') return 'صادرشده';
       if (s === 'ابطال' || s === 'ابطال شد' || s === 'ابطال شده' || s === 'ابطال‌شده') return 'ابطال‌شده‌ها';
-      if (s === 'ناقص' || s === 'مغایرت' || s === 'در انتظار رفع مغایرت' || note.indexOf('علت مغایرت') >= 0) return 'در انتظار رفع مغایرت';
+      if (s === 'ناقص' || s === 'مغایرت' || s === 'در انتظار رفع مغایرت' ||
+          note.indexOf('علت مغایرت') >= 0 || note.indexOf('مغایرت') >= 0 ||
+          extra.indexOf('مغایرت') >= 0 || (c.sent === false && s && s !== 'در صف بررسی')) {
+        return 'در انتظار رفع مغایرت';
+      }
       return 'در دست بررسی';
     }
 
@@ -1326,19 +1331,16 @@
     }
 
     // کارت‌ها: اول آینهٔ Supabase (زیر نیم ثانیه)؛ اگر پیکربندی نشده/فیلتر/کند بود → همان مسیر قبلی Apps Script.
-    var CARDS_MIRROR_STALE_MS = 15 * 60 * 1000;
     function fetchSalesCards(name) {
       var fl = window.FastLayer;
-      if (!(fl && fl.pullSalesCards && fl.enabled && fl.enabled())) return runGas('getSalespersonCards', name);
-      return fl.pullSalesCards(name, 1500).then(function (r) {
-        state.cardsSource = 'supabase ' + r.ms + 'ms';
-        if (!r.updatedAt || (Date.now() - r.updatedAt) > CARDS_MIRROR_STALE_MS) {
-          runGas('getSalespersonCards', name).then(function (cards) {
-            if (state.salesperson === name) applyServerCards(cards);
-          }).catch(function () {});
-        }
-        return r.cards;
-      }).catch(function () { state.cardsSource = 'apps-script'; return runGas('getSalespersonCards', name); });
+      if (fl && fl.pullSalesCards && fl.enabled && fl.enabled()) {
+        fl.pullSalesCards(name, 1500).then(function (r) {
+          if (state.salesperson === name && r && r.cards && r.cards.length) {
+            applyServerCards(r.cards);
+          }
+        }).catch(function () {});
+      }
+      return runGas('getSalespersonCards', name);
     }
 
     function silentRefreshCards() {

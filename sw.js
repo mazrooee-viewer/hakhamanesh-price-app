@@ -1,5 +1,5 @@
-/* Service Worker — PWA لیست قیمت — build 20260916213304 */
-var CACHE = "price-pwa-20260916213304";
+/* Service Worker — PWA لیست قیمت — build 20260916213837 */
+var CACHE = "price-pwa-20260916213837";
 var SHELL = ["./", "./index.html", "./sales.html", "./manifest.json", "./manifest-sales.json",
   "./assets/app-icon-180.png", "./assets/app-icon-192.png", "./assets/app-icon-512.png"];
 
@@ -19,10 +19,21 @@ self.addEventListener("fetch", function (e) {
   var req = e.request;
   if (req.method !== "GET") return;
   var url = new URL(req.url);
-  // API و هر چیز Google Script: همیشه شبکه (بدون کش)
   if (/script\.google\.com$|googleusercontent\.com$/.test(url.hostname)) return;
   if (url.origin === location.origin) {
-    // پوستهٔ اپ: اول کش (فوری)، به‌روزرسانی در پس‌زمینه
+    var isHtml = req.mode === "navigate" || url.pathname.indexOf(".html") >= 0 || url.pathname.endsWith("/");
+    if (isHtml) {
+      e.respondWith(fetch(req).then(function (res) {
+        if (res && res.ok) {
+          var copy = res.clone();
+          caches.open(CACHE).then(function (c) { c.put(req, copy); });
+        }
+        return res;
+      }).catch(function () {
+        return caches.match(req, { ignoreSearch: true });
+      }));
+      return;
+    }
     e.respondWith(caches.open(CACHE).then(function (c) {
       return c.match(req, { ignoreSearch: true }).then(function (hit) {
         var net = fetch(req).then(function (res) {
