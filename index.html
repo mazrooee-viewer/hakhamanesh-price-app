@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260916111505">
+  <meta name="x-build" content="20260916112528">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916111505" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916112528" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1008,6 +1008,23 @@
         var ironStops = values.input === 'دو درب مجانب' ? 1 + stops : stops;
         prices.installIron = fmtPrice(roundToman(ironStops * (eng.ironPerStop || 5000000)));
       }
+
+      var lux = eng.luxury || { cabinHeights: {}, doorHeights: {}, doorCovers: {} };
+      var doorMul = values.input === 'ساده' ? (stops + 1) : (stops + 2);
+
+      if (values.doorHeight && values.doorHeight !== 'ندارد' && values.doorHeight !== '200') {
+         var dh = lux.doorHeights[values.doorHeight] || 0;
+         prices.doorHeight = fmtPrice(roundToman(dh * doorMul));
+      }
+      if (values.doorCover && values.doorCover !== 'ندارد') {
+         var dc = lux.doorCovers[values.doorCover] || 0;
+         prices.doorCover = fmtPrice(roundToman(dc * doorMul));
+      }
+      if (values.cabinHeight && values.cabinHeight !== 'ندارد' && values.cabinHeight !== '230') {
+         var ch = lux.cabinHeights[values.cabinHeight] || 0;
+         prices.cabinHeight = fmtPrice(roundToman(ch));
+      }
+
 
       if (isHyd(values)) prices.weight = '';
       return prices;
