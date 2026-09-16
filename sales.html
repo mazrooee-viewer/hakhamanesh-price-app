@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260916202510">
+  <meta name="x-build" content="20260916203821">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916202510" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916203821" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1155,7 +1155,10 @@
 
     function salesBadgeHtml(c) {
       var norm = normalizeSalesStatus(c);
-      var rawStatus = c.status || 'در دست بررسی';
+      var note = String((c && c.note) || '');
+      if (note.indexOf('صادر با قیمت پایه') >= 0) {
+        return '<span class="badge" style="background:#dcfce7; color:#15803d; border:1px solid #bbf7d0; font-weight:800;">صادر با قیمت پایه</span>';
+      }
       if (norm === 'صادرشده') {
         return '<span class="badge" style="background:#dcfce7; color:#166534;">صادرشده</span>';
       }
@@ -1217,12 +1220,13 @@
         return;
       }
       box.innerHTML = filteredCards.map(function (c) {
+        var isBasePriceNote = (c.note || '').indexOf('صادر با قیمت پایه') >= 0;
         return '<div class="card"><div class="name">' + escapeHtml(c.employer) + '</div>' +
           '<div class="spec">' + escapeHtml(c.system) + ' — ظرفیت ' + escapeHtml(c.caps) + ' — توقف ' + escapeHtml(c.stop) + '</div>' +
           cardDatesHtml(c) +
           '<div style="margin-top:8px">' + salesBadgeHtml(c) + '</div>' +
           (c.extraNote ? '<div class="spec" style="margin-top:6px">' + escapeHtml(c.extraNote) + '</div>' : '') +
-          (c.note ? '<div class="spec" style="margin-top:6px; color:#be123c; font-weight:700;">نظر مدیریت: ' + escapeHtml(c.note) + '</div>' : '') +
+          (c.note ? '<div class="spec" style="margin-top:6px; color:' + (isBasePriceNote ? '#15803d' : '#be123c') + '; font-weight:700;">' + (isBasePriceNote ? '' : 'نظر مدیریت: ') + escapeHtml(c.note) + '</div>' : '') +
           pdfLinksHtml(c) +
           cardActionsHtml(c) +
           '</div>';
