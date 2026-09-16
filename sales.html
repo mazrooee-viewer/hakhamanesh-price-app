@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260913220627">
+  <meta name="x-build" content="20260916105910">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260913220627" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916105910" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -77,7 +77,7 @@
 })();
 </script>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>استعلام قیمت — بازاریاب</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -107,6 +107,7 @@
       position: sticky; top: 0; z-index: 5;
       background: var(--navy); color: #fff;
       padding: 14px 16px;
+      padding-top: calc(14px + env(safe-area-inset-top, 0px));
     }
     .top h1 { font-size: 17px; font-weight: 800; }
     .top .meta { color: #cbd5e1; font-size: 12px; margin-top: 4px; }
@@ -202,10 +203,18 @@
       background: none; border: 0; color: #fff; font-family: inherit;
       font-size: 13px; font-weight: 700; margin-bottom: 6px; cursor: pointer;
     }
+    #back-fab {
+      position: fixed; right: 16px; bottom: 24px; z-index: 80;
+      width: 58px; height: 58px; border: 0; border-radius: 18px;
+      background: #0f172a; color: #fff; font-family: Vazirmatn, Tahoma, sans-serif;
+      font-size: 13px; font-weight: 800; cursor: pointer;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, .28);
+      text-align: center; display: none;
+    }
+    body:has(.nav) #back-fab { bottom: 88px; }
   </style>
-</head>
-<body>
   <div id="toast" class="toast"></div>
+  <button id="back-fab" type="button" onclick="triggerAppBack()">بازگشت</button>
 
   <section id="screen-people" class="screen active">
     <div class="top">
@@ -214,10 +223,19 @@
           <h1>استعلام قیمت</h1>
           <div class="meta">نام خود را انتخاب کنید</div>
         </div>
-        <div class="date-badge" data-date-slot></div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button type="button" onclick="window.location.href='?page=price'" class="date-badge" style="background: rgba(201,162,39,0.25); cursor: pointer; border: 1px solid rgba(201,162,39,0.7);">
+            ⚡ قیمت شیت All
+          </button>
+          <div class="date-badge" data-date-slot></div>
+        </div>
       </div>
     </div>
     <div class="wrap">
+      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+        <button class="btn" type="button" onclick="window.location.href='?page=price'" style="flex: 1; background: #1e1b4b; color: #fff; border: 1px solid #4338ca;">⚡ بهروزرسانی قیمت شیت All</button>
+        <button class="btn" type="button" onclick="window.location.href='?page=fastlayer'" style="flex: 1; background: #065f46; color: #fff; border: 1px solid #059669;">⚡ لایه سریع</button>
+      </div>
       <button class="btn btn-ghost" type="button" onclick="openSalesPackages('people')" style="margin-bottom:12px">لیست قیمت پکیج‌ها</button>
       <div id="people" class="people"></div>
     </div>
@@ -230,11 +248,20 @@
           <h1 id="cards-title">درخواست‌ها</h1>
           <div class="meta">کارت‌های استعلام شما</div>
         </div>
-        <div class="date-badge" data-date-slot></div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button type="button" onclick="window.location.href='?page=price'" class="date-badge" style="background: rgba(201,162,39,0.25); cursor: pointer; border: 1px solid rgba(201,162,39,0.7);">
+            ⚡ قیمت شیت All
+          </button>
+          <div class="date-badge" data-date-slot></div>
+        </div>
       </div>
     </div>
     <div class="wrap">
       <button class="btn btn-gold" type="button" onclick="openNew()">درخواست استعلام جدید</button>
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <button class="btn" type="button" onclick="window.location.href='?page=price'" style="flex: 1; background: #1e1b4b; color: #fff; border: 1px solid #4338ca;">⚡ قیمت شیت All</button>
+        <button class="btn" type="button" onclick="window.location.href='?page=fastlayer'" style="flex: 1; background: #065f46; color: #fff; border: 1px solid #059669;">⚡ لایه سریع</button>
+      </div>
       <button class="btn btn-ghost" type="button" onclick="openSalesPackages('cards')" style="margin-top:10px">لیست قیمت پکیج‌ها</button>
       <div class="notify-box">
         <button class="btn btn-ghost" type="button" onclick="enablePhoneNotify()">فعال‌سازی اعلان گوشی</button>
@@ -842,6 +869,27 @@
       document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); });
       document.getElementById(id).classList.add('active');
       window.scrollTo(0, 0);
+      updateBackFab();
+    }
+
+    function updateBackFab() {
+      var fab = document.getElementById('back-fab');
+      if (!fab) return;
+      var active = document.querySelector('.screen.active');
+      var id = active ? active.id : '';
+      if (id === 'screen-people' || id === 'screen-cards') {
+        fab.style.display = 'none';
+      } else {
+        fab.style.display = 'block';
+      }
+    }
+
+    function triggerAppBack() {
+      var active = document.querySelector('.screen.active');
+      var id = active ? active.id : '';
+      if (id === 'screen-packages') backFromSalesPackages();
+      else if (id === 'screen-form') showCards();
+      else showCards();
     }
 
     function fillSelect(id, options, selected) {
@@ -954,8 +1002,8 @@
       var created = cardCreatedDate(c);
       var edited = cardEditedDate(c);
       var parts = [];
-      if (created) parts.push('<span class="date">ایجاد ' + escapeHtml(created) + '</span>');
-      if (edited) parts.push('<span class="date edit">ویرایش ' + escapeHtml(edited) + '</span>');
+      if (created) parts.push('<span class="date">تاریخ صدور: ' + escapeHtml(created) + '</span>');
+      if (edited) parts.push('<span class="date edit">ویرایش: ' + escapeHtml(edited) + '</span>');
       if (!parts.length) return '';
       return '<div class="dates">' + parts.join('') + '</div>';
     }
