@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260916202154">
+  <meta name="x-build" content="20260916202510">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916202154" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916202510" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -483,6 +483,13 @@
       <textarea id="sales-extra-note" class="note" readonly></textarea>
 
       <label>نظر مدیریت</label>
+      <select id="manager-note-preset" class="note-preset" onchange="onManagerNotePresetChange()" style="margin-bottom: 8px;">
+        <option value="">-- انتخاب نظر مدیریت --</option>
+        <option value="با توجه به ناپایداری قیمت ارز، یک الی دو روز دیگر مجدداً درخواست را ارسال کنید.">۱. با توجه به ناپایداری قیمت ارز، یک الی دو روز دیگر مجدداً درخواست را ارسال کنید.</option>
+        <option value="این درخواست قیمت، مشمول قیمتهای پایه میشود">۲. این درخواست قیمت، مشمول قیمتهای پایه میشود</option>
+        <option value="این ظرفیت آسانسور فعلا توسط شرکت کار نمی شود">۳. این ظرفیت آسانسور فعلا توسط شرکت کار نمی شود</option>
+        <option value="__CUSTOM__">۴. شرح آزاد</option>
+      </select>
       <textarea id="manager-note" class="note" placeholder="نظر خود را بنویسید"></textarea>
       </div>
 
@@ -1149,6 +1156,44 @@
       return s;
     }
 
+    var MANAGER_NOTE_PRESETS = [
+      'با توجه به ناپایداری قیمت ارز، یک الی دو روز دیگر مجدداً درخواست را ارسال کنید.',
+      'این درخواست قیمت، مشمول قیمتهای پایه میشود',
+      'این ظرفیت آسانسور فعلا توسط شرکت کار نمی شود'
+    ];
+
+    function onManagerNotePresetChange() {
+      var select = document.getElementById('manager-note-preset');
+      var noteArea = document.getElementById('manager-note');
+      if (!select || !noteArea) return;
+      var val = select.value;
+      if (val === '__CUSTOM__') {
+        noteArea.focus();
+      } else if (val) {
+        noteArea.value = val;
+      }
+    }
+
+    function setManagerNoteValue(noteText) {
+      var select = document.getElementById('manager-note-preset');
+      var noteArea = document.getElementById('manager-note');
+      var cleaned = cleanNote(noteText);
+      if (noteArea) noteArea.value = cleaned;
+
+      if (select) {
+        if (!cleaned) {
+          select.value = '';
+        } else {
+          var idx = MANAGER_NOTE_PRESETS.indexOf(cleaned);
+          if (idx !== -1) {
+            select.value = MANAGER_NOTE_PRESETS[idx];
+          } else {
+            select.value = '__CUSTOM__';
+          }
+        }
+      }
+    }
+
     function todayJalali() {
       if (state.bootstrap && state.bootstrap.todayJalali) return state.bootstrap.todayJalali;
       try {
@@ -1780,7 +1825,7 @@
         : data.salesperson;
       setHeaderDates(cardDate(data));
       document.getElementById('sales-extra-note').value = data.extraNote || '';
-      document.getElementById('manager-note').value = cleanNote(data.note);
+      setManagerNoteValue(data.note);
       document.getElementById('profitPct').value = (data.totals && data.totals.profitPct) || '';
       setTotals(data.totals || {});
       renderPdfs(data.pdfs || []);
@@ -2070,7 +2115,8 @@
     function submitIncompleteReason(reason) {
       var noteEl = document.getElementById('manager-note');
       var oldVal = (noteEl.value || '').trim();
-      noteEl.value = (oldVal ? oldVal + '\n' : '') + 'علت مغایرت: ' + reason;
+      var newVal = (oldVal ? oldVal + '\n' : '') + 'علت مغایرت: ' + reason;
+      setManagerNoteValue(newVal);
       cancelIncomplete();
       markIncomplete(reason);
     }

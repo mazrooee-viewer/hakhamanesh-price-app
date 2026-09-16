@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260916202154">
+  <meta name="x-build" content="20260916202510">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916202154" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916202510" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -247,6 +247,11 @@
     }
     .filter-tab[data-filter="در انتظار رفع مغایرت"].has-items {
       border-color: #fecdd3;
+      background: #fff1f2;
+      color: #be123c;
+    }
+    .filter-tab[data-filter="در انتظار رفع مغایرت"].has-items .tab-count {
+      background: #ffe4e6;
       color: #be123c;
     }
     .filter-tab[data-filter="در انتظار رفع مغایرت"].active {
@@ -299,11 +304,11 @@
       </div>
 
       <div class="filter-tabs-scroll" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom:12px; scrollbar-width:none;">
-        <button class="filter-tab active" type="button" data-filter="در دست بررسی" onclick="setSalesFilter('در دست بررسی')">
-          در دست بررسی <span id="cnt-pending" class="tab-count">0</span>
-        </button>
         <button class="filter-tab" type="button" data-filter="در انتظار رفع مغایرت" onclick="setSalesFilter('در انتظار رفع مغایرت')">
           در انتظار رفع مغایرت <span id="cnt-discrepancy" class="tab-count">0</span>
+        </button>
+        <button class="filter-tab active" type="button" data-filter="در دست بررسی" onclick="setSalesFilter('در دست بررسی')">
+          در دست بررسی <span id="cnt-pending" class="tab-count">0</span>
         </button>
         <button class="filter-tab" type="button" data-filter="صادرشده" onclick="setSalesFilter('صادرشده')">
           صادرشده <span id="cnt-issued" class="tab-count">0</span>
@@ -1585,7 +1590,7 @@
         caps: payload.caps,
         stop: payload.stop,
         extraNote: payload.extraNote,
-        status: (prev && prev.status === 'ناقص') ? 'در صف بررسی' : ((prev && prev.status) || 'در صف بررسی'),
+        status: (prev && (prev.status === 'ناقص' || prev.status === 'مغایرت' || prev.status === 'در انتظار رفع مغایرت')) ? 'در صف بررسی' : ((prev && prev.status) || 'در صف بررسی'),
         sent: true
       });
       resetSendButton(btn);
