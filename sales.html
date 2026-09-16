@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260916105910">
+  <meta name="x-build" content="20260916111505">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916105910" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916111505" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -224,18 +224,13 @@
           <div class="meta">نام خود را انتخاب کنید</div>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
-          <button type="button" onclick="window.location.href='?page=price'" class="date-badge" style="background: rgba(201,162,39,0.25); cursor: pointer; border: 1px solid rgba(201,162,39,0.7);">
-            ⚡ قیمت شیت All
-          </button>
+
           <div class="date-badge" data-date-slot></div>
         </div>
       </div>
     </div>
     <div class="wrap">
-      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-        <button class="btn" type="button" onclick="window.location.href='?page=price'" style="flex: 1; background: #1e1b4b; color: #fff; border: 1px solid #4338ca;">⚡ بهروزرسانی قیمت شیت All</button>
-        <button class="btn" type="button" onclick="window.location.href='?page=fastlayer'" style="flex: 1; background: #065f46; color: #fff; border: 1px solid #059669;">⚡ لایه سریع</button>
-      </div>
+
       <button class="btn btn-ghost" type="button" onclick="openSalesPackages('people')" style="margin-bottom:12px">لیست قیمت پکیج‌ها</button>
       <div id="people" class="people"></div>
     </div>
@@ -249,19 +244,14 @@
           <div class="meta">کارت‌های استعلام شما</div>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
-          <button type="button" onclick="window.location.href='?page=price'" class="date-badge" style="background: rgba(201,162,39,0.25); cursor: pointer; border: 1px solid rgba(201,162,39,0.7);">
-            ⚡ قیمت شیت All
-          </button>
+
           <div class="date-badge" data-date-slot></div>
         </div>
       </div>
     </div>
     <div class="wrap">
       <button class="btn btn-gold" type="button" onclick="openNew()">درخواست استعلام جدید</button>
-      <div style="display: flex; gap: 8px; margin-top: 10px;">
-        <button class="btn" type="button" onclick="window.location.href='?page=price'" style="flex: 1; background: #1e1b4b; color: #fff; border: 1px solid #4338ca;">⚡ قیمت شیت All</button>
-        <button class="btn" type="button" onclick="window.location.href='?page=fastlayer'" style="flex: 1; background: #065f46; color: #fff; border: 1px solid #059669;">⚡ لایه سریع</button>
-      </div>
+
       <button class="btn btn-ghost" type="button" onclick="openSalesPackages('cards')" style="margin-top:10px">لیست قیمت پکیج‌ها</button>
       <div class="notify-box">
         <button class="btn btn-ghost" type="button" onclick="enablePhoneNotify()">فعال‌سازی اعلان گوشی</button>
