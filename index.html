@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260916120226">
+  <meta name="x-build" content="20260916120936">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916120226" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916120936" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -395,7 +395,7 @@
     <div class="top">
       <div class="top-row">
         <div>
-          <button class="back" type="button" id="form-back" onclick="backFromForm()">بازگشت به صف</button>
+          <button class="back" type="button" id="form-back" onclick="backFromForm()">بازگشت</button>
           <h1 id="form-title">فرم محاسبه</h1>
           <div class="meta" id="form-meta"></div>
         </div>
@@ -487,7 +487,6 @@
       </div>
 
       <div class="actions">
-        <button class="btn btn-ghost" type="button" id="form-back-bottom" onclick="backFromForm()">بازگشت به صف</button>
         <button class="btn btn-main inquiry-only" id="issue" type="button" onclick="issuePdf()">صدور لیست قیمت</button>
         <button class="btn btn-ghost inquiry-only" id="finish" type="button" onclick="finishProcess()">اتمام فرایند</button>
         <button class="btn btn-bad inquiry-only" id="incomplete" type="button" onclick="showIncompleteOptions()">مغایرت</button>
@@ -1698,7 +1697,6 @@
       state.row = 0;
       document.getElementById('screen-form').classList.add('package-preview');
       document.getElementById('form-back').textContent = 'بازگشت به پکیج‌ها';
-      document.getElementById('form-back-bottom').textContent = 'بازگشت به پکیج‌ها';
       document.getElementById('form-title').textContent = packageName;
       document.getElementById('form-meta').textContent = 'پیش‌نمایش دستی — در حال همگام‌سازی با Data_Offers...';
       setHeaderDates(todayJalali());
@@ -1718,8 +1716,7 @@
         state.formMode = 'inquiry';
         state.previewPackageName = '';
         document.getElementById('screen-form').classList.remove('package-preview');
-        document.getElementById('form-back').textContent = 'بازگشت به صف';
-        document.getElementById('form-back-bottom').textContent = 'بازگشت به صف';
+        document.getElementById('form-back').textContent = 'بازگشت';
         setBasePriceIssueBtn(false);
         openPackages();
         return;
@@ -1733,8 +1730,7 @@
       state.formMode = 'inquiry';
       state.previewPackageName = '';
       document.getElementById('screen-form').classList.remove('package-preview');
-      document.getElementById('form-back').textContent = 'بازگشت به صف';
-      document.getElementById('form-back-bottom').textContent = 'بازگشت به صف';
+      document.getElementById('form-back').textContent = 'بازگشت';
       state.salesperson = card.salesperson;
       state.row = card.row;
       state.formDirty = false;
@@ -1774,8 +1770,7 @@
       state.formMode = data.preview ? 'package' : 'inquiry';
       if (data.preview && data.packageName) state.previewPackageName = data.packageName;
       document.getElementById('screen-form').classList.toggle('package-preview', !!data.preview);
-      document.getElementById('form-back').textContent = data.preview ? 'بازگشت به پکیج‌ها' : 'بازگشت به صف';
-      document.getElementById('form-back-bottom').textContent = data.preview ? 'بازگشت به پکیج‌ها' : 'بازگشت به صف';
+      document.getElementById('form-back').textContent = data.preview ? 'بازگشت به پکیج‌ها' : 'بازگشت';
       document.getElementById('employer').value = data.employer || '';
       document.getElementById('form-title').textContent = data.preview
         ? ('پیش‌نمایش ' + (data.displayName || data.packageName || data.employer || ''))
