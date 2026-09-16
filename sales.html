@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260916121802">
+  <meta name="x-build" content="20260916201848">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916121802" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916201848" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -212,6 +212,48 @@
       text-align: center; display: none;
     }
     body:has(.nav) #back-fab { bottom: 88px; }
+    .filter-tab {
+      flex: 0 0 auto;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy);
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .filter-tab.active {
+      background: var(--navy);
+      color: #fff;
+      border-color: var(--navy);
+    }
+    .filter-tab.active .tab-count {
+      background: rgba(255,255,255,0.25);
+      color: #fff;
+    }
+    .tab-count {
+      background: #f1f5f9;
+      color: #475569;
+      border-radius: 999px;
+      padding: 2px 7px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .filter-tab[data-filter="در انتظار رفع مغایرت"].has-items {
+      border-color: #fecdd3;
+      color: #be123c;
+    }
+    .filter-tab[data-filter="در انتظار رفع مغایرت"].active {
+      background: #be123c;
+      color: #fff;
+      border-color: #be123c;
+    }
   </style>
   <div id="toast" class="toast"></div>
   <button id="back-fab" type="button" onclick="triggerAppBack()">بازگشت</button>
@@ -250,13 +292,30 @@
       </div>
     </div>
     <div class="wrap">
-      <button class="btn btn-gold" type="button" onclick="openNew()">درخواست استعلام جدید</button>
-
-      <button class="btn btn-ghost" type="button" onclick="openSalesPackages('cards')" style="margin-top:10px">لیست قیمت پکیج‌ها</button>
-      <div class="notify-box">
+      <div class="sales-actions-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:14px;">
+        <button class="btn btn-gold" type="button" onclick="openNew()" style="grid-column: span 2;">درخواست استعلام جدید</button>
+        <button class="btn btn-ghost" type="button" onclick="openSalesPackages('cards')">لیست قیمت پکیج‌ها</button>
         <button class="btn btn-ghost" type="button" onclick="enablePhoneNotify()">فعال‌سازی اعلان گوشی</button>
-        <div class="hint" id="notify-hint"></div>
       </div>
+
+      <div class="filter-tabs-scroll" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom:12px; scrollbar-width:none;">
+        <button class="filter-tab active" type="button" data-filter="در دست بررسی" onclick="setSalesFilter('در دست بررسی')">
+          در دست بررسی <span id="cnt-pending" class="tab-count">0</span>
+        </button>
+        <button class="filter-tab" type="button" data-filter="در انتظار رفع مغایرت" onclick="setSalesFilter('در انتظار رفع مغایرت')">
+          در انتظار رفع مغایرت <span id="cnt-discrepancy" class="tab-count">0</span>
+        </button>
+        <button class="filter-tab" type="button" data-filter="صادرشده" onclick="setSalesFilter('صادرشده')">
+          صادرشده <span id="cnt-issued" class="tab-count">0</span>
+        </button>
+        <button class="filter-tab" type="button" data-filter="ابطال‌شده‌ها" onclick="setSalesFilter('ابطال‌شده‌ها')">
+          ابطال‌شده‌ها <span id="cnt-revoked" class="tab-count">0</span>
+        </button>
+        <button class="filter-tab" type="button" data-filter="همه" onclick="setSalesFilter('همه')">
+          همه <span id="cnt-all" class="tab-count">0</span>
+        </button>
+      </div>
+      <div class="hint" id="notify-hint" style="text-align:center; margin-bottom:8px;"></div>
       <div id="cards" class="list"></div>
     </div>
   </section>
@@ -921,7 +980,7 @@
 
     function isIssuedCard(c) {
       var s = String((c && c.status) || '').trim();
-      return s === 'صادر شد' || s === 'صادر شده' || s === 'ابطال' || s === 'ابطال شد';
+      return s === 'صادر شد' || s === 'صادر شده' || s === 'ابطال' || s === 'ابطال شد' || s === 'ابطال شده' || s === 'ابطال‌شده';
     }
 
     function canMutateCard(c) {
@@ -1079,19 +1138,86 @@
       renderPeople(data);
     }
 
-    function renderSalesCards(cards) {
+    state.cardFilter = state.cardFilter || 'در دست بررسی';
+
+    function normalizeSalesStatus(c) {
+      var s = String((c && c.status) || '').trim();
+      if (s === 'صادر شد' || s === 'صادر شده') return 'صادرشده';
+      if (s === 'ابطال' || s === 'ابطال شد' || s === 'ابطال شده' || s === 'ابطال‌شده') return 'ابطال‌شده‌ها';
+      if (s === 'ناقص' || s === 'مغایرت' || s === 'در انتظار رفع مغایرت') return 'در انتظار رفع مغایرت';
+      return 'در دست بررسی';
+    }
+
+    function salesBadgeHtml(c) {
+      var norm = normalizeSalesStatus(c);
+      var rawStatus = c.status || 'در دست بررسی';
+      if (norm === 'صادرشده') {
+        return '<span class="badge" style="background:#dcfce7; color:#166534;">صادرشده</span>';
+      }
+      if (norm === 'ابطال‌شده‌ها') {
+        return '<span class="badge" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;">ابطال‌شده</span>';
+      }
+      if (norm === 'در انتظار رفع مغایرت') {
+        return '<span class="badge" style="background:#fff1f2; color:#be123c; border:1px solid #fecdd3; font-weight:800;">در انتظار رفع مغایرت</span>';
+      }
+      return '<span class="badge" style="background:#eff6ff; color:#1e40af;">در دست بررسی</span>';
+    }
+
+    function setSalesFilter(filterName) {
+      state.cardFilter = filterName;
+      document.querySelectorAll('.filter-tab').forEach(function (tab) {
+        tab.classList.toggle('active', tab.getAttribute('data-filter') === filterName);
+      });
+      var cached = currentCards();
+      renderSalesCards(cardsWithPending(cached));
+    }
+
+    function updateSalesFilterCounts(allCards) {
+      var counts = {
+        'در دست بررسی': 0,
+        'در انتظار رفع مغایرت': 0,
+        'صادرشده': 0,
+        'ابطال‌شده‌ها': 0,
+        'همه': (allCards || []).length
+      };
+      (allCards || []).forEach(function (c) {
+        var norm = normalizeSalesStatus(c);
+        if (counts[norm] !== undefined) counts[norm]++;
+      });
+      document.getElementById('cnt-pending').textContent = counts['در دست بررسی'];
+      document.getElementById('cnt-discrepancy').textContent = counts['در انتظار رفع مغایرت'];
+      document.getElementById('cnt-issued').textContent = counts['صادرشده'];
+      document.getElementById('cnt-revoked').textContent = counts['ابطال‌شده‌ها'];
+      document.getElementById('cnt-all').textContent = counts['همه'];
+
+      var discTab = document.querySelector('.filter-tab[data-filter="در انتظار رفع مغایرت"]');
+      if (discTab) discTab.classList.toggle('has-items', counts['در انتظار رفع مغایرت'] > 0);
+    }
+
+    function renderSalesCards(allCards) {
+      allCards = allCards || [];
+      updateSalesFilterCounts(allCards);
+
+      var currentFilter = state.cardFilter || 'در دست بررسی';
+      var filteredCards = allCards;
+      if (currentFilter !== 'همه') {
+        filteredCards = allCards.filter(function (c) {
+          return normalizeSalesStatus(c) === currentFilter;
+        });
+      }
+
       var box = document.getElementById('cards');
-      if (!cards || !cards.length) {
-        box.innerHTML = '<div class="empty">هنوز استعلامی ثبت نشده است.</div>';
+      if (!filteredCards || !filteredCards.length) {
+        box.innerHTML = '<div class="empty">موردی در این دسته‌بندی وجود ندارد.</div>';
         return;
       }
-      box.innerHTML = cards.map(function (c) {
+      box.innerHTML = filteredCards.map(function (c) {
         return '<div class="card"><div class="name">' + escapeHtml(c.employer) + '</div>' +
           '<div class="spec">' + escapeHtml(c.system) + ' — ظرفیت ' + escapeHtml(c.caps) + ' — توقف ' + escapeHtml(c.stop) + '</div>' +
           cardDatesHtml(c) +
-          (c.status || c.sent ? '<div style="margin-top:8px"><span class="badge">' + escapeHtml(c.status || 'در صف بررسی') + '</span></div>' : '') +
+          '<div style="margin-top:8px">' + salesBadgeHtml(c) + '</div>' +
           (c.extraNote ? '<div class="spec" style="margin-top:6px">' + escapeHtml(c.extraNote) + '</div>' : '') +
-          (c.note ? '<div class="spec" style="margin-top:6px">' + escapeHtml(c.note) + '</div>' : '') +
+          (c.note ? '<div class="spec" style="margin-top:6px; color:#be123c; font-weight:700;">نظر مدیریت: ' + escapeHtml(c.note) + '</div>' : '') +
           pdfLinksHtml(c) +
           cardActionsHtml(c) +
           '</div>';

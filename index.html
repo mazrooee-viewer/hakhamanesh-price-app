@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260916121802">
+  <meta name="x-build" content="20260916201848">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916121802" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916201848" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1224,7 +1224,7 @@
       var s = String((c && c.status) || '').trim();
       if (s === 'صادر شد' || s === 'صادر شده') return 'صادر شده';
       if (s === 'ابطال' || s === 'ابطال شد') return 'ابطال شد';
-      if (s === 'ناقص') return 'ناقص';
+      if (s === 'ناقص' || s === 'مغایرت') return 'مغایرت';
       return 'در صف بررسی';
     }
 
@@ -1237,7 +1237,7 @@
     function updateHomeCounts() {
       var q = cardsByFilter('در صف بررسی').length;
       var i = cardsByFilter('صادر شده').length;
-      var b = cardsByFilter('ناقص').length;
+      var b = cardsByFilter('مغایرت').length;
       document.getElementById('count-queue').textContent = q + ' مورد';
       document.getElementById('count-issued').textContent = i + ' مورد';
       document.getElementById('count-bad').textContent = b + ' مورد';
@@ -2031,7 +2031,7 @@
       if (!pf()) return;
       pf().readStatusQueue().forEach(function (job) {
         var action = job.payload && job.payload.statusAction;
-        var handler = action === 'مغایرت' ? 'markIncomplete' : (action === 'ابطال شد' ? 'revokeOfferInquiry' : 'finishInquiry');
+        var handler = action === 'مغایرت' ? 'markInquiryIncomplete' : (action === 'ابطال شد' ? 'revokeOfferInquiry' : 'finishInquiry');
         sendStatusJob(job, handler);
       });
     }
@@ -2072,14 +2072,15 @@
       var oldVal = (noteEl.value || '').trim();
       noteEl.value = (oldVal ? oldVal + '\n' : '') + 'علت مغایرت: ' + reason;
       cancelIncomplete();
-      markIncomplete();
+      markIncomplete(reason);
     }
 
-    function markIncomplete() {
+    function markIncomplete(reason) {
       if (state.issuing) return toast('صبر کنید تا صدور لیست قیمت تمام شود', true);
       if (state.finishing) return;
       var payload = collectPayload();
       payload.statusAction = 'مغایرت';
+      if (reason) payload.reason = reason;
       var prev = snapshotCard();
       var job = pf() ? pf().enqueueStatus(payload, prev) : { id: String(Date.now()), payload: payload, prev: prev };
       if (pf()) {
