@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260916112528">
+  <meta name="x-build" content="20260916114440">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916112528" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916114440" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -344,8 +344,8 @@
           صادر شده
           <span class="count" id="count-issued">—</span>
         </button>
-        <button class="home-btn home-bad" type="button" onclick="openFilter('ناقص')">
-          ناقص
+        <button class="home-btn home-bad" type="button" onclick="openFilter('مغایرت')">
+          در انتظار رفع مغایرت
           <span class="count" id="count-bad">—</span>
         </button>
 
@@ -490,10 +490,16 @@
         <button class="btn btn-ghost" type="button" id="form-back-bottom" onclick="backFromForm()">بازگشت به صف</button>
         <button class="btn btn-main inquiry-only" id="issue" type="button" onclick="issuePdf()">صدور لیست قیمت</button>
         <button class="btn btn-ghost inquiry-only" id="finish" type="button" onclick="finishProcess()">اتمام فرایند</button>
-        <button class="btn btn-bad inquiry-only" id="incomplete" type="button" onclick="markIncomplete()">ناقص</button>
+        <button class="btn btn-bad inquiry-only" id="incomplete" type="button" onclick="showIncompleteOptions()">مغایرت</button>
         <button class="btn btn-bad inquiry-only" id="revoke-inquiry" type="button" onclick="markRevoked()">ابطال</button>
         <button class="btn btn-main package-only" id="issue-base-prices" type="button" onclick="issueBasePricesFromPreview()">صدور لیست قیمت های پایه</button>
         <button class="btn btn-bad package-only" id="revoke-base-price" type="button" onclick="revokeBasePriceFromPreview()">ابطال</button>
+      </div>
+      <div id="discrepancy-panel" style="display:none; flex-direction:column; gap:10px; margin-top:12px; background:#fff1f2; padding:15px; border-radius:12px; border:1px solid #fecdd3;" class="inquiry-only">
+        <div style="font-weight:700; text-align:center; font-size:14px; margin-bottom:5px; color:#be123c;">دلیل مغایرت را انتخاب کنید:</div>
+        <button class="btn btn-bad" type="button" onclick="submitIncompleteReason('مغایرت فرم محاسبه با توضیحات بازاریاب')">مغایرت فرم محاسبه با توضیحات بازاریاب</button>
+        <button class="btn btn-bad" type="button" onclick="submitIncompleteReason('مغایرت پکیج انتخابی با موارد انتخاب‌‌شده در فرم محاسبه')">مغایرت پکیج انتخابی با موارد انتخاب‌‌شده در فرم محاسبه</button>
+        <button class="btn btn-ghost" type="button" onclick="cancelIncomplete()" style="margin-top:5px; background: #fff; color: #333; border: 1px solid #ddd;">انصراف</button>
       </div>
       <div id="pdfs" class="pdfs"></div>
     </div>
@@ -1025,8 +1031,39 @@
          prices.cabinHeight = fmtPrice(roundToman(ch));
       }
 
+      // Wire rope
+      if (values.wireRope && values.wireRope !== 'ندارد') {
+        var wrPrice = lux.wireRopes[values.wireRope] || 0;
+        var wrBase = lux.wireRopeBasePrice || 0;
+        var wrType = (motorKind(values).indexOf('MRL') >= 0 || motorKind(values).indexOf('MR') >= 0) ? 'گیرلس' : 'گیربکس';
+        var wrLenObj = lux.wireRopeLength[String(stops)] || {};
+        var wrLen = wrLenObj[wrType] || 0;
+        if (wrPrice > 0 && wrLen > 0) {
+          prices.wireRope = fmtPrice(roundToman((wrPrice - wrBase) * wrLen));
+        }
+      }
 
-      if (isHyd(values)) prices.weight = '';
+      // Travel cable
+      if (values.travelCable && values.travelCable !== 'ندارد') {
+        var tcPrice = lux.travelCables[values.travelCable] || 0;
+        var tcBase = lux.travelCableBasePrice || 0;
+        var tcLen = lux.travelCableLength[String(stops)] || 0;
+        if (tcPrice > 0 && tcLen > 0) {
+          prices.travelCable = fmtPrice(roundToman((tcPrice - tcBase) * tcLen));
+        }
+      }
+
+      // Weight (Counterweight)
+      if (isHyd(values) || values.weight === 'فلزی' || values.weight === 'ندارد') {
+        prices.weight = '';
+      } else if (values.weight) {
+        var wbKg = lux.weightBase[String(values.caps)] || 0;
+        var wpKg = lux.weightPrices[values.weight] || 0;
+        if (wbKg > 0 && wpKg > 0) {
+          prices.weight = fmtPrice(roundToman(wbKg * wpKg));
+        }
+      }
+
       return prices;
     }
     function computeLocalTotals(prices, profitPct) {
@@ -1141,11 +1178,37 @@
       return cardCreatedDate(c);
     }
 
+    function daysSinceJalali(dateStr) {
+      if (!dateStr) return 0;
+      var p1 = dateStr.split('/');
+      var p2 = todayJalali().split('/');
+      if (p1.length !== 3 || p2.length !== 3) return 0;
+      var y1 = +p1[0], m1 = +p1[1], d1 = +p1[2];
+      var y2 = +p2[0], m2 = +p2[1], d2 = +p2[2];
+      function toDays(y, m, d) {
+        var days = y * 365 + Math.floor(y / 4);
+        days += m <= 7 ? (m - 1) * 31 : 186 + (m - 7) * 30;
+        return days + d;
+      }
+      return toDays(y2, m2, d2) - toDays(y1, m1, d1);
+    }
+
     function cardDatesHtml(c) {
       var created = cardCreatedDate(c);
       var edited = cardEditedDate(c);
       var parts = [];
-      if (created) parts.push('<span class="date">تاریخ صدور: ' + escapeHtml(created) + '</span>');
+      if (created) {
+        parts.push('<span class="date">تاریخ صدور: ' + escapeHtml(created) + '</span>');
+        if (state.filter === 'در صف بررسی') {
+          var diff = daysSinceJalali(created);
+          if (diff > 0) {
+            var color = diff > 2 ? '#b91c1c' : '#b8892a';
+            parts.push('<span class="date" style="color: ' + color + ';">' + diff + ' روز گذشته</span>');
+          } else if (diff === 0) {
+            parts.push('<span class="date" style="color: #16a34a;">امروز</span>');
+          }
+        }
+      }
       if (edited) parts.push('<span class="date edit">ویرایش: ' + escapeHtml(edited) + '</span>');
       if (!parts.length) return '';
       return '<div class="dates">' + parts.join('') + '</div>';
@@ -1666,6 +1729,7 @@
 
     function openCard(card) {
       if (!state.bootstrap) return toast('گزینه‌های فرم هنوز بارگذاری نشده', true);
+      if (typeof cancelIncomplete === 'function') cancelIncomplete();
       state.formMode = 'inquiry';
       state.previewPackageName = '';
       document.getElementById('screen-form').classList.remove('package-preview');
@@ -1972,7 +2036,7 @@
       if (!pf()) return;
       pf().readStatusQueue().forEach(function (job) {
         var action = job.payload && job.payload.statusAction;
-        var handler = action === 'ناقص' ? 'markIncomplete' : (action === 'ابطال شد' ? 'revokeOfferInquiry' : 'finishInquiry');
+        var handler = action === 'مغایرت' ? 'markIncomplete' : (action === 'ابطال شد' ? 'revokeOfferInquiry' : 'finishInquiry');
         sendStatusJob(job, handler);
       });
     }
@@ -1993,18 +2057,41 @@
       sendStatusJob(job, 'finishInquiry');
     }
 
+    function showIncompleteOptions() {
+      if (state.issuing) return toast('صبر کنید تا صدور لیست قیمت تمام شود', true);
+      if (state.finishing) return;
+      document.getElementById('discrepancy-panel').style.display = 'flex';
+      var actionsEl = document.querySelector('#screen-form .actions');
+      if (actionsEl) actionsEl.style.display = 'none';
+    }
+
+    function cancelIncomplete() {
+      var panel = document.getElementById('discrepancy-panel');
+      if (panel) panel.style.display = 'none';
+      var actionsEl = document.querySelector('#screen-form .actions');
+      if (actionsEl) actionsEl.style.display = 'flex';
+    }
+
+    function submitIncompleteReason(reason) {
+      var noteEl = document.getElementById('manager-note');
+      var oldVal = (noteEl.value || '').trim();
+      noteEl.value = (oldVal ? oldVal + '\n' : '') + 'علت مغایرت: ' + reason;
+      cancelIncomplete();
+      markIncomplete();
+    }
+
     function markIncomplete() {
       if (state.issuing) return toast('صبر کنید تا صدور لیست قیمت تمام شود', true);
       if (state.finishing) return;
       var payload = collectPayload();
-      payload.statusAction = 'ناقص';
+      payload.statusAction = 'مغایرت';
       var prev = snapshotCard();
       var job = pf() ? pf().enqueueStatus(payload, prev) : { id: String(Date.now()), payload: payload, prev: prev };
       if (pf()) {
-        state.allCards = pf().applyOptimisticStatus(state.allCards, payload.salesperson, payload.row, 'ناقص');
+        state.allCards = pf().applyOptimisticStatus(state.allCards, payload.salesperson, payload.row, 'مغایرت');
         pf().writeInbox(state.allCards);
       }
-      toast('به‌عنوان ناقص ثبت شد');
+      toast('به لیست مغایرت منتقل شد');
       showHome();
       sendStatusJob(job, 'markInquiryIncomplete');
     }

@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260916112528">
+  <meta name="x-build" content="20260916114440">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916112528" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916114440" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -988,11 +988,50 @@
       return cardCreatedDate(c);
     }
 
+    function toEnglishDigits(str) {
+      return String(str).replace(/[۰-۹]/g, function (w) {
+        return '0123456789'[w.charCodeAt(0) - 1776];
+      });
+    }
+
+    function daysSinceJalali(dateStr) {
+      if (!dateStr) return -1;
+      var m = toEnglishDigits(dateStr).match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+      if (!m) return -1;
+      var y1 = parseInt(m[1], 10), m1 = parseInt(m[2], 10), d1 = parseInt(m[3], 10);
+      
+      var todayStr = todayJalali();
+      if (!todayStr) return -1;
+      var mt = toEnglishDigits(todayStr).match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+      if (!mt) return -1;
+      var y2 = parseInt(mt[1], 10), m2 = parseInt(mt[2], 10), d2 = parseInt(mt[3], 10);
+      
+      function toDays(y, m, d) {
+        var days = y * 365 + Math.floor(y / 4);
+        days += m <= 7 ? (m - 1) * 31 : 186 + (m - 7) * 30;
+        return days + d;
+      }
+      return toDays(y2, m2, d2) - toDays(y1, m1, d1);
+    }
+
     function cardDatesHtml(c) {
       var created = cardCreatedDate(c);
       var edited = cardEditedDate(c);
       var parts = [];
-      if (created) parts.push('<span class="date">تاریخ صدور: ' + escapeHtml(created) + '</span>');
+      if (created) {
+        parts.push('<span class="date">تاریخ صدور: ' + escapeHtml(created) + '</span>');
+        var s = String((c && c.status) || '').trim();
+        if (!s && c.sent) s = 'در صف بررسی';
+        if (s === 'در صف بررسی') {
+          var diff = daysSinceJalali(created);
+          if (diff > 0) {
+            var color = diff > 2 ? '#b91c1c' : '#b8892a';
+            parts.push('<span class="date" style="color: ' + color + ';">' + diff + ' روز گذشته</span>');
+          } else if (diff === 0) {
+            parts.push('<span class="date" style="color: #16a34a;">امروز</span>');
+          }
+        }
+      }
       if (edited) parts.push('<span class="date edit">ویرایش: ' + escapeHtml(edited) + '</span>');
       if (!parts.length) return '';
       return '<div class="dates">' + parts.join('') + '</div>';
