@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260916203821">
+  <meta name="x-build" content="20260916210508">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916203821" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260916210508" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -259,6 +259,22 @@
       color: #fff;
       border-color: #be123c;
     }
+    .home-btns { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+    .home-btn {
+      width: 100%; border-radius: 14px; padding: 14px 14px;
+      font-family: inherit; font-size: 16px; font-weight: 800; cursor: pointer;
+      border-style: solid; border-width: 2px 2px 5px 2px;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+    .home-btn:active { border-bottom-width: 2px; transform: translateY(2px); }
+    .home-new { background: #fef08a; color: #713f12; border-color: #ca8a04; }
+    .home-queue { background: #f3e2b8; color: #4a3208; border-color: #b8892a; }
+    .home-issued { background: #cfe8d4; color: #0d3a22; border-color: #3d7a52; }
+    .home-bad { background: #f0d4d4; color: #5c1212; border-color: #a34a4a; }
+    .home-pkg { background: #efe7f8; color: #3b2060; border-color: #6b4c9a; }
+    .home-revoked { background: #e2e8f0; color: #334155; border-color: #94a3b8; }
+    .home-btn .count { display: block; font-size: 12px; font-weight: 700; opacity: 0.9; margin-top: 4px; }
   </style>
   <div id="toast" class="toast"></div>
   <button id="back-fab" type="button" onclick="triggerAppBack()">بازگشت</button>
@@ -283,10 +299,57 @@
     </div>
   </section>
 
+  <section id="screen-home" class="screen">
+    <div class="top">
+      <div class="top-row">
+        <div>
+          <h1 id="home-title">صف استعلام قیمت</h1>
+          <div class="meta">وضعیت مورد نظر را انتخاب کنید</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <div class="date-badge" data-date-slot></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="home-btns">
+        <button class="home-btn home-new" type="button" onclick="openNew()">
+          درخواست استعلام جدید
+          <span class="count">ثبت فرم استعلام قیمت</span>
+        </button>
+        <button class="home-btn home-queue" type="button" onclick="openSalesCategory('در دست بررسی')">
+          در دست بررسی
+          <span class="count" id="count-queue">—</span>
+        </button>
+        <button class="home-btn home-issued" type="button" onclick="openSalesCategory('صادرشده')">
+          صادر شده
+          <span class="count" id="count-issued">—</span>
+        </button>
+        <button class="home-btn home-bad" type="button" onclick="openSalesCategory('در انتظار رفع مغایرت')">
+          در انتظار رفع مغایرت
+          <span class="count" id="count-bad">—</span>
+        </button>
+        <button class="home-btn home-pkg" type="button" onclick="openSalesPackages('home')">
+          پکیج‌ها
+          <span class="count">لیست قیمت صادرشده و فعال</span>
+        </button>
+        <button class="home-btn home-revoked" type="button" onclick="openSalesCategory('ابطال‌شده‌ها')">
+          ابطال‌شده‌ها
+          <span class="count" id="count-revoked">—</span>
+        </button>
+      </div>
+      <div class="notify-box" style="margin-top:16px;">
+        <button class="btn btn-ghost" type="button" onclick="enablePhoneNotify()" style="width:100%;">فعال‌سازی اعلان گوشی</button>
+        <div class="hint" id="notify-hint" style="text-align:center; margin-top:6px;"></div>
+      </div>
+    </div>
+  </section>
+
   <section id="screen-cards" class="screen">
     <div class="top">
       <div class="top-row">
         <div>
+          <button class="back" type="button" onclick="showSalesHome()">بازگشت</button>
           <h1 id="cards-title">درخواست‌ها</h1>
           <div class="meta">کارت‌های استعلام شما</div>
         </div>
@@ -297,30 +360,6 @@
       </div>
     </div>
     <div class="wrap">
-      <div class="sales-actions-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:14px;">
-        <button class="btn btn-gold" type="button" onclick="openNew()" style="grid-column: span 2;">درخواست استعلام جدید</button>
-        <button class="btn btn-ghost" type="button" onclick="openSalesPackages('cards')">لیست قیمت پکیج‌ها</button>
-        <button class="btn btn-ghost" type="button" onclick="enablePhoneNotify()">فعال‌سازی اعلان گوشی</button>
-      </div>
-
-      <div class="filter-tabs-scroll" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom:12px; scrollbar-width:none;">
-        <button class="filter-tab" type="button" data-filter="در انتظار رفع مغایرت" onclick="setSalesFilter('در انتظار رفع مغایرت')">
-          در انتظار رفع مغایرت <span id="cnt-discrepancy" class="tab-count">0</span>
-        </button>
-        <button class="filter-tab active" type="button" data-filter="در دست بررسی" onclick="setSalesFilter('در دست بررسی')">
-          در دست بررسی <span id="cnt-pending" class="tab-count">0</span>
-        </button>
-        <button class="filter-tab" type="button" data-filter="صادرشده" onclick="setSalesFilter('صادرشده')">
-          صادرشده <span id="cnt-issued" class="tab-count">0</span>
-        </button>
-        <button class="filter-tab" type="button" data-filter="ابطال‌شده‌ها" onclick="setSalesFilter('ابطال‌شده‌ها')">
-          ابطال‌شده‌ها <span id="cnt-revoked" class="tab-count">0</span>
-        </button>
-        <button class="filter-tab" type="button" data-filter="همه" onclick="setSalesFilter('همه')">
-          همه <span id="cnt-all" class="tab-count">0</span>
-        </button>
-      </div>
-      <div class="hint" id="notify-hint" style="text-align:center; margin-bottom:8px;"></div>
       <div id="cards" class="list"></div>
     </div>
   </section>
@@ -382,7 +421,7 @@
     </div>
   </section>
 
-  ﻿<script>
+  <script>
 /**
  * لایه سریع استعلام پرایس — فقط روی گوشی.
  * دادهٔ مشتری به سوپابیس نمی‌رود؛ صدور PDF و نوشتن فرم محاسبه همان مسیر شیت می‌ماند.
@@ -628,9 +667,15 @@
         if (sameCard(cards[i], p)) { found = cards[i]; break; }
       }
       if (p.statusAction === 'اتمام') return !!found;
-      if (p.statusAction === 'ناقص') {
+      if (p.statusAction === 'ناقص' || p.statusAction === 'مغایرت') {
         if (!found) return false;
-        return String(found.status || '').trim() !== 'ناقص';
+        var st = String(found.status || '').trim();
+        return st !== 'ناقص' && st !== 'مغایرت';
+      }
+      if (p.statusAction === 'ابطال' || p.statusAction === 'ابطال شد') {
+        if (!found) return false;
+        var st2 = String(found.status || '').trim();
+        return st2 !== 'ابطال' && st2 !== 'ابطال شد';
       }
       return true;
     });
@@ -931,7 +976,7 @@
       if (!fab) return;
       var active = document.querySelector('.screen.active');
       var id = active ? active.id : '';
-      if (id === 'screen-people' || id === 'screen-cards') {
+      if (id === 'screen-people' || id === 'screen-home') {
         fab.style.display = 'none';
       } else {
         fab.style.display = 'block';
@@ -942,8 +987,9 @@
       var active = document.querySelector('.screen.active');
       var id = active ? active.id : '';
       if (id === 'screen-packages') backFromSalesPackages();
+      else if (id === 'screen-cards') showSalesHome();
       else if (id === 'screen-form') showCards();
-      else showCards();
+      else showSalesHome();
     }
 
     function fillSelect(id, options, selected) {
@@ -1180,26 +1226,44 @@
       renderSalesCards(cardsWithPending(cached));
     }
 
+    function openSalesCategory(filterName) {
+      state.cardFilter = filterName;
+      document.getElementById('cards-title').textContent = filterName;
+      showCards();
+    }
+
+    function showSalesHome() {
+      setHeaderDates(todayJalali());
+      showScreen('screen-home');
+      var cached = pf() ? pf().readCards(state.salesperson) : [];
+      updateSalesFilterCounts(cardsWithPending(cached));
+      flushSubmitQueue();
+      silentRefreshCards();
+    }
+
     function updateSalesFilterCounts(allCards) {
       var counts = {
         'در دست بررسی': 0,
         'در انتظار رفع مغایرت': 0,
         'صادرشده': 0,
-        'ابطال‌شده‌ها': 0,
-        'همه': (allCards || []).length
+        'ابطال‌شده‌ها': 0
       };
       (allCards || []).forEach(function (c) {
         var norm = normalizeSalesStatus(c);
         if (counts[norm] !== undefined) counts[norm]++;
       });
-      document.getElementById('cnt-pending').textContent = counts['در دست بررسی'];
-      document.getElementById('cnt-discrepancy').textContent = counts['در انتظار رفع مغایرت'];
-      document.getElementById('cnt-issued').textContent = counts['صادرشده'];
-      document.getElementById('cnt-revoked').textContent = counts['ابطال‌شده‌ها'];
-      document.getElementById('cnt-all').textContent = counts['همه'];
 
-      var discTab = document.querySelector('.filter-tab[data-filter="در انتظار رفع مغایرت"]');
-      if (discTab) discTab.classList.toggle('has-items', counts['در انتظار رفع مغایرت'] > 0);
+      var qEl = document.getElementById('count-queue');
+      if (qEl) qEl.textContent = counts['در دست بررسی'] + ' مورد';
+
+      var iEl = document.getElementById('count-issued');
+      if (iEl) iEl.textContent = counts['صادرشده'] + ' مورد';
+
+      var bEl = document.getElementById('count-bad');
+      if (bEl) bEl.textContent = counts['در انتظار رفع مغایرت'] + ' مورد';
+
+      var rEl = document.getElementById('count-revoked');
+      if (rEl) rEl.textContent = counts['ابطال‌شده‌ها'] + ' مورد';
     }
 
     function renderSalesCards(allCards) {
@@ -1286,7 +1350,7 @@
     }
 
     function openSalesPackages(from) {
-      state.pkgBack = from === 'cards' ? 'cards' : 'people';
+      state.pkgBack = from === 'cards' ? 'cards' : (from === 'home' ? 'home' : 'people');
       setHeaderDates(todayJalali());
       showScreen('screen-packages');
       loadSalesPackages();
@@ -1294,6 +1358,7 @@
 
     function backFromSalesPackages() {
       if (state.pkgBack === 'cards' && state.salesperson) showCards();
+      else if (state.pkgBack === 'home' && state.salesperson) showSalesHome();
       else showPeople();
     }
 
@@ -1335,9 +1400,10 @@
     function pickPerson(name) {
       state.salesperson = name;
       if (window.ticketBoxSetReporter) ticketBoxSetReporter(name);
-      document.getElementById('cards-title').textContent = name;
+      var hTitle = document.getElementById('home-title');
+      if (hTitle) hTitle.textContent = 'صف استعلام قیمت — ' + name;
       document.getElementById('form-meta').textContent = name;
-      showCards();
+      showSalesHome();
       startNoticeWatch();
     }
 
