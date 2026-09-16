@@ -1,5 +1,5 @@
-/* Service Worker — PWA لیست قیمت — build 20260916114440 */
-var CACHE = "price-pwa-20260916114440";
+/* Service Worker — PWA لیست قیمت — build 20260916120226 */
+var CACHE = "price-pwa-20260916120226";
 var SHELL = ["./", "./index.html", "./sales.html", "./manifest.json", "./manifest-sales.json",
   "./assets/app-icon-180.png", "./assets/app-icon-192.png", "./assets/app-icon-512.png"];
 
