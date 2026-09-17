@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260917133153">
+  <meta name="x-build" content="20260917133822">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260917133153" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260917133822" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -91,8 +91,8 @@
       --green: #16a34a;
       --red: #dc2626;
       --muted: #64748b;
-      --line: #e2e8f0;
-      --bg: #f8fafc;
+      --line: #cbd5e1;
+      --bg: #f1f5f9;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -126,12 +126,25 @@
     .notify-box { text-align: center; margin-top: 14px; }
     .notify-box .hint { font-size: 12px; color: var(--muted); margin-top: 6px; font-weight: 700; }
     .wrap { padding: 16px; padding-bottom: 36px; }
-    .list { display: flex; flex-direction: column; gap: 10px; }
+    .list { display: flex; flex-direction: column; gap: 14px; }
     .card {
-      background: #fff; border: 1px solid var(--line); border-radius: 16px;
-      padding: 14px; text-align: right; cursor: pointer;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: right;
+      cursor: pointer;
+      box-shadow: 0 4px 14px -3px rgba(15, 23, 42, 0.08), 0 2px 5px -2px rgba(15, 23, 42, 0.04);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
     }
-    .card:active { background: #f1f5f9; }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px -4px rgba(15, 23, 42, 0.12), 0 4px 8px -3px rgba(15, 23, 42, 0.06);
+    }
+    .card:active {
+      transform: translateY(0);
+      background: #f8fafc;
+    }
     .who { font-size: 12px; color: var(--muted); font-weight: 700; }
     .name { font-size: 18px; font-weight: 800; margin: 6px 0; }
     .spec { color: var(--muted); font-size: 13px; line-height: 1.7; }
