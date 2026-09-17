@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260917133822">
+  <meta name="x-build" content="20260917134218">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260917133822" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260917134218" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -90,9 +90,9 @@
       --gold: #c9a227;
       --green: #16a34a;
       --red: #dc2626;
-      --muted: #64748b;
+      --muted: #475569;
       --line: #cbd5e1;
-      --bg: #f1f5f9;
+      --bg: #e2e8f0;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -126,28 +126,51 @@
     .notify-box { text-align: center; margin-top: 14px; }
     .notify-box .hint { font-size: 12px; color: var(--muted); margin-top: 6px; font-weight: 700; }
     .wrap { padding: 16px; padding-bottom: 36px; }
-    .list { display: flex; flex-direction: column; gap: 14px; }
+    .list { display: flex; flex-direction: column; gap: 16px; }
     .card {
       background: #ffffff;
-      border: 1px solid var(--line);
+      border: 1px solid #b4c6db;
+      border-right: 5px solid #1e3a8a;
       border-radius: 16px;
-      padding: 16px;
+      padding: 16px 18px;
       text-align: right;
       cursor: pointer;
-      box-shadow: 0 4px 14px -3px rgba(15, 23, 42, 0.08), 0 2px 5px -2px rgba(15, 23, 42, 0.04);
-      transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 4px 10px -3px rgba(15, 23, 42, 0.07);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 22px -4px rgba(15, 23, 42, 0.12), 0 4px 8px -3px rgba(15, 23, 42, 0.06);
+      transform: translateY(-3px);
+      border-color: #94a3b8;
+      border-right-color: #2563eb;
+      box-shadow: 0 16px 32px -6px rgba(15, 23, 42, 0.18), 0 6px 14px -4px rgba(15, 23, 42, 0.1);
     }
     .card:active {
       transform: translateY(0);
       background: #f8fafc;
     }
-    .who { font-size: 12px; color: var(--muted); font-weight: 700; }
-    .name { font-size: 18px; font-weight: 800; margin: 6px 0; }
-    .spec { color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .who {
+      font-size: 12px;
+      color: #334155;
+      font-weight: 700;
+      background: #f1f5f9;
+      padding: 3px 10px;
+      border-radius: 8px;
+      display: inline-block;
+      margin-bottom: 4px;
+      border: 1px solid #e2e8f0;
+    }
+    .name {
+      font-size: 19px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 6px 0 8px;
+    }
+    .spec {
+      color: #475569;
+      font-size: 13.5px;
+      line-height: 1.7;
+      font-weight: 500;
+    }
     .attach, .pdf-link { display: inline-block; margin-top: 8px; margin-left: 10px; font-size: 13px; font-weight: 700; color: #1d4ed8; }
     .empty { text-align: center; color: var(--muted); padding: 48px 12px; }
     .btn {
