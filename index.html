@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260920133848">
+  <meta name="x-build" content="20260920210723">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260920133848" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260920210723" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -528,6 +528,7 @@
         <button class="btn btn-ghost inquiry-only" id="finish" type="button" onclick="finishProcess()">اتمام فرایند</button>
         <button class="btn btn-bad inquiry-only" id="incomplete" type="button" onclick="showIncompleteOptions()">مغایرت</button>
         <button class="btn btn-bad inquiry-only" id="revoke-inquiry" type="button" onclick="markRevoked()">ابطال</button>
+        <button class="btn inquiry-only" id="reopen-inquiry" type="button" onclick="reopenCurrentCard()" style="background:#f59e0b; color:#fff; display:none;">اصلاح کردن</button>
         <button class="btn btn-main package-only" id="issue-base-prices" type="button" onclick="issueBasePricesFromPreview()">صدور لیست قیمت های پایه</button>
         <button class="btn btn-bad package-only" id="revoke-base-price" type="button" onclick="revokeBasePriceFromPreview()">ابطال</button>
       </div>
@@ -1350,13 +1351,17 @@
         var pdf = c.pdf1
           ? '<a class="pdf-link" href="' + escapeHtml(c.pdf1) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">لیست قیمت ۱</a>'
           : '';
+        var isIssued = (c.status === 'صادر شد' || c.status === 'صادر شده');
+        var reopenBtnHtml = isIssued
+          ? '<div style="margin-top:8px;"><button type="button" class="btn btn-sm" onclick="event.stopPropagation(); reopenCard(\'' + escapeHtml(c.salesperson) + '\', ' + c.row + ', \'' + escapeHtml(c.employer) + '\')" style="background:#f59e0b; color:#fff; border:none; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:700; cursor:pointer;">اصلاح کردن</button></div>'
+          : '';
         return '<div class="card">' +
           '<div class="who">' + escapeHtml(c.salesperson) + '</div>' +
           '<div class="name">' + escapeHtml(c.employer) + '</div>' +
           '<div class="spec">' + escapeHtml(c.system) + ' — ظرفیت ' + escapeHtml(c.caps) + ' — توقف ' + escapeHtml(c.stop) + '</div>' +
           cardDatesHtml(c) +
           (cleanNote(c.note) ? '<div class="spec">' + escapeHtml(cleanNote(c.note)) + '</div>' : '') +
-          attach + pdf +
+          attach + pdf + reopenBtnHtml +
           '</div>';
       }).join('');
       document.querySelectorAll('#list .card').forEach(function (el, i) {
@@ -1875,6 +1880,11 @@
       document.getElementById('profitPct').value = (data.totals && data.totals.profitPct) || '';
       setTotals(data.totals || {});
       renderPdfs(data.pdfs || []);
+      var reopenBtn = document.getElementById('reopen-inquiry');
+      if (reopenBtn) {
+        var isIssued = (data.status === 'صادر شد' || data.status === 'صادر شده');
+        reopenBtn.style.display = (!data.preview && isIssued) ? 'inline-block' : 'none';
+      }
 
       var box = document.getElementById('form-fields');
       box.innerHTML = '';
@@ -1991,12 +2001,53 @@
 
     function renderPdfs(pdfs) {
       var el = document.getElementById('pdfs');
-      var links = [];
+      var html = [];
       (pdfs || []).forEach(function (url, i) {
         if (!url) return;
-        links.push('<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener">لیست قیمت ' + (i + 1) + '</a>');
+        var idx = i + 1;
+        html.push(
+          '<span class="pdf-chip" style="display:inline-flex; align-items:center; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:4px 8px; margin:4px 4px; font-size:12px;">' +
+            '<button type="button" class="pdf-delete-btn" title="حذف این لیست قیمت" onclick="deletePdfItem(event, ' + idx + ')" style="background:none; border:none; color:#ef4444; font-weight:800; font-size:14px; cursor:pointer; margin-left:6px; padding:0 3px; line-height:1;">✕</button>' +
+            '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener" style="color:#1d4ed8; text-decoration:none; font-weight:700;">لیست قیمت ' + idx + '</a>' +
+          '</span>'
+        );
       });
-      el.innerHTML = links.length ? links.join(' | ') : '';
+      el.innerHTML = html.length ? html.join('') : '';
+    }
+
+    function deletePdfItem(e, pdfIndex) {
+      if (e) e.stopPropagation();
+      if (!confirm('آیا از حذف لیست قیمت ' + pdfIndex + ' مطمئن هستید؟')) return;
+      toast('در حال حذف لیست قیمت...');
+      runGas('removeInquiryPdf', { salesperson: state.salesperson, row: state.row, pdfIndex: pdfIndex })
+        .then(function (res) {
+          toast('لیست قیمت ' + pdfIndex + ' با موفقیت حذف شد');
+          if (res && res.pdfs) renderPdfs(res.pdfs);
+          loadInbox(true);
+        })
+        .catch(function (err) {
+          toast((err && err.message) || 'خطا در حذف لیست قیمت', true);
+        });
+    }
+
+    function reopenCurrentCard() {
+      reopenCard(state.salesperson, state.row, document.getElementById('employer').value);
+    }
+
+    function reopenCard(salesperson, row, employer) {
+      if (!confirm('آیا مایلید استعلام «' + (employer || '') + '» جهت اصلاح مجدداً به صف بررسی منتقل شود؟')) return;
+      toast('در حال انتقال به صف بررسی...');
+      runGas('reopenInquiryToQueue', { salesperson: salesperson, row: row })
+        .then(function () {
+          toast('کارت با موفقیت به صف بررسی بازگردانده شد');
+          loadInbox(true);
+          if (document.getElementById('screen-form').classList.contains('active')) {
+            goHome();
+          }
+        })
+        .catch(function (err) {
+          toast((err && err.message) || 'خطا در بازگرداندن کارت', true);
+        });
     }
 
     function setOutSheet(name) {
