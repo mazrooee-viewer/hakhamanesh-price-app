@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260921141029">
+  <meta name="x-build" content="20260921144209">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260921141029" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260921144209" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -226,6 +226,8 @@
       resize: vertical;
     }
     label { display: block; font-weight: 700; margin: 14px 0 6px; }
+    .req { color: var(--red); }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 6px; font-weight: 700; }
     input, select {
       width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 12px;
       font-family: inherit; font-size: 16px; background: #fff;
@@ -474,6 +476,9 @@
       <div class="inquiry-only">
       <label>نام کارفرما</label>
       <input id="employer" type="text">
+      <label>پکیج <span class="req">*</span></label>
+      <select id="inquiry-package" onchange="onInquiryPackageChange()"></select>
+      <div class="hint" style="text-align:center;margin-top:4px">با تغییر پکیج، همه فیلدهای فرم از روی همان پکیج از نو پر می‌شوند</div>
       </div>
 
       <div class="calc-table">
@@ -640,6 +645,7 @@
 (function (global) {
   var INBOX_KEY = 'priceInboxCache';
   var BOOT_KEY = 'priceBootstrapCache';
+  var ENGINE_KEY = 'priceEngineCache';
   var CARDS_PREFIX = 'priceSalesCards_';
   var SUBMIT_PREFIX = 'pricePendingSubmit_';
   var STATUS_KEY = 'pricePendingStatus';
@@ -690,6 +696,14 @@
 
   function writeBootstrap(data) {
     writeJson(BOOT_KEY, data || null);
+  }
+
+  function readEngine() {
+    return readJson(ENGINE_KEY, null);
+  }
+
+  function writeEngine(data) {
+    writeJson(ENGINE_KEY, data || null);
   }
 
   function cardsKey(name) {
@@ -752,6 +766,7 @@
       system: payload && payload.system,
       caps: payload && payload.caps,
       stop: payload && payload.stop,
+      packageName: payload && payload.packageName,
       extraNote: payload && payload.extraNote,
       status: 'در صف بررسی',
       sent: true,
@@ -910,6 +925,8 @@
     writeInbox: writeInbox,
     readBootstrap: readBootstrap,
     writeBootstrap: writeBootstrap,
+    readEngine: readEngine,
+    writeEngine: writeEngine,
     readCards: readCards,
     writeCards: writeCards,
     readSubmitQueue: readSubmitQueue,
@@ -955,6 +972,7 @@
       packageLists: [],
       packageIssuing: '',
       formMode: 'inquiry',
+      ignorePackageChange: false,
       profitTableRows: [],
       profitTableDirty: false,
       profitTableSaving: false,
@@ -1229,6 +1247,68 @@
       else showHome();
     }
 
+    function packageCatalogList() {
+      var fromEngine = state.engine && state.engine.packages;
+      var fromBoot = state.bootstrap && state.bootstrap.packages;
+      return fromEngine && fromEngine.length ? fromEngine : (fromBoot || []);
+    }
+
+    function findPackageStruct(name) {
+      var want = String(name || '').trim();
+      if (!want) return null;
+      var rows = packageCatalogList();
+      for (var i = 0; i < rows.length; i++) {
+        var pkg = rows[i];
+        if (pkg.packageName === want || pkg.displayName === want) return pkg;
+      }
+      return null;
+    }
+
+    function packageDisplayName(name) {
+      var pkg = findPackageStruct(name);
+      return (pkg && (pkg.displayName || pkg.packageName)) || name || '';
+    }
+
+    function fillPackageSelect(selected) {
+      var el = document.getElementById('inquiry-package');
+      if (!el) return;
+      state.ignorePackageChange = true;
+      var html = '<option value="">انتخاب پکیج</option>';
+      packageCatalogList().forEach(function (pkg) {
+        var val = pkg.packageName;
+        var label = pkg.displayName || pkg.packageName;
+        html += '<option value="' + escapeHtml(val) + '"' + (val === selected || label === selected ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+      });
+      el.innerHTML = html;
+      if (selected && !findPackageStruct(selected)) {
+        el.innerHTML = '<option value="' + escapeHtml(selected) + '" selected>' + escapeHtml(selected) + '</option>' + html;
+      }
+      state.ignorePackageChange = false;
+    }
+
+    function applyPackageStructure(name) {
+      var pkg = findPackageStruct(name);
+      if (!pkg || !state.bootstrap) return;
+      var values = pkg.values || {};
+      var b = state.bootstrap;
+      (b.fields || []).forEach(function (f) {
+        var opts = b.options[f.key] || [];
+        if (f.key === 'caps' && pkg.caps && pkg.caps.length) opts = pkg.caps;
+        fillSelect('f-' + f.key, opts, values[f.key] || '');
+      });
+      applySystemLists(values.system || '', values);
+      if (pkg.outSheet) setOutSheet(pkg.outSheet);
+      if (state.engine && state.formMode !== 'package') applyLocalCalc();
+      else applyPriceHighlight(values);
+    }
+
+    function onInquiryPackageChange() {
+      if (state.ignorePackageChange || state.formMode === 'package') return;
+      var name = document.getElementById('inquiry-package').value;
+      if (!name) return;
+      applyPackageStructure(name);
+    }
+
     function fillSelect(id, options, selected) {
       var el = document.getElementById(id);
       if (!el) return;
@@ -1406,7 +1486,7 @@
         return '<div class="card">' +
           '<div class="who">' + escapeHtml(c.salesperson) + '</div>' +
           '<div class="name">' + escapeHtml(c.employer) + '</div>' +
-          '<div class="spec">' + escapeHtml(c.system) + ' — ظرفیت ' + escapeHtml(c.caps) + ' — توقف ' + escapeHtml(c.stop) + '</div>' +
+          '<div class="spec">' + (c.packageName ? (escapeHtml(packageDisplayName(c.packageName)) + ' — ') : '') + escapeHtml(c.system) + ' — ظرفیت ' + escapeHtml(c.caps) + ' — توقف ' + escapeHtml(c.stop) + '</div>' +
           cardDatesHtml(c) +
           (cleanNote(c.note) ? '<div class="spec">' + escapeHtml(cleanNote(c.note)) + '</div>' : '') +
           attach + pdf + reopenBtnHtml +
@@ -1819,6 +1899,7 @@
         status: card.status || '',
         note: card.note || '',
         extraNote: card.extraNote || '',
+        packageName: card.packageName || (card.inquiry && card.inquiry.packageName) || '',
         date: card.date || '',
         values: card.inquiry.values,
         totals: {},
@@ -1829,7 +1910,7 @@
     }
 
     function inquiryFingerprint(d) {
-      return JSON.stringify([d.employer, d.values, d.note, d.extraNote, d.pdfs, d.attachment, d.status]);
+      return JSON.stringify([d.employer, d.values, d.note, d.extraNote, d.pdfs, d.attachment, d.status, d.packageName]);
     }
 
     function openPackagePreview(packageName) {
@@ -1917,6 +1998,7 @@
       document.getElementById('screen-form').classList.toggle('package-preview', !!data.preview);
       document.getElementById('form-back').textContent = data.preview ? 'بازگشت به پکیج‌ها' : 'بازگشت';
       document.getElementById('employer').value = data.employer || '';
+      fillPackageSelect(data.packageName || '');
       document.getElementById('form-title').textContent = data.preview
         ? ('پیش‌نمایش ' + (data.displayName || data.packageName || data.employer || ''))
         : (data.employer || 'فرم محاسبه');
@@ -1945,7 +2027,12 @@
           '</div>';
       });
       b.fields.forEach(function (f) {
-        fillSelect('f-' + f.key, b.options[f.key], (data.values && data.values[f.key]) || '');
+        var opts = b.options[f.key];
+        if (f.key === 'caps') {
+          var pkg = findPackageStruct(data.packageName || '');
+          if (pkg && pkg.caps && pkg.caps.length) opts = pkg.caps;
+        }
+        fillSelect('f-' + f.key, opts, (data.values && data.values[f.key]) || '');
       });
       state.lastPrices = data.prices || {};
       setPrices(data.prices || {});
@@ -2120,6 +2207,7 @@
         salesperson: state.salesperson,
         row: state.row,
         employer: document.getElementById('employer').value.trim(),
+        packageName: (document.getElementById('inquiry-package') && document.getElementById('inquiry-package').value) || '',
         outSheet: state.outSheet,
         profitPct: document.getElementById('profitPct').value,
         note: document.getElementById('manager-note').value,
@@ -2142,6 +2230,8 @@
 
     function issuePdf() {
       if (!state.outSheet) return toast('شیت لیست قیمت را انتخاب کنید', true);
+      var pkgEl = document.getElementById('inquiry-package');
+      if (!pkgEl || !String(pkgEl.value || '').trim()) return toast('پکیج را انتخاب کنید', true);
       if (state.issuing) return;
       state.issuing = true;
       var btn = document.getElementById('issue');
@@ -2348,15 +2438,18 @@
       if (!cachedBoot) toast((err && err.message) || 'بارگذاری گزینه‌ها انجام نشد', true);
     });
 
-    google.script.run
-      .withSuccessHandler(function (data) {
-        state.engine = data;
-        if (document.getElementById('screen-form').classList.contains('active')) applyLocalCalc();
-      })
-      .withFailureHandler(function (err) {
-        toast(err.message || 'جداول قیمت لود نشد', true);
-      })
-      .getPriceEngineData();
+    var cachedEngine = pf() && pf().readEngine ? pf().readEngine() : null;
+    if (cachedEngine) state.engine = cachedEngine;
+    runGas('getPriceEngineData').then(function (data) {
+      state.engine = data;
+      if (pf() && pf().writeEngine) pf().writeEngine(data);
+      if (document.getElementById('screen-form').classList.contains('active')) {
+        fillPackageSelect((document.getElementById('inquiry-package') && document.getElementById('inquiry-package').value) || '');
+        if (state.formMode !== 'package') applyLocalCalc();
+      }
+    }).catch(function (err) {
+      if (!cachedEngine) toast((err && err.message) || 'جداول قیمت لود نشد', true);
+    });
 
     var notifyWatch = 0;
     function notifyRole() { return 'manager'; }

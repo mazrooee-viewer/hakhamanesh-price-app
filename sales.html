@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260921141029">
+  <meta name="x-build" content="20260921144209">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260921141029" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260921144209" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -188,6 +188,34 @@
     textarea.note { min-height: 88px; resize: vertical; text-align: center; }
     .req { color: var(--red); }
     .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .calc-table {
+      background: #fff; border: 1px solid var(--line); border-radius: 16px;
+      overflow: hidden; margin-top: 16px;
+    }
+    .calc-head, .calc-row {
+      display: grid;
+      grid-template-columns: 1.4fr 0.9fr;
+      gap: 2px;
+      align-items: center;
+      padding: 3px 4px;
+    }
+    .calc-head {
+      background: var(--navy); color: #fff;
+      font-size: 12px; font-weight: 800;
+      text-align: center;
+    }
+    .calc-row { border-top: 1px solid var(--line); }
+    .calc-row:nth-child(odd) { background: #f8fafc; }
+    .calc-row .part {
+      font-size: 13px; font-weight: 700; line-height: 1.4;
+      text-align: center;
+    }
+    .calc-row select {
+      padding: 4px 6px; border-radius: 8px;
+      font-size: 12px;
+      text-align: center;
+      text-align-last: center;
+    }
     details {
       background: #fff; border: 1px solid var(--line); border-radius: 16px;
       padding: 12px 14px; margin-top: 16px;
@@ -396,19 +424,17 @@
       <label>نام کارفرما <span class="req">*</span></label>
       <input id="employer" type="text" placeholder="نام کارفرما را وارد کنید">
 
-      <label>نوع آسانسور <span class="req">*</span></label>
-      <select id="system"></select>
+      <label>پکیج <span class="req">*</span></label>
+      <select id="inquiry-package" onchange="onInquiryPackageChange()"></select>
+      <div class="hint">با انتخاب پکیج، فرم محاسبه فوری از روی همان پکیج پر می‌شود</div>
 
-      <label>ظرفیت <span class="req">*</span></label>
-      <select id="caps"></select>
-
-      <label>تعداد توقف <span class="req">*</span></label>
-      <select id="stop"></select>
-
-      <details>
-        <summary>سایر مشخصات (اختیاری — در غیر این صورت پیش‌فرض می‌ماند)</summary>
-        <div id="extra-fields"></div>
-      </details>
+      <div class="calc-table">
+        <div class="calc-head">
+          <span>ویژگی</span>
+          <span>اجزاء</span>
+        </div>
+        <div id="form-fields"></div>
+      </div>
 
       <label>پیوست فایل</label>
       <input id="file" type="file">
@@ -429,6 +455,7 @@
 (function (global) {
   var INBOX_KEY = 'priceInboxCache';
   var BOOT_KEY = 'priceBootstrapCache';
+  var ENGINE_KEY = 'priceEngineCache';
   var CARDS_PREFIX = 'priceSalesCards_';
   var SUBMIT_PREFIX = 'pricePendingSubmit_';
   var STATUS_KEY = 'pricePendingStatus';
@@ -479,6 +506,14 @@
 
   function writeBootstrap(data) {
     writeJson(BOOT_KEY, data || null);
+  }
+
+  function readEngine() {
+    return readJson(ENGINE_KEY, null);
+  }
+
+  function writeEngine(data) {
+    writeJson(ENGINE_KEY, data || null);
   }
 
   function cardsKey(name) {
@@ -541,6 +576,7 @@
       system: payload && payload.system,
       caps: payload && payload.caps,
       stop: payload && payload.stop,
+      packageName: payload && payload.packageName,
       extraNote: payload && payload.extraNote,
       status: 'در صف بررسی',
       sent: true,
@@ -699,6 +735,8 @@
     writeInbox: writeInbox,
     readBootstrap: readBootstrap,
     writeBootstrap: writeBootstrap,
+    readEngine: readEngine,
+    writeEngine: writeEngine,
     readCards: readCards,
     writeCards: writeCards,
     readSubmitQueue: readSubmitQueue,
@@ -965,8 +1003,8 @@
 </script>
   <script>
     var MAIN_KEYS = ['system', 'caps', 'stop'];
-    var HIDDEN_KEYS = ['installIron'];
-    var state = { salesperson: '', bootstrap: null, extraKeys: [], inflight: {}, editRow: 0, pendingDelete: 0, pkgBack: 'people' };
+    var HIDDEN_KEYS = [];
+    var state = { salesperson: '', bootstrap: null, engine: null, extraKeys: [], inflight: {}, editRow: 0, pendingDelete: 0, pkgBack: 'people', ignorePackageChange: false };
 
     function toast(msg, bad) {
       var el = document.getElementById('toast');
@@ -1199,6 +1237,9 @@
       if (pf()) pf().writeBootstrap(data);
       setHeaderDates(todayJalali());
       renderPeople(data);
+      if (document.getElementById('screen-form') && document.getElementById('screen-form').classList.contains('active')) {
+        fillPackageSelect((document.getElementById('inquiry-package') && document.getElementById('inquiry-package').value) || '');
+      }
     }
 
     state.cardFilter = state.cardFilter || 'در دست بررسی';
@@ -1323,7 +1364,7 @@
       box.innerHTML = bannerHtml + filteredCards.map(function (c) {
         var isBasePriceNote = (c.note || '').indexOf('صادر با قیمت پایه') >= 0;
         return '<div class="card"><div class="name">' + escapeHtml(c.employer) + '</div>' +
-          '<div class="spec">' + escapeHtml(c.system) + ' — ظرفیت ' + escapeHtml(c.caps) + ' — توقف ' + escapeHtml(c.stop) + '</div>' +
+          '<div class="spec">' + (c.packageName ? (escapeHtml(packageDisplayName(c.packageName)) + ' — ') : '') + escapeHtml(c.system) + ' — ظرفیت ' + escapeHtml(c.caps) + ' — توقف ' + escapeHtml(c.stop) + '</div>' +
           cardDatesHtml(c) +
           '<div style="margin-top:8px">' + salesBadgeHtml(c) + '</div>' +
           (c.extraNote ? '<div class="spec" style="margin-top:6px">' + escapeHtml(c.extraNote) + '</div>' : '') +
@@ -1517,49 +1558,108 @@
       document.getElementById('send').textContent = sendButtonLabel();
     }
 
-    function fillInquiryForm(selected) {
+    function packageCatalogList() {
+      var fromEngine = state.engine && state.engine.packages;
+      var fromBoot = state.bootstrap && state.bootstrap.packages;
+      return fromEngine && fromEngine.length ? fromEngine : (fromBoot || []);
+    }
+
+    function findPackageStruct(name) {
+      var want = String(name || '').trim();
+      if (!want) return null;
+      var rows = packageCatalogList();
+      for (var i = 0; i < rows.length; i++) {
+        var pkg = rows[i];
+        if (pkg.packageName === want || pkg.displayName === want) return pkg;
+      }
+      return null;
+    }
+
+    function packageDisplayName(name) {
+      var pkg = findPackageStruct(name);
+      return (pkg && (pkg.displayName || pkg.packageName)) || name || '';
+    }
+
+    function fillPackageSelect(selected) {
+      var el = document.getElementById('inquiry-package');
+      if (!el) return;
+      state.ignorePackageChange = true;
+      var html = '<option value="">انتخاب پکیج</option>';
+      packageCatalogList().forEach(function (pkg) {
+        var val = pkg.packageName;
+        var label = pkg.displayName || pkg.packageName;
+        html += '<option value="' + escapeHtml(val) + '"' + (val === selected || label === selected ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+      });
+      el.innerHTML = html;
+      if (selected && !findPackageStruct(selected)) {
+        el.innerHTML = '<option value="' + escapeHtml(selected) + '" selected>' + escapeHtml(selected) + '</option>' + html;
+      }
+      state.ignorePackageChange = false;
+    }
+
+    function applySystemLists(systemType, picked) {
+      var b = state.bootstrap || {};
+      var defaults = b.defaults || {};
+      picked = picked || {};
+      var motor = document.getElementById('f-motorType');
+      var panel = document.getElementById('f-panelType');
+      var motorBrand = document.getElementById('f-motorBrand');
+      var panelBrand = document.getElementById('f-panelBrand');
+      if (motor) fillSelect('f-motorType', b.options.motorType, picked.motorType || systemType);
+      if (panel) fillSelect('f-panelType', b.options.panelType, picked.panelType || systemType);
+      if (motorBrand) {
+        var motorBrands = (b.motorBrandsBySystem && b.motorBrandsBySystem[systemType]) || b.options.motorBrand || [];
+        var motorPref = picked.motorBrand || ((motorBrands.indexOf(defaults.motorBrand) >= 0) ? defaults.motorBrand : motorBrands[0]);
+        fillSelect('f-motorBrand', motorBrands, motorPref);
+      }
+      if (panelBrand) {
+        var panelBrands = (b.panelBrandsBySystem && b.panelBrandsBySystem[systemType]) || b.options.panelBrand || [];
+        var panelPref = picked.panelBrand || ((panelBrands.indexOf(defaults.panelBrand) >= 0) ? defaults.panelBrand : panelBrands[0]);
+        fillSelect('f-panelBrand', panelBrands, panelPref);
+      }
+    }
+
+    function applyPackageStructure(name) {
+      var pkg = findPackageStruct(name);
+      if (!pkg || !state.bootstrap) return;
+      fillInquiryForm(pkg.values || {}, pkg);
+    }
+
+    function onInquiryPackageChange() {
+      if (state.ignorePackageChange) return;
+      var name = document.getElementById('inquiry-package').value;
+      if (!name) return;
+      applyPackageStructure(name);
+    }
+
+    function fillInquiryForm(selected, pkgHint) {
       selected = selected || {};
       var b = state.bootstrap;
+      if (!b) return;
       var defaults = b.defaults || {};
-      fillSelect('system', b.options.system, selected.system || defaults.system);
-      fillSelect('caps', b.options.caps, selected.caps || defaults.caps);
-      fillSelect('stop', b.options.stop, selected.stop || defaults.stop);
-      var extra = document.getElementById('extra-fields');
-      extra.innerHTML = '';
+      var box = document.getElementById('form-fields');
+      box.innerHTML = '';
       state.extraKeys = [];
-      b.fields.forEach(function (f) {
-        if (MAIN_KEYS.indexOf(f.key) >= 0) return;
+      var pkg = pkgHint || findPackageStruct((document.getElementById('inquiry-package') && document.getElementById('inquiry-package').value) || '');
+      (b.fields || []).forEach(function (f) {
         if (HIDDEN_KEYS.indexOf(f.key) >= 0) return;
         state.extraKeys.push(f.key);
-        extra.innerHTML += '<label>' + escapeHtml(f.header) + '</label><select id="f-' + f.key + '"></select>';
+        box.innerHTML += '<div class="calc-row">' +
+          '<select id="f-' + f.key + '"></select>' +
+          '<div class="part">' + escapeHtml(f.header) + (f.required ? ' *' : '') + '</div>' +
+          '</div>';
       });
-      function applySystemLists(systemType, picked) {
-        picked = picked || {};
-        var motor = document.getElementById('f-motorType');
-        var panel = document.getElementById('f-panelType');
-        var motorBrand = document.getElementById('f-motorBrand');
-        var panelBrand = document.getElementById('f-panelBrand');
-        if (motor) fillSelect('f-motorType', b.options.motorType, picked.motorType || systemType);
-        if (panel) fillSelect('f-panelType', b.options.panelType, picked.panelType || systemType);
-        if (motorBrand) {
-          var motorBrands = (b.motorBrandsBySystem && b.motorBrandsBySystem[systemType]) || b.options.motorBrand || [];
-          var motorPref = picked.motorBrand || ((motorBrands.indexOf(defaults.motorBrand) >= 0) ? defaults.motorBrand : motorBrands[0]);
-          fillSelect('f-motorBrand', motorBrands, motorPref);
-        }
-        if (panelBrand) {
-          var panelBrands = (b.panelBrandsBySystem && b.panelBrandsBySystem[systemType]) || b.options.panelBrand || [];
-          var panelPref = picked.panelBrand || ((panelBrands.indexOf(defaults.panelBrand) >= 0) ? defaults.panelBrand : panelBrands[0]);
-          fillSelect('f-panelBrand', panelBrands, panelPref);
-        }
+      (b.fields || []).forEach(function (f) {
+        if (HIDDEN_KEYS.indexOf(f.key) >= 0) return;
+        var opts = b.options[f.key] || [];
+        if (f.key === 'caps' && pkg && pkg.caps && pkg.caps.length) opts = pkg.caps;
+        fillSelect('f-' + f.key, opts, selected[f.key] || '');
+      });
+      applySystemLists((document.getElementById('f-system') && document.getElementById('f-system').value) || selected.system || '', selected);
+      var sys = document.getElementById('f-system');
+      if (sys) {
+        sys.onchange = function () { applySystemLists(this.value, {}); };
       }
-      applySystemLists(document.getElementById('system').value, selected);
-      state.extraKeys.forEach(function (key) {
-        if (key === 'motorType' || key === 'panelType' || key === 'motorBrand' || key === 'panelBrand') return;
-        fillSelect('f-' + key, b.options[key], selected[key] || defaults[key]);
-      });
-      document.getElementById('system').onchange = function () {
-        applySystemLists(this.value, {});
-      };
     }
 
     function openNew() {
@@ -1568,7 +1668,8 @@
       document.getElementById('file').value = '';
       document.getElementById('extra-note').value = '';
       document.getElementById('attach-hint').textContent = 'اختیاری است. لینک فایل در ستون پیوست ذخیره می‌شود.';
-      fillInquiryForm(state.bootstrap.defaults || {});
+      fillPackageSelect('');
+      fillInquiryForm({});
       showScreen('screen-form');
     }
 
@@ -1589,9 +1690,8 @@
         document.getElementById('attach-hint').textContent = data.attachment
           ? 'پیوست فعلی حفظ می‌شود مگر فایل جدیدی انتخاب کنید.'
           : 'اختیاری است. لینک فایل در ستون پیوست ذخیره می‌شود.';
+        fillPackageSelect(data.packageName || (card && card.packageName) || '');
         fillInquiryForm(data.values || {});
-        var extraWrap = document.querySelector('#screen-form details');
-        if (extraWrap) extraWrap.open = true;
         showScreen('screen-form');
       }).catch(function (e) {
         toast((e && e.message) || 'بارگذاری استعلام انجام نشد', true);
@@ -1626,11 +1726,19 @@
 
     function readFormPayload() {
       var employer = document.getElementById('employer').value.trim();
-      var system = document.getElementById('system').value;
-      var caps = document.getElementById('caps').value;
-      var stop = document.getElementById('stop').value;
+      var packageName = document.getElementById('inquiry-package') ? document.getElementById('inquiry-package').value : '';
+      var systemEl = document.getElementById('f-system');
+      var capsEl = document.getElementById('f-caps');
+      var stopEl = document.getElementById('f-stop');
+      var system = systemEl ? systemEl.value : '';
+      var caps = capsEl ? capsEl.value : '';
+      var stop = stopEl ? stopEl.value : '';
       if (!employer) {
         toast('نام کارفرما را وارد کنید', true);
+        return null;
+      }
+      if (!packageName) {
+        toast('پکیج را انتخاب کنید', true);
         return null;
       }
       if (!system || !caps || !stop) {
@@ -1640,6 +1748,7 @@
       var payload = {
         salesperson: state.salesperson,
         employer: employer,
+        packageName: packageName,
         system: system,
         caps: caps,
         stop: stop,
@@ -1812,6 +1921,15 @@
     runGas('getSalesBootstrap').then(applyBootstrap).catch(function (err) {
       if (!cachedBoot) toast((err && err.message) || 'بارگذاری انجام نشد', true);
     });
+    var cachedEngine = pf() && pf().readEngine ? pf().readEngine() : null;
+    if (cachedEngine) state.engine = cachedEngine;
+    runGas('getPriceEngineData').then(function (data) {
+      state.engine = data;
+      if (pf() && pf().writeEngine) pf().writeEngine(data);
+      if (document.getElementById('screen-form') && document.getElementById('screen-form').classList.contains('active')) {
+        fillPackageSelect((document.getElementById('inquiry-package') && document.getElementById('inquiry-package').value) || '');
+      }
+    }).catch(function () {});
     setHeaderDates(todayJalali());
   </script>
   <script>window.__FAST_LAYER__={};</script>
