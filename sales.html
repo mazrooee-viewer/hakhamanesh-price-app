@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260921150323">
+  <meta name="x-build" content="20260921194439">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260921150323" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260921194439" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1042,6 +1042,27 @@
       else showSalesHome();
     }
 
+    function driveFolderHref(last) {
+      if (!last) return '';
+      var id = String(last.folderId || '').trim();
+      var url = String(last.folderUrl || '').trim();
+      var m = (id && /^[a-zA-Z0-9_-]{20,}$/.test(id) ? id : '') ||
+        ((url.match(/\/folders\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/) || [])[1] || '');
+      if (m) return 'https://drive.google.com/drive/folders/' + m + '?usp=sharing';
+      if (/^https:\/\/(drive|docs)\.google\.com\//i.test(url)) return url;
+      return '';
+    }
+
+    function openDriveLink(url, ev) {
+      if (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
+      if (!url) return false;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return false;
+    }
+
     function fillSelect(id, options, selected) {
       var el = document.getElementById(id);
       var opts = options || [];
@@ -1455,6 +1476,7 @@
         box.innerHTML = packages.map(function (pkg) {
           var last = pkg.lastIssue;
           var isArchived = !!pkg.archived;
+          var folder = !isArchived ? driveFolderHref(last) : '';
           return '<div class="card pkg-card' + (isArchived ? ' archived' : '') + '">' +
             '<div class="name">' + escapeHtml(pkg.displayName || pkg.packageName) + '</div>' +
             (last ? '<div class="pkg-meta">آخرین صدور: ' + escapeHtml(last.issueDate || '—') +
@@ -1463,8 +1485,8 @@
             (isArchived
               ? '<div class="pkg-badges"><span class="pkg-badge invalid">ابطال شد</span></div>'
               : '<div class="pkg-badges"><span class="pkg-badge active">فعال</span></div>') +
-            (last && last.folderUrl && !isArchived
-              ? '<a class="pdf-link" href="' + escapeHtml(last.folderUrl) + '" target="_blank" rel="noopener">مشاهده پوشه قیمت</a>'
+            (folder
+              ? '<a class="pdf-link" href="' + escapeHtml(folder) + '" target="_blank" rel="noopener noreferrer" onclick="return openDriveLink(this.href, event)">مشاهده پوشه قیمت</a>'
               : '') +
             '</div>';
         }).join('');
