@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260920210723">
+  <meta name="x-build" content="20260921141029">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260920210723" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260921141029" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -180,8 +180,46 @@
     .btn-ghost { background: #fff; color: var(--navy); border: 1px solid var(--line); }
     .btn:disabled { opacity: .55; cursor: default; }
     .actions { display: flex; gap: 8px; margin-top: 12px; }
-    .actions .btn { flex: 1; font-size: 13px; padding: 12px 8px; }
+    .actions .btn { flex: 1; font-size: 13px; padding: 12px 8px; text-align: center; }
     .btn-bad { background: #b91c1c; color: #fff; }
+    .form-dock { display: none; }
+    #screen-form.active .form-dock {
+      display: flex;
+      justify-content: center;
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      z-index: 60;
+      padding: 10px 76px calc(12px + env(safe-area-inset-bottom, 0px));
+      background: linear-gradient(to top, #e2e8f0 62%, rgba(226,232,240,0));
+      pointer-events: none;
+    }
+    #screen-form.active .form-dock .actions {
+      pointer-events: auto;
+      width: 100%;
+      max-width: 360px;
+      margin-top: 0;
+      justify-content: center;
+    }
+    #screen-form.active .wrap { padding-bottom: 108px; }
+    body:has(#screen-form.active) .toast { bottom: 96px; }
+    #screen-form.package-preview .form-dock .package-only { display: block; flex: 1; }
+    .more-panel {
+      display: none;
+      position: fixed;
+      left: 16px; right: 16px;
+      bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+      z-index: 75;
+      flex-direction: column;
+      gap: 10px;
+      background: #fff1f2;
+      padding: 15px;
+      border-radius: 12px;
+      border: 1px solid #fecdd3;
+      text-align: center;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+    .more-panel .btn { width: 100%; }
     textarea.note {
       width: 100%; min-height: 88px; padding: 12px; border: 1px solid var(--line);
       border-radius: 12px; font-family: inherit; font-size: 15px; background: #fff;
@@ -523,16 +561,23 @@
       <textarea id="manager-note" class="note" placeholder="نظر خود را بنویسید"></textarea>
       </div>
 
-      <div class="actions">
-        <button class="btn btn-main inquiry-only" id="issue" type="button" onclick="issuePdf()">صدور لیست قیمت</button>
-        <button class="btn btn-ghost inquiry-only" id="finish" type="button" onclick="finishProcess()">اتمام فرایند</button>
-        <button class="btn btn-bad inquiry-only" id="incomplete" type="button" onclick="showIncompleteOptions()">مغایرت</button>
-        <button class="btn btn-bad inquiry-only" id="revoke-inquiry" type="button" onclick="markRevoked()">ابطال</button>
-        <button class="btn inquiry-only" id="reopen-inquiry" type="button" onclick="reopenCurrentCard()" style="background:#f59e0b; color:#fff; display:none;">اصلاح کردن</button>
-        <button class="btn btn-main package-only" id="issue-base-prices" type="button" onclick="issueBasePricesFromPreview()">صدور لیست قیمت های پایه</button>
-        <button class="btn btn-bad package-only" id="revoke-base-price" type="button" onclick="revokeBasePriceFromPreview()">ابطال</button>
+      <div id="form-dock" class="form-dock">
+        <div class="actions" id="form-main-actions">
+          <button class="btn btn-main inquiry-only" id="issue" type="button" onclick="issuePdf()">صدور لیست قیمت</button>
+          <button class="btn btn-ghost inquiry-only" id="finish" type="button" onclick="finishProcess()">اتمام فرایند</button>
+          <button class="btn btn-ghost inquiry-only" id="more-actions" type="button" onclick="showMoreActions()">سایر</button>
+          <button class="btn btn-main package-only" id="issue-base-prices" type="button" onclick="issueBasePricesFromPreview()">صدور لیست قیمت های پایه</button>
+          <button class="btn btn-bad package-only" id="revoke-base-price" type="button" onclick="revokeBasePriceFromPreview()">ابطال</button>
+        </div>
       </div>
-      <div id="discrepancy-panel" style="display:none; flex-direction:column; gap:10px; margin-top:12px; background:#fff1f2; padding:15px; border-radius:12px; border:1px solid #fecdd3;" class="inquiry-only">
+      <div id="more-actions-panel" class="inquiry-only more-panel">
+        <div style="font-weight:700; text-align:center; font-size:14px; margin-bottom:5px; color:#be123c;">سایر عملیات</div>
+        <button class="btn" id="reopen-inquiry" type="button" onclick="reopenCurrentCard()" style="background:#f59e0b; color:#fff; display:none;">اصلاح کردن</button>
+        <button class="btn btn-bad" id="incomplete" type="button" onclick="showIncompleteOptions()">مغایرت</button>
+        <button class="btn btn-bad" id="revoke-inquiry" type="button" onclick="markRevoked()">ابطال</button>
+        <button class="btn btn-ghost" type="button" onclick="cancelMoreActions()" style="background:#fff; color:#333; border:1px solid #ddd;">انصراف</button>
+      </div>
+      <div id="discrepancy-panel" class="inquiry-only more-panel">
         <div style="font-weight:700; text-align:center; font-size:14px; margin-bottom:5px; color:#be123c;">دلیل مغایرت را انتخاب کنید:</div>
         <button class="btn btn-bad" type="button" onclick="submitIncompleteReason('مغایرت فرم محاسبه با توضیحات بازاریاب')">مغایرت فرم محاسبه با توضیحات بازاریاب</button>
         <button class="btn btn-bad" type="button" onclick="submitIncompleteReason('مغایرت پکیج انتخابی با موارد انتخاب‌‌شده در فرم محاسبه')">مغایرت پکیج انتخابی با موارد انتخاب‌‌شده در فرم محاسبه</button>
@@ -1159,6 +1204,9 @@
       document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); });
       document.getElementById(id).classList.add('active');
       window.scrollTo(0, 0);
+      if (id !== 'screen-form') {
+        resetFormDockPanels();
+      }
       updateBackFab();
     }
 
@@ -1861,6 +1909,7 @@
     document.getElementById('screen-form').addEventListener('change', function () { state.formDirty = true; });
 
     function fillInquiryForm(data) {
+      resetFormDockPanels();
       var b = state.bootstrap;
       state.attachment = data.attachment || '';
       state.formMode = data.preview ? 'package' : 'inquiry';
@@ -2192,19 +2241,46 @@
       sendStatusJob(job, 'finishInquiry');
     }
 
+    function setFormDockVisible(on) {
+      var dock = document.getElementById('form-dock');
+      if (dock) dock.style.display = on ? '' : 'none';
+    }
+
+    function resetFormDockPanels() {
+      var more = document.getElementById('more-actions-panel');
+      if (more) more.style.display = 'none';
+      var disc = document.getElementById('discrepancy-panel');
+      if (disc) disc.style.display = 'none';
+      setFormDockVisible(true);
+    }
+
+    function showMoreActions() {
+      if (state.issuing) return toast('صبر کنید تا صدور لیست قیمت تمام شود', true);
+      if (state.finishing) return;
+      setFormDockVisible(false);
+      var panel = document.getElementById('more-actions-panel');
+      if (panel) panel.style.display = 'flex';
+    }
+
+    function cancelMoreActions() {
+      var panel = document.getElementById('more-actions-panel');
+      if (panel) panel.style.display = 'none';
+      setFormDockVisible(true);
+    }
+
     function showIncompleteOptions() {
       if (state.issuing) return toast('صبر کنید تا صدور لیست قیمت تمام شود', true);
       if (state.finishing) return;
+      var more = document.getElementById('more-actions-panel');
+      if (more) more.style.display = 'none';
       document.getElementById('discrepancy-panel').style.display = 'flex';
-      var actionsEl = document.querySelector('#screen-form .actions');
-      if (actionsEl) actionsEl.style.display = 'none';
+      setFormDockVisible(false);
     }
 
     function cancelIncomplete() {
       var panel = document.getElementById('discrepancy-panel');
       if (panel) panel.style.display = 'none';
-      var actionsEl = document.querySelector('#screen-form .actions');
-      if (actionsEl) actionsEl.style.display = 'flex';
+      setFormDockVisible(true);
     }
 
     function submitIncompleteReason(reason) {
