@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260922132132">
+  <meta name="x-build" content="20260922185037">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260922132132" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260922185037" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1038,6 +1038,24 @@
       if (t.indexOf('MR') >= 0) return 1;
       return 0;
     }
+    function lookupUpsPrice(values, eng) {
+      if (!values || values.ups !== 'دارد') return 0;
+      var panel = String(values.panelBrand || '');
+      var key = '';
+      if (panel.indexOf('پارس') >= 0) key = 'پارس';
+      else if (panel.indexOf('آریان') >= 0) key = 'آریان';
+      if (!key) return 0;
+      var cap = String(parseInt(values.caps, 10) || '');
+      if (!cap || cap === 'NaN') return 0;
+      var rows = (eng && eng.upsRows) || [];
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        if (String(row.brand || '').trim() === key && String(parseInt(row.cap, 10)) === cap) {
+          return row.price || 0;
+        }
+      }
+      return 0;
+    }
     function computeLocalPrices(values) {
       var eng = state.engine;
       var prices = {};
@@ -1061,7 +1079,8 @@
       });
       prices.panelBrand = fmtPrice(panel && power ? (panel.prices[power] || 0) : 0);
 
-      prices.ups = values.ups === 'دارد' ? fmtPrice(eng.ups) : '';
+      var upsAmount = lookupUpsPrice(values, eng);
+      prices.ups = values.ups === 'دارد' ? (upsAmount ? fmtPrice(upsAmount) : '-') : '';
       prices.photocell = values.photocell === 'دارد' ? fmtPrice(eng.photocell) : '';
 
       var stops = parseNum(values.stop) || 0;
