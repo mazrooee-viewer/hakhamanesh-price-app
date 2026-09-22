@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260921201011">
+  <meta name="x-build" content="20260922121242">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260921201011" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260922121242" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1845,7 +1845,16 @@
       toast('تغییرات ذخیره شد');
       showCardsLocal();
       paintThen(function () {
-        runGas('updateSalespersonInquiry', payload).then(function () {
+        runGas('updateSalespersonInquiry', payload).then(function (res) {
+          if (res && res.revoked) {
+            applyLocalCardPatch(payload.row, {
+              status: 'ابطال شد',
+              sent: false,
+              note: res.message || ''
+            });
+            toast(res.message || 'استعلام به‌خاطر پکیج فعال ابطال شد');
+            showCardsLocal();
+          }
           silentRefreshCards();
         }).catch(function (e) {
           restoreLocalCard(prev);
@@ -1858,9 +1867,12 @@
       if (!job || state.inflight[job.id]) return;
       state.inflight[job.id] = true;
       var toSend = livePayload || job.payload;
-      runGas('submitInquiry', toSend).then(function () {
+      runGas('submitInquiry', toSend).then(function (res) {
         delete state.inflight[job.id];
         if (pf()) pf().dequeueSubmit(state.salesperson, job.id);
+        if (res && res.revoked) {
+          toast(res.message || 'استعلام به‌خاطر پکیج فعال ابطال شد');
+        }
         silentRefreshCards();
       }).catch(function (e) {
         delete state.inflight[job.id];
