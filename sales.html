@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260922185037">
+  <meta name="x-build" content="20260924114922">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","finishInquiry","markInquiryIncomplete","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   function call(fn, args) {
     return fetch(API, {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260922185037" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260924114922" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -300,6 +300,7 @@
     .home-queue { background: #f3e2b8; color: #4a3208; border-color: #b8892a; }
     .home-issued { background: #cfe8d4; color: #0d3a22; border-color: #3d7a52; }
     .home-bad { background: #f0d4d4; color: #5c1212; border-color: #a34a4a; }
+    .home-hold { background: #e2e8f0; color: #1e293b; border-color: #64748b; }
     .home-pkg { background: #efe7f8; color: #3b2060; border-color: #6b4c9a; }
     .home-revoked { background: #e2e8f0; color: #334155; border-color: #94a3b8; }
     .home-btn .count { display: block; font-size: 12px; font-weight: 700; opacity: 0.9; margin-top: 4px; }
@@ -356,6 +357,10 @@
         <button class="home-btn home-bad" type="button" onclick="openSalesCategory('در انتظار رفع مغایرت')">
           در انتظار رفع مغایرت
           <span class="count" id="count-bad">—</span>
+        </button>
+        <button class="home-btn home-hold" type="button" onclick="openSalesCategory('تعلیق شده')">
+          تعلیق شده
+          <span class="count" id="count-hold">—</span>
         </button>
         <button class="home-btn home-pkg" type="button" onclick="openSalesPackages('home')">
           پکیج‌ها
@@ -608,6 +613,7 @@
       var item = clone(c);
       item.status = status;
       item.sent = status === 'در صف بررسی';
+      if (status === 'تعلیق شده') item.sent = false;
       item.pendingSync = true;
       next.push(item);
     });
@@ -712,6 +718,14 @@
       var found = null;
       for (var i = 0; i < cards.length; i++) {
         if (sameCard(cards[i], p)) { found = cards[i]; break; }
+      }
+      if (p.statusAction === 'تعلیق') {
+        if (!found) return false;
+        return String(found.status || '').trim() !== 'تعلیق شده';
+      }
+      if (p.statusAction === 'بازگشت') {
+        if (!found) return false;
+        return String(found.status || '').trim() === 'تعلیق شده';
       }
       if (p.statusAction === 'اتمام') return !!found;
       if (p.statusAction === 'ناقص' || p.statusAction === 'مغایرت') {
@@ -1107,6 +1121,7 @@
 
     function canMutateCard(c) {
       if (!c || c.pendingSync) return false;
+      if (String(c.status || '').trim() === 'تعلیق شده') return false;
       if (String(c.row).indexOf('tmp-') === 0) return false;
       if (Number(c.row) < 2) return false;
       if (c.editable === false) return false;
@@ -1203,6 +1218,13 @@
         parts.push('<span class="date">تاریخ صدور: ' + escapeHtml(created) + '</span>');
         var s = String((c && c.status) || '').trim();
         if (!s && c.sent) s = 'در صف بررسی';
+        if (s === 'تعلیق شده') {
+          var holdLeft = Number(c.suspendUntil);
+          if (holdLeft) {
+            var remain = Math.ceil((holdLeft - Date.now()) / 86400000);
+            if (remain > 0) parts.push('<span class="date">تا ' + remain + ' روز دیگر در صف برمی‌گردد</span>');
+          }
+        }
         if (s === 'در صف بررسی') {
           var diff = daysSinceJalali(created);
           if (diff > 0) {
@@ -1269,6 +1291,7 @@
     function normalizeSalesStatus(c) {
       if (!c) return 'در دست بررسی';
       var s = String(c.status || '').trim();
+      if (s === 'تعلیق شده') return 'تعلیق شده';
       var note = String(c.note || '').trim();
       var extra = String(c.extraNote || '').trim();
       if (s === 'صادر شد' || s === 'صادر شده') return 'صادرشده';
@@ -1289,6 +1312,9 @@
       }
       if (norm === 'صادرشده') {
         return '<span class="badge" style="background:#dcfce7; color:#166534;">صادرشده</span>';
+      }
+      if (norm === 'تعلیق شده') {
+        return '<span class="badge" style="background:#e2e8f0; color:#1e293b; border:1px solid #94a3b8;">تعلیق شده</span>';
       }
       if (norm === 'ابطال‌شده‌ها') {
         return '<span class="badge" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;">ابطال‌شده</span>';
@@ -1328,7 +1354,8 @@
         'در دست بررسی': 0,
         'در انتظار رفع مغایرت': 0,
         'صادرشده': 0,
-        'ابطال‌شده‌ها': 0
+        'ابطال‌شده‌ها': 0,
+        'تعلیق شده': 0
       };
       (allCards || []).forEach(function (c) {
         var norm = normalizeSalesStatus(c);
@@ -1343,6 +1370,8 @@
 
       var bEl = document.getElementById('count-bad');
       if (bEl) bEl.textContent = counts['در انتظار رفع مغایرت'] + ' مورد';
+      var hEl = document.getElementById('count-hold');
+      if (hEl) hEl.textContent = counts['تعلیق شده'] + ' مورد';
 
       var rEl = document.getElementById('count-revoked');
       if (rEl) rEl.textContent = counts['ابطال‌شده‌ها'] + ' مورد';
@@ -1700,6 +1729,9 @@
       state.pendingDelete = 0;
       var card = findLocalCard(row);
       if (!canMutateCard(card || { row: row })) {
+        if (card && String(card.status || '').trim() === 'تعلیق شده') {
+          return toast('این استعلام تا پایان مدت تعلیق قابل ویرایش یا ارسال دوباره نیست', true);
+        }
         return toast('لیست قیمت این کارت صادر شده و قابل ویرایش نیست', true);
       }
       runGas('getSalespersonInquiry', state.salesperson, row).then(function (data) {
