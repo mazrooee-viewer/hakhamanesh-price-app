@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260924184854">
+  <meta name="x-build" content="20260925101819">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260924184854" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260925101819" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -742,6 +742,63 @@
     });
   }
 
+  function conditionNumber(value) {
+    var s = String(value == null ? '' : value);
+    s = s.replace(/[۰-۹]/g, function (d) { return String(d.charCodeAt(0) - 1776); });
+    var n = parseInt(s.replace(/[^\d]/g, ''), 10);
+    return isNaN(n) ? NaN : n;
+  }
+
+  function conditionFormKey(field) {
+    var raw = String(field || '').trim();
+    var key = raw.replace(/\s/g, '').toLowerCase();
+    var aliases = { door: 'doorSize', rail: 'requestedRail', caps: 'caps', capacity: 'caps', stop: 'stop' };
+    return aliases[key] || raw;
+  }
+
+  function conditionClauseMatches(clause, values) {
+    values = values || {};
+    var field = conditionFormKey(clause.field);
+    var current = values[field];
+    if ((current == null || current === '') && field === 'caps') current = values.capacity;
+    var left = conditionNumber(current);
+    var right = conditionNumber(clause.value);
+    var rightText = String(clause.value || '').replace(/\s/g, '');
+    if (!isNaN(left) && !isNaN(right) && /^\d+$/.test(rightText)) {
+      if (clause.op === '=>') return left >= right;
+      if (clause.op === '<=') return left <= right;
+      if (clause.op === '>') return left > right;
+      if (clause.op === '<') return left < right;
+      return left === right;
+    }
+    return String(current || '').replace(/\s/g, '') === rightText;
+  }
+
+  function conditionPatch(rules, values, packageName) {
+    var out = {};
+    var pkg = String(packageName || '').trim().toLowerCase();
+    (rules || []).forEach(function (rule) {
+      if (rule.scope && rule.scope !== 'all') {
+        var hit = false;
+        (rule.packages || []).forEach(function (name) {
+          if (String(name || '').trim().toLowerCase() === pkg) hit = true;
+        });
+        if (!hit) return;
+      }
+      var ok = (rule.ifs || []).every(function (c) { return conditionClauseMatches(c, values); });
+      if (!ok) return;
+      (rule.thens || []).forEach(function (t) {
+        var key = conditionFormKey(t.field);
+        if (!key || key === 'caps' || key === 'stop') return;
+        var val = String(t.value || '').trim();
+        if (key === 'doorSize' && val.indexOf('دولته') < 0 && /^\d+$/.test(val)) val += ' دولته';
+        if (key === 'requestedRail') val = val.replace(/(\d)([A-Za-z])/g, '$1 $2');
+        out[key] = val;
+      });
+    });
+    return out;
+  }
+
   global.PriceFast = {
     INBOX_KEY: INBOX_KEY,
     clone: clone,
@@ -769,6 +826,8 @@
     markPendingOnInbox: markPendingOnInbox,
     dropSyncedSubmit: dropSyncedSubmit,
     dropSyncedStatus: dropSyncedStatus,
+    conditionPatch: conditionPatch,
+    conditionFormKey: conditionFormKey,
     _memoryStore: memoryStore
   };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -1671,6 +1730,32 @@
       }
     }
 
+    function applySalesConditions(baseValues) {
+      if (!window.PriceFast || !PriceFast.conditionPatch || !state.bootstrap) return;
+      var rules = state.bootstrap.conditionRules || [];
+      var pkgName = (document.getElementById('inquiry-package') || {}).value || '';
+      var values = {};
+      (state.bootstrap.fields || []).forEach(function (f) {
+        var el = document.getElementById('f-' + f.key);
+        if (el) values[f.key] = el.value;
+      });
+      var pkg = findPackageStruct(pkgName);
+      var base = baseValues || (pkg && pkg.values) || {};
+      var patch = PriceFast.conditionPatch(rules, values, pkgName);
+      var keys = {};
+      rules.forEach(function (rule) {
+        (rule.thens || []).forEach(function (t) {
+          var k = PriceFast.conditionFormKey(t.field);
+          if (k) keys[k] = true;
+        });
+      });
+      Object.keys(keys).forEach(function (k) {
+        var val = Object.prototype.hasOwnProperty.call(patch, k) ? patch[k] : (base[k] || '');
+        var opts = (state.bootstrap.options && state.bootstrap.options[k]) || [];
+        if (document.getElementById('f-' + k)) fillSelect('f-' + k, opts, val);
+      });
+    }
+
     function applyPackageStructure(name) {
       var pkg = findPackageStruct(name);
       if (!pkg || !state.bootstrap) return;
@@ -1708,10 +1793,15 @@
         fillSelect('f-' + f.key, opts, selected[f.key] || '');
       });
       applySystemLists((document.getElementById('f-system') && document.getElementById('f-system').value) || selected.system || '', selected);
-      var sys = document.getElementById('f-system');
-      if (sys) {
-        sys.onchange = function () { applySystemLists(this.value, {}); };
-      }
+      applySalesConditions(selected);
+      (b.fields || []).forEach(function (f) {
+        var el = document.getElementById('f-' + f.key);
+        if (!el || HIDDEN_KEYS.indexOf(f.key) >= 0) return;
+        el.onchange = function () {
+          if (f.key === 'system') applySystemLists(this.value, {});
+          applySalesConditions();
+        };
+      });
     }
 
     function openNew() {
