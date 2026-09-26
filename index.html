@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260926202510">
+  <meta name="x-build" content="20260926204831">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260926202510" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260926204831" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1443,7 +1443,13 @@
       else applyPriceHighlight(values);
     }
 
+    function calcModeIsAuto() {
+      var mode = String((state.bootstrap && state.bootstrap.calcMode) || '').trim();
+      return mode.indexOf('اتومات') >= 0 && mode.indexOf('دستی') < 0;
+    }
+
     function applyConditionTable(packageName, baseValues) {
+      if (!calcModeIsAuto()) return;
       if (!window.PriceFast || !PriceFast.conditionPatch) return;
       var rules = (state.engine && state.engine.conditionRules) || (state.bootstrap && state.bootstrap.conditionRules) || [];
       var pkgName = packageName || ((document.getElementById('inquiry-package') || {}).value || '');
@@ -2240,6 +2246,11 @@
       setPrices(data.prices || {});
       applySystemLists(document.getElementById('f-system').value, data.values || {});
       bindPriceRecalc();
+      (b.fields || []).forEach(function (f) {
+        var el = document.getElementById('f-' + f.key);
+        if (el) el.disabled = calcModeIsAuto();
+      });
+      if (calcModeIsAuto()) applyConditionTable();
       setOutSheet(data.suggestedOutSheet || 'Traction');
       if (state.engine && !data.preview) applyLocalCalc();
       else applyPriceHighlight(data.values || {});
