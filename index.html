@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260926204831">
+  <meta name="x-build" content="20260926225939">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260926204831" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260926225939" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1125,6 +1125,22 @@
     function isHyd(values) {
       return motorKind(values).indexOf('هیدرولیک') >= 0;
     }
+    function carSlingForCabin(values, eng) {
+      var system = String((values && values.system) || '').trim();
+      var input = String((values && values.input) || '').trim();
+      if (system !== 'هیدرولیک' && input !== 'دو درب مجانب') return 0;
+      var want = system === 'هیدرولیک' ? 'هیدرولیک' : 'کششی';
+      var row = null;
+      ((eng && eng.carSlings) || []).some(function (s) {
+        if (eq(s.type, want)) { row = s; return true; }
+        return false;
+      });
+      if (!row || !row.prices) return 0;
+      var cap = String(values.caps == null ? '' : values.caps).trim();
+      if (row.prices[cap] != null) return row.prices[cap] || 0;
+      var n = String(parseInt(cap, 10));
+      return (n && n !== 'NaN' && row.prices[n]) || 0;
+    }
     function findMotor(values) {
       var list = (state.engine && state.engine.motors) || [];
       var type = motorKind(values);
@@ -1228,7 +1244,9 @@
         }
         return false;
       });
-      if (cabin) prices.cabin = fmtPrice(roundToman(cabin.prices[String(values.caps)] || 0));
+      var cabinAmount = cabin ? (cabin.prices[String(values.caps)] || 0) : 0;
+      var slingAmount = carSlingForCabin(values, eng);
+      if (cabin || slingAmount) prices.cabin = fmtPrice(roundToman(cabinAmount + slingAmount));
 
       var railSize = values.requestedRail === 'پیش فرض' ? (eng.railSizes[0] || '') : values.requestedRail;
       var rail = null;
