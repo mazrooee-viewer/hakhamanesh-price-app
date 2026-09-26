@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260926225939">
+  <meta name="x-build" content="20260926231424">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260926225939" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260926231424" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -490,8 +490,8 @@
       </div>
     </div>
     <div class="wrap">
+      <button class="btn btn-ghost" type="button" style="width:100%;margin-bottom:12px" onclick="reloadInboxFromSheet()">بازخوانی لیست</button>
       <div id="list" class="list"><div class="empty">در حال بارگذاری...</div></div>
-      <button class="btn btn-ghost" type="button" style="width:100%;margin-top:12px" onclick="loadInbox()">بازخوانی لیست</button>
     </div>
   </section>
 
@@ -2087,6 +2087,19 @@
         state.profitTableSaving = false;
         btn.textContent = 'ذخیره جدول سود';
         if (state.profitTableDirty) btn.disabled = false;
+      });
+    }
+
+    function reloadInboxFromSheet() {
+      var box = document.getElementById('list');
+      if (box) box.innerHTML = '<div class="empty">در حال بازخوانی از شیت...</div>';
+      runGas('getMazroueiInbox', true).then(function (cards) {
+        applyInbox(cards || [], true);
+        var n = cardsByFilter(state.filter).length;
+        toast('«' + (state.filter || 'لیست') + '» از شیت خوانده شد — ' + n + ' مورد');
+      }).catch(function (err) {
+        if (box) box.innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بازخوانی انجام نشد') + '</div>';
+        toast((err && err.message) || 'بازخوانی انجام نشد', true);
       });
     }
 
