@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260927103326">
+  <meta name="x-build" content="20260927104514">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260927103326" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260927104514" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1119,6 +1119,12 @@
     function eq(a, b) {
       return String(a || '').trim() === String(b || '').trim();
     }
+    function panelSheetModel(model) {
+      var m = String(model || '').trim();
+      if (m === 'AC2') return 'OPEN';
+      if (m === 'VVVF') return 'CLOSE';
+      return m;
+    }
     function motorKind(values) {
       return String(values.motorType || values.system || '');
     }
@@ -1207,8 +1213,9 @@
 
       var panel = null;
       var power = motor && motor.panel ? String(motor.panel).trim() : '';
+      var panelModel = panelSheetModel(values.model);
       (eng.panels || []).some(function (p) {
-        if (eq(p.brand, values.panelBrand) && eq(p.model, values.model) && eq(p.type, values.system || values.panelType)) {
+        if (eq(p.brand, values.panelBrand) && eq(p.model, panelModel) && eq(p.type, values.system || values.panelType)) {
           panel = p;
           return true;
         }
