@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <link rel="manifest" href="./manifest-all.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
+  <meta name="x-build" content="20260927103326">
+<script>
+/* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbycunrhs9C9vh-r7uVq7GEZvgjA_Iv1a-PZ9zaCEASLH3KGFIwhxHK2gGFMGiRbpxi3_g/exec) */
+(function () {
+  var API = "https://script.google.com/macros/s/AKfycbycunrhs9C9vh-r7uVq7GEZvgjA_Iv1a-PZ9zaCEASLH3KGFIwhxHK2gGFMGiRbpxi3_g/exec";
+  var FNS = ["previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
+  var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
+  function call(fn, args) {
+    return fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ fn: fn, args: args }),
+      redirect: "follow",
+      credentials: "omit"
+    }).then(function (r) { return r.text(); }).then(function (t) {
+      var o;
+      try { o = JSON.parse(t); } catch (e) { throw new Error("پاسخ نامعتبر سرور"); }
+      if (!o || !o.ok) throw new Error((o && o.error) || "خطای سرور");
+      return o.result;
+    });
+  }
+  function store(key, v) { try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), v: v })); } catch (e) {} }
+  function cachedCall(fn, args) {
+    var ttl = TTL[fn];
+    if (!ttl || (args && args.length)) return call(fn, args);
+    var key = "gasrpc:" + fn;
+    try {
+      var raw = localStorage.getItem(key);
+      if (raw) {
+        var o = JSON.parse(raw);
+        if (o && (Date.now() - o.t) < ttl) {
+          call(fn, args).then(function (r) { store(key, r); }).catch(function () {});
+          return Promise.resolve(o.v);
+        }
+      }
+    } catch (e) {}
+    return call(fn, args).then(function (r) { store(key, r); return r; });
+  }
+  function Runner() { this.ok = null; this.fail = null; this.user = undefined; }
+  Runner.prototype.withSuccessHandler = function (f) { this.ok = f; return this; };
+  Runner.prototype.withFailureHandler = function (f) { this.fail = f; return this; };
+  Runner.prototype.withUserObject = function (u) { this.user = u; return this; };
+  FNS.forEach(function (fn) {
+    Runner.prototype[fn] = function () {
+      var args = Array.prototype.slice.call(arguments);
+      var self = this;
+      cachedCall(fn, args).then(function (r) {
+        if (self.ok) self.ok(r, self.user);
+      }, function (e) {
+        if (self.fail) self.fail(e, self.user); else console.error(e);
+      });
+    };
+  });
+  var run = {};
+  ["withSuccessHandler", "withFailureHandler", "withUserObject"].concat(FNS).forEach(function (m) {
+    run[m] = function () { var r = new Runner(); return r[m].apply(r, arguments); };
+  });
+  window.google = window.google || {};
+  window.google.script = window.google.script || {};
+  window.google.script.run = run;
+  window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
+  window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260927103326" };
+  // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
+  cachedCall("getFastLayerConfig", []).then(function (cfg) {
+    if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
+  }).catch(function () {});
+})();
+</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>سامانه استخراج و تطبیق قیمت شیت All</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .pulse-dot {
+      animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse-ring {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+    /* ورودی فایل باید روی خود باکس باشد؛ display:none و click() برنامه‌ای در iframe اپ اسکریپت دیالوگ را باز نمی‌کند */
+    #dropZone {
+      position: relative;
+      overflow: hidden;
+    }
+    #fileInput {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      opacity: 0;
+      cursor: pointer;
+      font-size: 100px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50/80 text-slate-800 min-h-screen flex flex-col custom-scrollbar text-sm selection:bg-sky-100 selection:text-sky-900">
+
+  <!-- هدر بالای صفحه -->
+  <header class="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-200 shadow-xs">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="3" ry="3"></rect>
+            <polyline points="9 10 12 7 15 10"></polyline>
+            <polyline points="9 14 12 17 15 14"></polyline>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-black text-slate-900 text-base sm:text-lg">
+              سامانه استخراج و تطبیق قیمت شیت All
+            </h1>
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5">تطبیق خودکار موتورهای گیرلس و گیربکس (اعمال همزمان MR و MRL)، هیدرولیک، تابلو فرمانها و دربها</p>
+        </div>
+      </div>
+
+      <!-- دکمههای ناوبری تبها -->
+      <div class="flex items-center gap-2">
+        <button id="tabBtnWorkspace" onclick="switchMainTab('workspace')" class="px-4 py-2 text-xs font-bold bg-sky-600 text-white rounded-xl shadow-xs transition flex items-center gap-2">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          <span>میز کار و پیشنمایش</span>
+        </button>
+        <button id="tabBtnQuestions" onclick="switchMainTab('questions')" class="px-4 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200/70 text-slate-700 rounded-xl transition flex items-center gap-2 border border-slate-200">
+          <svg class="w-4 h-4 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>قوانین سیستم (۱۹ اصل مصوب)</span>
+          <span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-extrabold">۱۹ سوال</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- تب اصلی: میز کار و پیشنمایش -->
+  <main id="viewWorkspace" class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- ستون جدول پیشنمایش تطبیق شیت All -->
+    <section class="lg:col-span-8 flex flex-col gap-4 order-2 lg:order-1">
+
+      <div class="bg-white rounded-3xl p-4.5 border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span class="w-3 h-3 rounded-full bg-emerald-500 pulse-dot"></span>
+          <div>
+            <h3 id="tableTitle" class="text-xs sm:text-sm font-extrabold text-slate-900">شرکت پارس کنترل (اعتبار تا پایان شهریور ماه ۱۴۰۵)</h3>
+            <p id="tableSubtitle" class="text-[11px] sm:text-xs text-slate-500 mt-0.5">تابلو فرمان (درایوهای Uniqe, Hp mount, QMA, Stark و هیدرولیک Blain) | واحد پول: ریال</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="commitAllBtn" onclick="confirmTransferToAll()" disabled class="px-3.5 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>تایید انتقال به شیت All</span>
+          </button>
+          <button onclick="copyTableData()" class="px-3.5 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition flex items-center gap-1.5 border border-slate-200/60">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span>کپی جدول</span>
+          </button>
+          <button onclick="clearWorkspace()" class="px-3 py-2 text-xs font-medium text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            <span>پاکسازی</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- جدول پیشنمایش اقلام استخراجشده -->
+      <div class="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col">
+        <div class="p-3.5 bg-slate-50/60 border-b border-slate-100 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+            <span class="text-xs font-bold text-slate-700">جدول پیشنمایش استخراج و تطبیق با ستونهای شیت مرجع All</span>
+          </div>
+          <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] px-2.5 py-0.5 rounded-full font-bold">تطبیق هوشمند ستون L</span>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-right border-collapse">
+            <thead class="bg-slate-50/90 text-slate-700 font-bold border-b border-slate-200 sticky top-0 z-10 text-xs">
+              <tr>
+                <th class="p-3.5 text-center w-10 text-slate-400">#</th>
+                <th class="p-3.5">شرح قطعه در سند</th>
+                <th class="p-3.5">کلید داده کنترلی ستون L</th>
+                <th class="p-3.5 text-center">ردیف متناظر شیت All</th>
+                <th class="p-3.5 text-left">قیمت جدید (ریال)</th>
+                <th class="p-3.5 text-center w-24">ضریب اطمینان</th>
+                <th class="p-3.5 text-center w-36">وضعیت تطبیق</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-slate-100 text-xs text-slate-700">
+              <!-- رندر داینامیک -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="tableSummaryFooter" class="p-3.5 bg-slate-50/80 border-t border-slate-200 flex flex-wrap items-center justify-between text-xs text-slate-600">
+          <span id="summaryCount">تعداد اقلام سند: <b>۵ قلم</b></span>
+          <span id="summaryTotal">مجموع ارزش فاکتور: <b>۶,۳۶۸,۰۰۰,۰۰۰ ریال</b></span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- سایدبار امکانات و آزمایشگاه اسناد واقعی -->
+    <aside class="lg:col-span-4 flex flex-col gap-4 order-1 lg:order-2">
+
+      <!-- کارت دستهبندی قطعه -->
+      <div class="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex flex-col gap-3">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16m-7 6h7"/></svg>
+            <h2 class="text-xs sm:text-sm font-extrabold text-slate-800">نمونه آزمایشگاه</h2>
+          </div>
+          <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">فقط نمونه</span>
+        </div>
+        <div>
+          <select id="selectCategory" onchange="onCategorySelectChange()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 transition">
+            <option value="tablo" selected>تابلو فرمان آسانسور (آریان، پارس، آرکل)</option>
+            <option value="motors">موتور آسانسور (گیرلس، گیربکس، هیدرولیک)</option>
+            <option value="doors">درب طبقه و کابین (تمام اتوماتیک و نیمه)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- کارت آپلود و پیست آنی تصویر -->
+      <div class="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex flex-col gap-3.5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            <h2 class="text-xs sm:text-sm font-extrabold text-slate-800">استخراج آنی هوشمند (Gemini Vision)</h2>
+          </div>
+          <span class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-bold">پردازش با Ctrl+V</span>
+        </div>
+
+        <div id="dropZone" class="border-2 border-dashed border-indigo-200 hover:border-indigo-500 bg-indigo-50/20 hover:bg-indigo-50/50 rounded-2xl p-5 text-center cursor-pointer transition flex flex-col items-center justify-center gap-2.5 group">
+          <div class="pointer-events-none w-11 h-11 rounded-xl bg-white text-indigo-600 border border-indigo-200 shadow-xs flex items-center justify-center group-hover:scale-105 transition-transform">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <div class="pointer-events-none">
+            <p class="text-xs font-bold text-slate-800">انتخاب فایل یا عکس</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">کلیک کنید تا پنجرهٔ انتخاب باز شود، یا با Ctrl+V تصویر را بچسبانید</p>
+          </div>
+          <input type="file" id="fileInput" accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.bmp,.heic,.heif,.pdf" aria-label="انتخاب فایل یا عکس" onchange="handleFileSelect(event)">
+        </div>
+        <p id="filePickStatus" class="text-center text-[11px] font-bold text-emerald-700 min-h-[1.1rem]"></p>
+      </div>
+
+    </aside>
+
+  </main>
+
+  <!-- تب دوم: قوانین سیستم (۱۹ اصل مصوب) -->
+  <section id="viewQuestions" class="hidden flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex-col gap-6">
+
+    <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <div>
+          <h2 class="text-base sm:text-lg font-black text-slate-900">بانک سوالات چهارگزینهای تعیین قوانین تطبیق شیت مرجع All</h2>
+          <p class="text-xs text-slate-500 mt-0.5">۱۹ سوال کلیدی برای برطرف کردن کلیه ابهامات نگاشت، مالیات و مشخصات فنی</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="saveAllQuestionAnswers()" class="px-5 py-2.5 text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>ذخیره آرای مصوب قوانین</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- فیلتر دستهبندی سوالات -->
+    <div class="flex flex-wrap gap-2">
+      <button onclick="filterQuestionCategory('all')" class="q-filter-btn px-4 py-2 text-xs font-bold rounded-xl bg-slate-900 text-white transition">همه سوالات (۱۹ سوال)</button>
+      <button onclick="filterQuestionCategory('doors')" class="q-filter-btn px-4 py-2 text-xs font-bold rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">درب طبقه و کابین (۶ سوال)</button>
+      <button onclick="filterQuestionCategory('motors')" class="q-filter-btn px-4 py-2 text-xs font-bold rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">موتور آسانسور (۶ سوال)</button>
+      <button onclick="filterQuestionCategory('tablo')" class="q-filter-btn px-4 py-2 text-xs font-bold rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">تابلو فرمان (۴ سوال)</button>
+      <button onclick="filterQuestionCategory('general')" class="q-filter-btn px-4 py-2 text-xs font-bold rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">عمومی و مالیاتی (۳ سوال)</button>
+    </div>
+
+    <!-- کانتینر رندر سوالات ۴ گزینهای -->
+    <div id="questionsContainer" class="grid grid-cols-1 gap-5">
+      <!-- با جاوااسکریپت رندر میشود -->
+    </div>
+
+  </section>
+
+  <!-- مودال دسته بعد از آپلود -->
+  <div id="modalCategory" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200 flex flex-col gap-4 text-center">
+      <h3 class="font-black text-slate-900 text-sm sm:text-base">دسته‌بندی محصول را انتخاب کنید</h3>
+      <p class="text-xs text-slate-600 leading-relaxed">عکس انتخاب شد. قبل از خواندن، بگویید این کاتالوگ مربوط به کدام دسته است.</p>
+      <select id="modalCategorySelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 text-center">
+        <option value="doors" selected>درب طبقه و کابین</option>
+        <option value="motors">موتور آسانسور</option>
+        <option value="tablo">تابلو فرمان</option>
+      </select>
+      <div class="flex items-center justify-center gap-2.5 pt-2">
+        <button onclick="closeCategoryModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">انصراف</button>
+        <button onclick="confirmCategoryAndNext()" class="px-5 py-2.5 text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white rounded-xl transition">ادامه</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال استعلام برند درب -->
+  <div id="modalDoorBrand" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200 flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2">
+          <svg class="w-5 h-5 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span id="brandModalTitle">برند را انتخاب کنید</span>
+        </h3>
+        <button onclick="closeBrandModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-600 leading-relaxed">
+        برند این لیست را انتخاب کنید. اگر چند برند در یک عکس است، گزینهٔ ترکیبی را بزنید.
+      </p>
+
+      <div>
+        <label id="brandModalLabel" class="block text-xs font-bold text-slate-700 mb-1.5">برند را انتخاب نمایید:</label>
+        <select id="modalBrandSelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">
+          <option value="domestic" selected>گروه مارال / بیابانی / حریری / سیما تکسان / کهکشان</option>
+          <option value="selcom_it">سلکوم ایتالیا (Selcom Italy)</option>
+          <option value="selcom_tr">سلکوم ترکیه (Selcom Turkey)</option>
+          <option value="selcom_cn">سلکوم چین (Selcom China)</option>
+          <option value="fermator">فرماتور اسپانیا (Fermator)</option>
+          <option value="ebadat">کهکشان / عبادت (درب لولایی)</option>
+        </select>
+      </div>
+
+      <div class="flex items-center justify-end gap-2.5 pt-2">
+        <button onclick="closeBrandModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">انصراف</button>
+        <button onclick="confirmDoorBrandAndNext()" class="px-5 py-2.5 text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white rounded-xl shadow-xs transition flex items-center gap-1.5">
+          <span>مرحله بعد: استعلام مالیات</span>
+          <svg class="w-4 h-4 transform -scale-x-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال استعلام مالیات بر ارزش افزوده (۱۰٪) -->
+  <div id="modalTaxInquiry" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200 flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2">
+          <svg class="w-5 h-5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          استعلام مالیات بر ارزش افزوده (۱۰٪)
+        </h3>
+        <button onclick="closeTaxModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-600 leading-relaxed">
+        وضعیت ارقام سند را جهت درج در شیت مرجع مشخص فرمایید:
+      </p>
+
+      <div class="flex flex-col gap-2.5">
+        <label class="flex items-start gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
+          <input type="radio" name="taxOption" value="raw" checked class="mt-1 text-sky-600 focus:ring-sky-500">
+          <div>
+            <span class="block text-xs font-bold text-slate-800">عیناً در جدول پیش‌نمایش بیاید</span>
+            <span class="block text-[11px] text-slate-500 mt-0.5">همان قیمتی که در عکس خوانده شده، بدون تغییر.</span>
+          </div>
+        </label>
+
+        <label class="flex items-start gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
+          <input type="radio" name="taxOption" value="add" class="mt-1 text-sky-600 focus:ring-sky-500">
+          <div>
+            <span class="block text-xs font-bold text-slate-800">ده درصد به قیمت اضافه شود</span>
+            <span class="block text-[11px] text-slate-500 mt-0.5">قیمت عکس در ۱.۱۰ ضرب می‌شود و بعد در پیش‌نمایش می‌آید.</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="flex items-center justify-end gap-2.5 pt-2">
+        <button onclick="closeTaxModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">انصراف</button>
+        <button onclick="openCurrencyModal()" class="px-5 py-2.5 text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white rounded-xl shadow-xs transition flex items-center gap-1.5">
+          <span>مرحله بعد: واحد پول</span>
+          <svg class="w-4 h-4 transform -scale-x-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال واحد پول عکس -->
+  <div id="modalCurrency" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200 flex flex-col gap-4 text-center">
+      <h3 class="font-black text-slate-900 text-sm sm:text-base">واحد پول قیمت‌های عکس</h3>
+      <p class="text-xs text-slate-600 leading-relaxed">شیت All به ریال است. اگر عکس تومان باشد، هر قیمت در ۱۰ ضرب می‌شود.</p>
+      <div class="flex flex-col gap-2.5 text-right">
+        <label class="flex items-center justify-center gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
+          <input type="radio" name="moneyUnit" value="rial" checked class="text-sky-600 focus:ring-sky-500">
+          <span class="text-xs font-bold text-slate-800">قیمت ها بر اساس ریال هست</span>
+        </label>
+        <label class="flex items-center justify-center gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
+          <input type="radio" name="moneyUnit" value="toman" class="text-sky-600 focus:ring-sky-500">
+          <span class="text-xs font-bold text-slate-800">قیمت ها بر اساس تومان هست</span>
+        </label>
+      </div>
+      <div class="flex items-center justify-center gap-2.5 pt-2">
+        <button onclick="closeCurrencyModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">انصراف</button>
+        <button onclick="executeDoorExtractionWithRules()" class="px-5 py-2.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>نمایش در جدول پیش‌نمایش</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- توست اعلان -->
+  <div id="toastNotification" class="fixed bottom-6 left-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4.5 py-3 rounded-2xl shadow-xl border border-slate-700 flex items-center gap-2.5 transition-all duration-300 translate-y-16 opacity-0 pointer-events-none">
+    <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    <span id="toastMessage">عملیات با موفقیت انجام شد.</span>
+  </div>
+
+  <script>
+    // بانک سناریوهای واقعی ۲۱ گانه آزمایشگاه
+    const laboratoryScenarios = {
+      1: {
+        title: 'شرکت پارس کنترل (اعتبار تا پایان شهریور ماه ۱۴۰۵)',
+        subtitle: 'تابلو فرمان (درایوهای Uniqe, Hp mount, QMA, Stark و هیدرولیک Blain) | واحد پول: ریال',
+        cat: 'tablo',
+        items: [
+          { name: 'تابلو پارس Uniqe توان 7.5kW حلقه باز (open)', key: 'پارس /UNIQE VVVF/گیربکس 7.5', row: 'صفحه ۳۶ - ردیف ۲۳', price: 1158000000, conf: '100%' },
+          { name: 'تابلو پارس Uniqe توان 7.5kW حلقه بسته (close)', key: 'پارس /UNIQE VVVF/گیربکس 7.5', row: 'صفحه ۳۶ - ردیف ۲۳', price: 1295000000, conf: '100%' },
+          { name: 'تابلو پارس Hp mount توان 7.5kW حلقه بسته (close)', key: 'پارس HPMOUNTVVVF/7.5 گیربکس', row: 'صفحه ۳۵ - ردیف ۲۵', price: 1345000000, conf: '100%' },
+          { name: 'تابلو پارس Hp mount توان 11kW حلقه بسته (close)', key: 'پارس HPMOUNTVVVF/11 گیربکس', row: 'صفحه ۳۵ - ردیف ۲۶', price: 1480000000, conf: '100%' },
+          { name: 'تابلو هیدرولیک پارس کنترل 7.5kW شیر بلین', key: 'پارس کنترل / / VVVFهیدرولیک / 7.5', row: 'صفحه ۲۲ - ردیف ۲', price: 1090000000, conf: '100%' }
+        ]
+      },
+      7: {
+        title: 'کاتالوگ اورست کنترل (آرکل Arcode و Arcube)',
+        subtitle: 'تبدیل آمپر به توان و نگاشت به صفحات ۳۹ و ۴۰ شیت All',
+        cat: 'tablo',
+        items: [
+          { name: 'تابلو آرکل آرکد 14A/17A معادل 7.5kW گیربکس', key: 'ارکل ارکد / /VWFگیربکس 7.5', row: 'صفحه ۲۹ - ردیف ۱۹', price: 4350000000, conf: '100%' },
+          { name: 'تابلو آرکل آرکد 26A معادل 11kW گیربکس', key: 'ارکل ارکد / /VVVFگیربکس / 11', row: 'صفحه ۲۹ - ردیف ۲۰', price: 4850000000, conf: '100%' },
+          { name: 'تابلو آرکل آرکد 17A معادل 7.5kW مدل MRL', key: 'ارکل ارکد / /VVWF75/MRL', row: 'صفحه ۲۹ - ردیف ۲۴', price: 4650000000, conf: '100%' },
+          { name: 'تابلو آرکل آرکیوب 17A معادل 7.5kW گیربکس', key: 'ارکل آرکیوب / VVVF گیربکس / 7.5', row: 'صفحه ۲۹ - ردیف ۳۴', price: 3950000000, conf: '100%' }
+        ]
+      },
+      17: {
+        title: 'پارسیان آسانسور (نسخه اردیبهشت)',
+        subtitle: 'تفکیک ۳ حالته گیربکس، MR و MRL (اعمال همزمان به ردیفهای MR و MRL در شیت All)',
+        cat: 'motors',
+        items: [
+          { name: 'موتور بهران 6 نفره 1m/s گیربکس', key: 'تهران //61// VVVFگیربکس', row: 'صفحه ۱ - ردیف ۲', price: 295000000, conf: '100%' },
+          { name: 'موتور بهران 8 نفره 1m/s گیربکس', key: 'تهران / /81// WFگیربکس', row: 'صفحه ۱ - ردیف ۴', price: 340000000, conf: '100%' },
+          { 
+            name: 'موتور بهران 8 نفره 1m/s گیرلس', 
+            key: 'بهران / /81//MRVVVF', 
+            dualKeys: ['بهران / /81//MRVVVF', 'MRLVVVF//8/1/ بهران'],
+            row: 'صفحه ۳ - ردیف ۸ (MR) و ردیف ۹ (MRL)', 
+            dualRows: [
+              { type: 'MR', text: 'صفحه ۳ - ردیف ۸' },
+              { type: 'MRL', text: 'صفحه ۳ - ردیف ۹' }
+            ],
+            price: 460000000, 
+            conf: '100%' 
+          },
+          { 
+            name: 'موتور بهران 10 نفره 1m/s گیرلس', 
+            key: 'MR/VVVF/10/1 بهران', 
+            dualKeys: ['MR/VVVF/10/1 بهران', 'MRL/VVVF/10/1 / بهران'],
+            row: 'صفحه ۳ - ردیف ۱۲ (MR) و ردیف ۱۳ (MRL)', 
+            dualRows: [
+              { type: 'MR', text: 'صفحه ۳ - ردیف ۱۲' },
+              { type: 'MRL', text: 'صفحه ۳ - ردیف ۱۳' }
+            ],
+            price: 530000000, 
+            conf: '100%' 
+          }
+        ]
+      },
+      16: {
+        title: 'موتور گیرلس شیزی چین (تعلیق ۱به۱)',
+        subtitle: 'رمزگشایی اصطلاح «1:1» و تطبیق دوگانه ردیفهای MR و MRL',
+        cat: 'motors',
+        items: [
+          { name: 'موتور شیزی 6 نفره 1m/s تعلیق 1:1', key: '1:1/VVVF/6/1/شیری', row: 'صفحه ۶ - ردیف ۲۷', price: 310000000, conf: '100%' },
+          { name: 'موتور شیزی 8 نفره 1m/s تعلیق 1:1', key: ' : /VVVF/8/1/شیزی', row: 'صفحه ۹ - ردیف ۳', price: 370000000, conf: '100%' },
+          { 
+            name: 'موتور شیزی 10 نفره 1m/s گیرلس', 
+            key: 'MR/VVVF/10/1/شیری', 
+            dualKeys: ['MR/VVVF/10/1/شیری', 'MRL/VVVF/101//شیزی'],
+            row: 'صفحه ۶ - ردیف ۳ (MR) و صفحه ۹ - ردیف ۵ (MRL)', 
+            dualRows: [
+              { type: 'MR', text: 'صفحه ۶ - ردیف ۳' },
+              { type: 'MRL', text: 'صفحه ۹ - ردیف ۵' }
+            ],
+            price: 440000000, 
+            conf: '100%' 
+          },
+          { 
+            name: 'موتور شیزی 13 نفره 1m/s گیرلس', 
+            key: 'MRVVVF//13/1/شیری', 
+            dualKeys: ['MRVVVF//13/1/شیری', 'MRL/VVVF/131//'],
+            row: 'صفحه ۹ - ردیف ۱۰ (MR) و ردیف ۱۱ (MRL)', 
+            dualRows: [
+              { type: 'MR', text: 'صفحه ۹ - ردیف ۱۰' },
+              { type: 'MRL', text: 'صفحه ۹ - ردیف ۱۱' }
+            ],
+            price: 560000000, 
+            conf: '100%' 
+          }
+        ]
+      },
+      4: {
+        title: 'آریان تکنیک - لیست قیمت ادونس ARIS',
+        subtitle: 'تفکیک مدلهای اکونومی اپن/کلوز و ادونس آریس و آرپک',
+        cat: 'tablo',
+        items: [
+          { name: 'تابلو آریان ادونس ARIS توان 7.5kW گیربکس', key: 'ADVANCE آریان ARIS/VVVF/7.5 گیریکس', row: 'صفحه ۲۲ - ردیف ۲۷', price: 1910000000, conf: '100%' },
+          { name: 'تابلو آریان ادونس ARIS توان 11kW گیربکس', key: 'ADVANCE آریان ARIS/VVVF/11/ گیریکس', row: 'صفحه ۲۲ - ردیف ۲۸', price: 2140000000, conf: '100%' },
+          { name: 'تابلو آریان ادونس ARIS توان 7.5kW تعلیق 1:1', key: 'ADVANCE آریان  ARIS/VVVF/1:1/7.5', row: 'صفحه ۲۲ - ردیف ۳۲', price: 2050000000, conf: '100%' },
+          { name: 'تابلو آریان ادونس ARIS توان 11kW مدل MR', key: 'ADVANCE آریان ARIS/VVVF/MR/11', row: 'صفحه ۲۳ - ردیف ۲', price: 2280000000, conf: '100%' }
+        ]
+      },
+      8: {
+        title: 'کاتالوگ درب اتوماتیک صادراتی مارال پلاس (۱۴۰۵/۰۳/۱۶)',
+        subtitle: 'تطبیق تلسکوپی و سانترال ۲۰۰cm با کلید گروه مشترک داخلی',
+        cat: 'doors',
+        items: [
+          { name: 'درب طبقه تلسکوپی عرض ۷۰ (ارتفاع ۲۰۰)', key: 'درب طبقه مارال / بیابانی / حریری / سیما تکسان کهکشان تلسکویی // 70دولته', row: 'صفحه ۳۰ - ردیف ۳', price: 413000000, conf: '100%' },
+          { name: 'درب کابین تلسکوپی عرض ۷۰ (ارتفاع ۲۰۰)', key: 'درب کابین مارال / بیابانی / حریری / سیما تکسان کهکشان / تلسکوپی / / 70دولته', row: 'صفحه ۳۰ - ردیف ۴', price: 628000000, conf: '100%' },
+          { name: 'درب طبقه تلسکوپی عرض ۸۰ (ارتفاع ۲۰۰)', key: 'درب طبقه مارال / بیابانی / جریری / سیما تکسان کهکشان تلسکویی /80/ دولته', row: 'صفحه ۳۰ - ردیف ۵', price: 419000000, conf: '100%' },
+          { name: 'درب کابین تلسکوپی عرض ۸۰ (ارتفاع ۲۰۰)', key: 'درب کابین /مارال / بیابانی / حریری / سیما تکسان کهکشان / تلسکوپی / / 80 دولته', row: 'صفحه ۳۰ - ردیف ۶', price: 634000000, conf: '100%' },
+          { name: 'درب طبقه سانترال عرض ۸۰ (ارتفاع ۲۰۰)', key: 'درب طبقه مارال / بیابانی / خریری سیما تکسان کهکشان / سانترال /80/ دولته', row: 'صفحه ۳۰ - ردیف ۱۹', price: 419000000, conf: '100%' },
+          { name: 'درب کابین سانترال عرض ۸۰ (ارتفاع ۲۰۰)', key: 'درب کابین مارال / بیابانی / حریری / سیما تکسان کهکشان / سانترال / 80 / دولته', row: 'صفحه ۳۰ - ردیف ۲۰', price: 634000000, conf: '100%' }
+        ]
+      },
+      14: {
+        title: 'موتور گیرلس بلولایت (BlueLight)',
+        subtitle: 'ثبت همزمان و قطعی در هر دو ردیف MR و MRL در شیت All',
+        cat: 'motors',
+        items: [
+          { 
+            name: 'موتور بلولایت 8 نفره 1m/s گیرلس', 
+            key: 'MR/VVVF/8/1/BLUELIGHT', 
+            dualKeys: ['MR/VVVF/8/1/BLUELIGHT', 'MRL/VVVF/8/1/BLUELIGHT'],
+            row: 'صفحه ۹ - ردیف ۷ (MR) و صفحه ۶ - ردیف ۳۰ (MRL)', 
+            dualRows: [
+              { type: 'MR', text: 'صفحه ۹ - ردیف ۷' },
+              { type: 'MRL', text: 'صفحه ۶ - ردیف ۳۰' }
+            ],
+            price: 420000000, 
+            conf: '100%' 
+          },
+          { 
+            name: 'موتور بلولایت 10 نفره 1m/s گیرلس', 
+            key: 'MR/VVVF/10/1/BLUELIGHT', 
+            dualKeys: ['MR/VVVF/10/1/BLUELIGHT', 'MRL/VVVF/10/1/BLUELIGHT'],
+            row: 'صفحه ۶ - ردیف ۶ (MR) و ردیف ۱۳ (MRL)', 
+            dualRows: [
+              { type: 'MR', text: 'صفحه ۶ - ردیف ۶' },
+              { type: 'MRL', text: 'صفحه ۶ - ردیف ۱۳' }
+            ],
+            price: 540000000, 
+            conf: '100%' 
+          },
+          { 
+            name: 'موتور بلولایت 13 نفره 1m/s گیرلس', 
+            key: 'MRVVVF//13/1/BLUELIGHT', 
+            dualKeys: ['MRVVVF//13/1/BLUELIGHT', 'MRL/VVVF/13/1/BLUELIGHT'],
+            row: 'صفحه ۹ - ردیف ۱۳ (MR) و ردیف ۱۲ (MRL)', 
+            dualRows: [
+              { type: 'MR', text: 'صفحه ۹ - ردیف ۱۳' },
+              { type: 'MRL', text: 'صفحه ۹ - ردیف ۱۲' }
+            ],
+            price: 680000000, 
+            conf: '100%' 
+          },
+          { 
+            name: 'موتور بلولایت 6 نفره 1.6m/s گیرلس', 
+            key: 'MR/VVVF/6/1.6/BLUELIGHT', 
+            dualKeys: ['MR/VVVF/6/1.6/BLUELIGHT', 'MRL/VVVF/6/1.6/BLUELIGHT'],
+            row: 'صفحه ۱۵ - ردیف ۲۸ (MR) و صفحه ۱۴ - ردیف ۲۱ (MRL)', 
+            dualRows: [
+              { type: 'MR', text: 'صفحه ۱۵ - ردیف ۲۸' },
+              { type: 'MRL', text: 'صفحه ۱۴ - ردیف ۲۱' }
+            ],
+            price: 490000000, 
+            conf: '100%' 
+          }
+        ]
+      },
+      15: {
+        title: 'موتور گیرلس زیلابگ آلمان (SM200)',
+        subtitle: 'اعمال همزمان به هر دو ردیف MR و MRL در صفحات ۲ و ۴ شیت مرجع',
+        cat: 'motors',
+        items: [
+          { 
+            name: 'موتور زیلابگ 8 نفره 1m/s توان 4.8kW', 
+            key: 'زیلابگ / /81//MRVVVF', 
+            dualKeys: ['زیلابگ / /81//MRVVVF', 'زیلایک //81//MRLVVVF'],
+            row: 'صفحه ۲ - ردیف ۳۱ (MR) و ردیف ۳۲ (MRL)', 
+            dualRows: [
+              { type: 'MR', text: 'صفحه ۲ - ردیف ۳۱' },
+              { type: 'MRL', text: 'صفحه ۲ - ردیف ۳۲' }
+            ],
+            price: 790000000, 
+            conf: '100%' 
+          },
+          { 
+            name: 'موتور زیلابگ 8 نفره 1.6m/s توان 7.6kW', 
+            key: 'MR/VVVF/8/1/6/زیلایگ', 
+            dualKeys: ['MR/VVVF/8/1/6/زیلایگ', 'MRLVVVF//8/1.6 زیلابگ'],
+            row: 'صفحه ۲ - ردیف ۳۴ (MR) و ردیف ۳۳ (MRL)', 
+            dualRows: [
+              { type: 'MR', text: 'صفحه ۲ - ردیف ۳۴' },
+              { type: 'MRL', text: 'صفحه ۲ - ردیف ۳۳' }
+            ],
+            price: 890000000, 
+            conf: '100%' 
+          },
+          { 
+            name: 'موتور زیلابگ 10 نفره 1m/s توان 6kW', 
+            key: 'MRVVVF//10/1/ زیلایک', 
+            dualKeys: ['MRVVVF//10/1/ زیلایک', 'MRL/VVVF/10/1/زیلایگ'],
+            row: 'صفحه ۴ - ردیف ۳۰ (MR) و ردیف ۲۹ (MRL)', 
+            dualRows: [
+              { type: 'MR', text: 'صفحه ۴ - ردیف ۳۰' },
+              { type: 'MRL', text: 'صفحه ۴ - ردیف ۲۹' }
+            ],
+            price: 860000000, 
+            conf: '100%' 
+          }
+        ]
+      },
+      10: {
+        title: 'درب تمام اتوماتیک سلکوم ایتالیا (Selcom Italy)',
+        subtitle: 'تلسکوپی و سانترال عرض ۸۰ و ۹۰ صفحه ۳۱ شیت All',
+        cat: 'doors',
+        items: [
+          { name: 'درب طبقه سلکوم ایتالیا تلسکوپی عرض ۸۰', key: 'درب طبقه / سلکوم ایتالیا / تلسکوپی / / 80 دولته', row: 'صفحه ۳۱ - ردیف ۳', price: 1180000000, conf: '100%' },
+          { name: 'درب کابین سلکوم ایتالیا تلسکوپی عرض ۸۰', key: 'حرب كابين / سلکوم ایتالیا / تلسکوپی / 80/ دولته', row: 'صفحه ۳۱ - ردیف ۴', price: 1540000000, conf: '100%' },
+          { name: 'درب طبقه سلکوم ایتالیا سانترال عرض ۸۰', key: 'درب طبقه / سلکوم ایتالیا سانترال /80/ دولته', row: 'صفحه ۳۱ - ردیف ۷', price: 1220000000, conf: '100%' }
+        ]
+      },
+      11: {
+        title: 'درب فرماتور اسپانیا (Fermator Spain)',
+        subtitle: 'تمام اتوماتیک دولته صفحه ۳۱ شیت مرجع',
+        cat: 'doors',
+        items: [
+          { name: 'درب طبقه فرماتور اسپانیا تلسکوپی عرض ۸۰', key: 'درب طبقه / فرماتور اسپانیا تلسکوپی /80/ دولته', row: 'صفحه ۳۱ - ردیف ۱۷', price: 1050000000, conf: '100%' },
+          { name: 'درب کابین فرماتور اسپانیا تلسکوپی عرض ۸۰', key: 'درب کابین فرماتور اسپانیا تلسکوپی / / 80دولته', row: 'صفحه ۳۱ - ردیف ۱۸', price: 1420000000, conf: '100%' }
+        ]
+      },
+      21: {
+        title: 'موتورهای هیدرولیک شکیب و ویتور (صفحات ۱۱ تا ۲۰)',
+        subtitle: 'کدهای عددی سیلندر ۳۶۰۰ تا ۱۶۶۰۰',
+        cat: 'motors',
+        items: [
+          { name: 'موتور هیدرولیک شکیب 4 نفره کد 3600', key: 'شکیب ////4136002// VVVFهیدرولیک', row: 'صفحه ۱۱ - ردیف ۳۲', price: 380000000, conf: '100%' },
+          { name: 'موتور هیدرولیک شکیب 6 نفره کد 6600', key: 'شكيب ////6166003// VVVFهیدرولیک', row: 'صفحه ۱۲ - ردیف ۱۳', price: 490000000, conf: '100%' },
+          { name: 'موتور هیدرولیک ویتور 8 نفره کد 16600', key: 'ويتور / ///81166006// VVVF هیدرولیک', row: 'صفحه ۲۰ - ردیف ۲۵', price: 740000000, conf: '100%' }
+        ]
+      }
+    };
+
+    // بانک ۱۹ سوال سیستم
+    const systemQuestions = [
+      {
+        id: 1, cat: 'doors', title: 'ارتفاع مرجع برای قیمتگذاری دربها (طبقه و کابین)',
+        desc: 'در کاتالوگها ۴ ارتفاع (۲۰۰، ۲۱۰، ۲۲۰، ۲۳۰) وجود دارد، در حالی که شیت All ستون مجزای ارتفاع ندارد.',
+        status: 'مصوب', approvedOption: 'a',
+        options: [
+          { key: 'a', text: 'مبنا همواره و منحصراً ارتفاع ۲۰۰ سانتیمتر باشد و ستونهای مازاد در شیت All ثبت نشوند (مصوب شما).' },
+          { key: 'b', text: 'میانگین قیمت ۴ ارتفاع محاسبه و درج شود.' },
+          { key: 'c', text: 'برای هر ارتفاع یک ردیف جدید در شیت All ساخته شود.' },
+          { key: 'd', text: 'بیشترین قیمت (ارتفاع ۲۳۰) به عنوان مبنا درج گردد.' }
+        ]
+      },
+      {
+        id: 2, cat: 'doors', title: 'استعلام نام برند سازنده درب پیش از تطبیق',
+        desc: 'برخی فاکتورها نام کارخانه را در سربرگ ندارند و تنها مشخصات ابعادی را درج کردهاند.',
+        status: 'مصوب', approvedOption: 'a',
+        options: [
+          { key: 'a', text: 'همواره پیش از تشکیل جدول، نام برند سازنده از کاربر استعلام شود (مصوب شما).' },
+          { key: 'b', text: 'سیستم به صورت خودکار پیشفرض را روی گروه مشترک داخلی بگذارد.' },
+          { key: 'c', text: 'اگر برند مشخص نبود، کل سند رد شده و پردازش متوقف شود.' },
+          { key: 'd', text: 'بر اساس فونت و قالب کاتالوگ نام برند حدس زده شود.' }
+        ]
+      },
+      {
+        id: 3, cat: 'general', title: 'نحوه مدیریت مالیات بر ارزش افزوده (۱۰٪)',
+        desc: 'در کاتالوگهایی نظیر مارال درج شده «مبالغ با احتساب ۱۰٪ ارزش افزوده است».',
+        status: 'مصوب', approvedOption: 'a',
+        options: [
+          { key: 'a', text: 'سیستم نیاز به هیچ تشخیص هوشمندی نداشته باشد و فقط از کاربر سوال کند (خام یا تقسیم بر ۱.۱) (مصوب شما).' },
+          { key: 'b', text: 'سیستم خودکار متن را بخواند و اگر مالیات بود تقسیم بر ۱.۱ کند.' },
+          { key: 'c', text: 'تمام قیمتهای فاکتورها همیشه بدون دخل و تصرف عیناً در شیت بنشینند.' },
+          { key: 'd', text: 'همیشه ۱۰٪ به تمام فاکتورها اضافه شود.' }
+        ]
+      },
+      {
+        id: 4, cat: 'motors', title: 'برابری موتورهای MR (با موتورخانه) و MRL (بدون موتورخانه)',
+        desc: 'در استعلامها و کاتالوگها، ذات موتور گیرلس تفاوتی بین با و بدون موتورخانه ندارد.',
+        status: 'مصوب', approvedOption: 'a',
+        options: [
+          { key: 'a', text: 'برچسبهای MR و MRL در موتورها یکسان در نظر گرفته شده و مشخصات فنی ملاک است (مصوب شما).' },
+          { key: 'b', text: 'قیمت MRL همیشه ۵٪ گرانتر از MR در شیت All اعمال شود.' },
+          { key: 'c', text: 'تنها ردیف دقیق با برچسب یکسان در شیت All جستجو شود.' },
+          { key: 'd', text: 'همیشه اولویت با ردیفهای MR باشد.' }
+        ]
+      },
+      {
+        id: 5, cat: 'tablo', title: 'تطبیق سیستم تعلیق 1:1 در تابلو فرمانهای گیرلس',
+        desc: 'در مدلهای گیرلس، تعلیق ۱:۱ معمولاً برای آسانسورهای با موتورخانه به کار میرود.',
+        status: 'مصوب', approvedOption: 'a',
+        options: [
+          { key: 'a', text: 'مدلهای تعلیق 1:1 در تابلو فرمانها مستقیماً معادل مدلهای MR تطبیق یابند (مصوب شما).' },
+          { key: 'b', text: 'تعلیق 1:1 معادل مدلهای MRL در نظر گرفته شود.' },
+          { key: 'c', text: 'از کاربر در هر بار استعلام تعلیق تابلو سوال شود.' },
+          { key: 'd', text: 'تعلیق 1:1 نادیده گرفته شود.' }
+        ]
+      },
+      {
+        id: 6, cat: 'doors', title: 'عرضهای نامتعارف و فرد دربها (مانند ۸۵ و ۹۵ سانتیمتر)',
+        desc: 'در کاتالوگ مارال ردیفهای ۸۵ و ۹۵ دولته وجود دارد، اما شیت All ردیف فرد ندارد.',
+        status: 'در حال بررسی', approvedOption: 'b',
+        options: [
+          { key: 'a', text: 'عرضهای فرد به نزدیکترین عرض استاندارد بالاتر گرد شوند (مثلاً ۸۵ به ۹۰).' },
+          { key: 'b', text: 'چون در شیت ردیف معادل ندارند، نادیده گرفته شوند و ثبت نگردند (پیشفرض).' },
+          { key: 'c', text: 'سیستم برای این عرضها یک ردیف جدید در انتهای صفحه ۳۰ بسازد.' },
+          { key: 'd', text: 'در پیشنمایش به صورت ردیف زرد هشدار داده شود.' }
+        ]
+      },
+      {
+        id: 7, cat: 'doors', title: 'بیاثر بودن جهت بازشو دربها (راست یا چپ)',
+        desc: 'برخی فاکتورها جهت بازشو را R یا L قید میکنند.',
+        status: 'مصوب', approvedOption: 'a',
+        options: [
+          { key: 'a', text: 'جهت بازشو کاملاً بیاثر بوده و هر دو به یک ردیف واحد متناظر نگاشت شوند (مصوب).' },
+          { key: 'b', text: 'فقط اگر جهت بازشو مشخص نبود خطا صادر شود.' },
+          { key: 'c', text: 'جهت بازشو به عنوان توضیحات ذخیره شود.' },
+          { key: 'd', text: 'قیمت دربهای راستبازشو متفاوت ثبت شود.' }
+        ]
+      }
+    ];
+
+    let activeData = [];
+    let currentFilterCat = 'all';
+    let pickedFile = null;
+    let pendingCategory = '';
+    let previewItems = [];
+    let previewFromPhoto = false;
+
+    function switchMainTab(tab) {
+      const viewWork = document.getElementById('viewWorkspace');
+      const viewQues = document.getElementById('viewQuestions');
+      const btnWork = document.getElementById('tabBtnWorkspace');
+      const btnQues = document.getElementById('tabBtnQuestions');
+
+      if (tab === 'workspace') {
+        viewWork.classList.remove('hidden');
+        viewWork.classList.add('grid');
+        viewQues.classList.add('hidden');
+        viewQues.classList.remove('flex');
+
+        btnWork.className = 'px-4 py-2 text-xs font-bold bg-sky-600 text-white rounded-xl shadow-xs transition flex items-center gap-2';
+        btnQues.className = 'px-4 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200/70 text-slate-700 rounded-xl transition flex items-center gap-2 border border-slate-200';
+      } else {
+        viewWork.classList.add('hidden');
+        viewWork.classList.remove('grid');
+        viewQues.classList.remove('hidden');
+        viewQues.classList.add('flex');
+
+        btnQues.className = 'px-4 py-2 text-xs font-bold bg-sky-600 text-white rounded-xl shadow-xs transition flex items-center gap-2';
+        btnWork.className = 'px-4 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200/70 text-slate-700 rounded-xl transition flex items-center gap-2 border border-slate-200';
+        renderQuestions();
+      }
+    }
+
+    function renderQuestions() {
+      const container = document.getElementById('questionsContainer');
+      container.innerHTML = '';
+      const filtered = systemQuestions.filter(q => currentFilterCat === 'all' || q.cat === currentFilterCat);
+
+      filtered.forEach(q => {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-3xl p-5 border border-slate-200 shadow-xs flex flex-col gap-3.5';
+
+        const isApproved = q.status === 'مصوب';
+        const badgeColor = isApproved ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200';
+
+        let optionsHtml = '';
+        q.options.forEach(opt => {
+          const isSelected = q.approvedOption === opt.key;
+          optionsHtml += `
+            <label class="flex items-start gap-3 p-3 rounded-2xl border ${isSelected ? 'border-sky-500 bg-sky-50/50' : 'border-slate-200 hover:bg-slate-50'} cursor-pointer transition">
+              <input type="radio" name="q_${q.id}" value="${opt.key}" ${isSelected ? 'checked' : ''} onchange="setQuestionAnswer(${q.id}, '${opt.key}')" class="mt-1 text-sky-600 focus:ring-sky-500">
+              <div class="text-xs">
+                <span class="font-bold ${isSelected ? 'text-sky-900' : 'text-slate-800'}">${opt.key === 'a' ? 'الف) ' : opt.key === 'b' ? 'ب) ' : opt.key === 'c' ? 'ج) ' : 'د) '}${opt.text}</span>
+              </div>
+            </label>
+          `;
+        });
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+            <div class="flex items-center gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-extrabold text-xs flex items-center justify-center">${q.id}</span>
+              <h3 class="font-bold text-slate-900 text-xs sm:text-sm">${q.title}</h3>
+            </div>
+            <span class="text-[11px] px-2.5 py-0.5 rounded-full font-bold border ${badgeColor}">وضعیت: ${q.status}</span>
+          </div>
+          <p class="text-xs text-slate-500 leading-relaxed">${q.desc}</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+            ${optionsHtml}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filterQuestionCategory(cat) {
+      currentFilterCat = cat;
+      const buttons = document.querySelectorAll('.q-filter-btn');
+      buttons.forEach(b => {
+        b.className = 'q-filter-btn px-4 py-2 text-xs font-bold rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition';
+      });
+      event.currentTarget.className = 'q-filter-btn px-4 py-2 text-xs font-bold rounded-xl bg-slate-900 text-white transition';
+      renderQuestions();
+    }
+
+    function setQuestionAnswer(id, key) {
+      const q = systemQuestions.find(i => i.id === id);
+      if (q) {
+        q.approvedOption = key;
+        showNotification(`پاسخ سوال ${id} با موفقیت ثبت شد.`);
+      }
+    }
+
+    function saveAllQuestionAnswers() {
+      showNotification('تمامی قوانین مصوب با موفقیت در سیستم ذخیره شدند.');
+    }
+
+    function showNotification(msg) {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastMessage').innerText = msg;
+      toast.classList.remove('translate-y-16', 'opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('translate-y-16', 'opacity-0', 'pointer-events-none');
+      }, 3000);
+    }
+
+    function onCategorySelectChange() {
+      const val = document.getElementById('selectCategory').value;
+      if (val === 'doors') {
+        loadScenario(8);
+      } else if (val === 'motors') {
+        loadScenario(17);
+      } else {
+        loadScenario(1);
+      }
+    }
+
+    function loadScenario(id) {
+      const sc = laboratoryScenarios[id];
+      if (!sc) return;
+
+      document.getElementById('selectCategory').value = sc.cat;
+      document.getElementById('tableTitle').innerText = sc.title;
+      document.getElementById('tableSubtitle').innerText = sc.subtitle;
+      previewFromPhoto = false;
+
+      renderTable(sc.items);
+
+      document.querySelectorAll('.scenario-btn').forEach(b => {
+        b.classList.remove('border-sky-500', 'bg-sky-500', 'text-white');
+        b.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-800');
+      });
+      if (event && event.currentTarget && event.currentTarget.classList) {
+        event.currentTarget.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-800');
+        event.currentTarget.classList.add('border-sky-500', 'bg-sky-500', 'text-white');
+      }
+
+      showNotification(`سناریوی ${id} با موفقیت بارگذاری شد.`);
+    }
+
+    function renderTable(items) {
+      activeData = items;
+      previewItems = items || [];
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      let total = 0;
+      let dualCount = 0;
+
+      items.forEach((r, idx) => {
+        total += (r.price || 0);
+        if (r.dualRows && r.dualRows.length > 1) dualCount++;
+
+        // تولید ظاهر کلیدهای کنترلی ستون L (تکی یا دوگانه MR/MRL)
+        let keysHtml = '';
+        if (r.dualKeys && r.dualKeys.length > 1) {
+          keysHtml = `
+            <div class="flex flex-col gap-1 text-[11px]" dir="ltr">
+              <span class="text-sky-800 font-bold bg-sky-50 px-1.5 py-0.5 rounded border border-sky-100 flex items-center justify-between">
+                <span>${r.dualKeys[0]}</span>
+                <b class="text-[10px] text-sky-600 ml-1">MR</b>
+              </span>
+              <span class="text-purple-800 font-bold bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 flex items-center justify-between">
+                <span>${r.dualKeys[1]}</span>
+                <b class="text-[10px] text-purple-600 ml-1">MRL</b>
+              </span>
+            </div>
+          `;
+        } else {
+          keysHtml = `<span class="text-sky-700 font-bold" dir="ltr">${r.key}</span>`;
+        }
+
+        // تولید ظاهر ردیفهای متناظر شیت All (تکی یا دوگانه MR/MRL)
+        let rowsHtml = '';
+        if (r.dualRows && r.dualRows.length > 1) {
+          rowsHtml = `
+            <div class="flex flex-col gap-1 items-center">
+              <span class="inline-flex items-center gap-1 bg-sky-100 text-sky-800 border border-sky-200 px-2 py-0.5 rounded-md text-[11px] font-bold">
+                <span class="w-1.5 h-1.5 rounded-full bg-sky-600"></span>
+                <span>MR: ${r.dualRows[0].text}</span>
+              </span>
+              <span class="inline-flex items-center gap-1 bg-purple-100 text-purple-800 border border-purple-200 px-2 py-0.5 rounded-md text-[11px] font-bold">
+                <span class="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
+                <span>MRL: ${r.dualRows[1].text}</span>
+              </span>
+            </div>
+          `;
+        } else {
+          rowsHtml = `<span class="text-slate-600 font-semibold">${r.row}</span>`;
+        }
+
+        // تولید وضعیت تطبیق
+        let statusHtml = '';
+        if (r.dualRows && r.dualRows.length > 1) {
+          statusHtml = `
+            <span class="inline-flex items-center gap-1 bg-gradient-to-r from-sky-50 to-purple-50 text-sky-800 border border-sky-200 px-2 py-1 rounded-full text-[11px] font-extrabold shadow-xs">
+              <svg class="w-3.5 h-3.5 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              تطبیق دوگانه (MR+MRL)
+            </span>
+          `;
+        } else if (r.statusLabel) {
+          var tone = r.status === 'visible-only'
+            ? 'bg-amber-50 text-amber-800 border-amber-200'
+            : r.status === 'matched'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              : 'bg-sky-50 text-sky-800 border-sky-200';
+          statusHtml = `<span class="inline-flex items-center gap-1 ${tone} px-2 py-1 rounded-full text-[11px] font-extrabold">${r.statusLabel}</span>`;
+        } else {
+          statusHtml = `
+            <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-bold">
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              تطبیق قطعی
+            </span>
+          `;
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50/80 transition';
+        tr.innerHTML = `
+          <td class="p-3.5 text-center font-bold text-slate-400">${idx + 1}</td>
+          <td class="p-3.5 font-bold text-slate-800">
+            <div>${r.name}</div>
+            ${r.note ? `<div class="text-[10px] font-semibold text-slate-500 mt-0.5">${r.note}</div>` : ''}
+          </td>
+          <td class="p-3.5">${keysHtml}</td>
+          <td class="p-3.5 text-center">${rowsHtml}</td>
+          <td class="p-3.5 text-left font-black text-slate-900">${Number(r.price).toLocaleString('fa-IR')}</td>
+          <td class="p-3.5 text-center">
+            <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg text-xs font-black">${r.conf || '100%'}</span>
+          </td>
+          <td class="p-3.5 text-center">${statusHtml}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const totalTargetRows = items.length + dualCount;
+      const fromPhoto = items.some(function (row) { return row.statusLabel; });
+      document.getElementById('summaryCount').innerHTML = fromPhoto
+        ? `تعداد اقلام عکس: <b>${items.length} قلم</b> (همهٔ ردیف‌های عکس نشان داده می‌شوند)`
+        : `تعداد اقلام سند: <b>${items.length} قلم</b> | ردیفهای هدف در شیت All: <b class="text-sky-700">${totalTargetRows} ردیف</b> (شامل ${dualCount} ثبت دوگانه MR/MRL)`;
+      document.getElementById('summaryTotal').innerHTML = `مجموع ارزش فاکتور: <b>${total.toLocaleString('fa-IR')} ریال</b>`;
+      var commitBtn = document.getElementById('commitAllBtn');
+      if (commitBtn) {
+        var matched = previewFromPhoto ? previewItems.filter(function (row) { return row && row.status === 'matched' && row.key && row.price; }).length : 0;
+        commitBtn.disabled = matched === 0;
+        commitBtn.title = matched ? (matched + ' ردیف تطبیق‌شده منتقل می‌شود') : 'ردیف تطبیق‌شده‌ای نیست';
+      }
+    }
+
+    function confirmTransferToAll() {
+      var rows = (previewItems || []).filter(function (row) {
+        return row && row.status === 'matched' && row.key && row.price;
+      }).map(function (row) {
+        return { key: row.key, price: row.price, status: row.status };
+      });
+      if (!previewFromPhoto || !rows.length) {
+        showNotification('ردیف تطبیق‌شده‌ای برای انتقال نیست.');
+        return;
+      }
+      var btn = document.getElementById('commitAllBtn');
+      if (btn) btn.disabled = true;
+      var done = function (result) {
+        if (btn) btn.disabled = false;
+        if (!result || result.ok === false) {
+          showNotification((result && result.error) || 'انتقال انجام نشد.');
+          return;
+        }
+        showNotification(result.written + ' قیمت در شیت All نوشته شد. تاریخ: ' + (result.date || ''));
+      };
+      var fail = function (err) {
+        if (btn) btn.disabled = false;
+        showNotification((err && err.message) || 'انتقال انجام نشد.');
+      };
+      if (window.google && google.script && google.script.run) {
+        google.script.run.withSuccessHandler(done).withFailureHandler(fail)
+          .commitMatchedCatalogPrices(rows);
+        return;
+      }
+      fail(new Error('اتصال انتقال برقرار نیست.'));
+    }
+
+    function rememberPickedFile(file) {
+      if (!file) return;
+      pickedFile = file;
+      var status = document.getElementById('filePickStatus');
+      if (status) status.textContent = 'انتخاب شد: ' + file.name;
+    }
+
+    function handleFileSelect(e) {
+      if (e.target.files && e.target.files.length > 0) {
+        rememberPickedFile(e.target.files[0]);
+        triggerDoorOrDirect();
+      }
+    }
+
+    window.addEventListener('paste', function(e) {
+      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+      for (let item of items) {
+        if (item.kind === 'file') {
+          var file = item.getAsFile();
+          if (file) rememberPickedFile(file);
+          triggerDoorOrDirect();
+          break;
+        }
+      }
+    });
+
+    function openCategoryModal() {
+      if (!pickedFile) {
+        showNotification('اول عکس کاتالوگ را انتخاب کنید.');
+        return;
+      }
+      var modal = document.getElementById('modalCategory');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeCategoryModal() {
+      var modal = document.getElementById('modalCategory');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function confirmCategoryAndNext() {
+      pendingCategory = document.getElementById('modalCategorySelect').value || 'doors';
+      closeCategoryModal();
+      openBrandModal(pendingCategory);
+    }
+
+    function openBrandModal(category) {
+      var titles = { doors: 'برند درب را انتخاب کنید', motors: 'برند موتور را انتخاب کنید', tablo: 'برند تابلو فرمان را انتخاب کنید' };
+      document.getElementById('brandModalTitle').textContent = titles[category] || 'برند را انتخاب کنید';
+      var sel = document.getElementById('modalBrandSelect');
+      sel.innerHTML = '<option value="">در حال خواندن برندها...</option>';
+      var modal = document.getElementById('modalDoorBrand');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      var apply = function (list) {
+        sel.innerHTML = '';
+        (list || []).forEach(function (item) {
+          var opt = document.createElement('option');
+          opt.value = item.id;
+          opt.textContent = item.label;
+          sel.appendChild(opt);
+        });
+        if (!sel.options.length) {
+          var mixed = document.createElement('option');
+          mixed.value = 'mixed';
+          mixed.textContent = 'ترکیبی';
+          sel.appendChild(mixed);
+        }
+      };
+      if (window.google && google.script && google.script.run) {
+        google.script.run.withSuccessHandler(apply).withFailureHandler(function () {
+          apply([{ id: 'mixed', label: 'ترکیبی' }]);
+        }).listCatalogBrands(category);
+        return;
+      }
+      apply([{ id: 'mixed', label: 'ترکیبی' }]);
+    }
+
+    function triggerDoorOrDirect() {
+      openCategoryModal();
+    }
+
+    function closeBrandModal() {
+      document.getElementById('modalDoorBrand').classList.add('hidden');
+      document.getElementById('modalDoorBrand').classList.remove('flex');
+    }
+
+    function confirmDoorBrandAndNext() {
+      closeBrandModal();
+      document.getElementById('modalTaxInquiry').classList.remove('hidden');
+      document.getElementById('modalTaxInquiry').classList.add('flex');
+    }
+
+    function closeTaxModal() {
+      document.getElementById('modalTaxInquiry').classList.add('hidden');
+      document.getElementById('modalTaxInquiry').classList.remove('flex');
+    }
+
+    function openCurrencyModal() {
+      closeTaxModal();
+      var modal = document.getElementById('modalCurrency');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeCurrencyModal() {
+      var modal = document.getElementById('modalCurrency');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function executeDoorExtractionWithRules() {
+      const tax = document.querySelector('input[name="taxOption"]:checked');
+      const unit = document.querySelector('input[name="moneyUnit"]:checked');
+      const brandEl = document.getElementById('modalBrandSelect');
+      closeTaxModal();
+      closeCurrencyModal();
+      runPreviewExtraction({
+        category: pendingCategory || 'doors',
+        add: tax && tax.value === 'add',
+        toman: !!(unit && unit.value === 'toman'),
+        brand: brandEl ? brandEl.value : ''
+      });
+    }
+
+    function runPreviewExtraction(opts) {
+      if (!pickedFile) {
+        showNotification('عکسی برای استخراج انتخاب نشده است.');
+        return;
+      }
+      const category = opts.category || pendingCategory || 'doors';
+      document.getElementById('tableTitle').innerText = 'در حال خواندن همهٔ کالاهای عکس...';
+      document.getElementById('tableSubtitle').innerText = pickedFile.name;
+      previewFromPhoto = false;
+      renderTable([]);
+      const reader = new FileReader();
+      reader.onload = function() {
+        const dataUrl = String(reader.result || '');
+        const comma = dataUrl.indexOf(',');
+        const base64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
+        const mime = pickedFile.type || 'image/jpeg';
+        const payload = {
+          category: category,
+          add: !!opts.add,
+          toman: !!opts.toman,
+          brand: opts.brand || ''
+        };
+        const apply = function(result) {
+          if (!result || result.ok === false) {
+            fail({ message: (result && result.error) || 'استخراج عکس انجام نشد.' });
+            return;
+          }
+          const items = result.items || [];
+          document.getElementById('tableTitle').innerText = 'کالاهای داخل عکس (' + items.length + ' قلم)';
+          previewFromPhoto = true;
+          var moneyNote = opts.toman ? 'قیمت تومان بود و در ۱۰ ضرب شد تا ریال شیت شود. ' : '';
+          document.getElementById('tableSubtitle').innerText = moneyNote + (opts.add
+            ? 'پیش‌نمایش با ۱۰٪ اضافه. تا تأیید شما چیزی در شیت All نوشته نمی‌شود.'
+            : 'پیش‌نمایش با قیمت عین عکس. تا تأیید شما چیزی در شیت All نوشته نمی‌شود.');
+          renderTable(items);
+          showNotification(items.length + ' قلم از عکس در پیش‌نمایش آمد.');
+        };
+        const fail = function(err) {
+          var message = (err && err.message) || 'استخراج عکس انجام نشد.';
+          previewFromPhoto = false;
+          renderTable([]);
+          document.getElementById('tableTitle').innerText = 'استخراج عکس انجام نشد';
+          document.getElementById('tableSubtitle').innerText = message;
+          showNotification(message);
+        };
+        if (window.__previewCatalogStub) {
+          Promise.resolve(window.__previewCatalogStub(base64, mime, payload)).then(apply).catch(fail);
+          return;
+        }
+        if (window.google && google.script && google.script.run) {
+          google.script.run.withSuccessHandler(apply).withFailureHandler(fail)
+            .previewImageCatalog(base64, mime, payload);
+          return;
+        }
+        fail(new Error('اتصال استخراج برقرار نیست.'));
+      };
+      reader.onerror = function() {
+        showNotification('خواندن فایل عکس ناموفق بود.');
+      };
+      reader.readAsDataURL(pickedFile);
+    }
+
+    function clearWorkspace() {
+      pickedFile = null;
+      previewItems = [];
+      previewFromPhoto = false;
+      pendingCategory = '';
+      var commitBtn = document.getElementById('commitAllBtn');
+      if (commitBtn) commitBtn.disabled = true;
+      var status = document.getElementById('filePickStatus');
+      if (status) status.textContent = '';
+      var input = document.getElementById('fileInput');
+      if (input) input.value = '';
+      renderTable([]);
+      document.getElementById('tableTitle').innerText = 'جدول پاکسازی شد';
+      document.getElementById('tableSubtitle').innerText = 'آماده دریافت سند یا فاکتور جدید';
+    }
+
+    function copyTableData() {
+      if (!activeData.length) {
+        showNotification('جدول خالی است.');
+        return;
+      }
+      let txt = "ردیف\tشرح کالا\tکلید ستون L\tصفحه و ردیف شیت\tقیمت (ریال)\n";
+      activeData.forEach((r, i) => {
+        txt += `${i + 1}\t${r.name}\t${r.key}\t${r.row}\t${r.price}\n`;
+      });
+      const el = document.createElement('textarea');
+      el.value = txt;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      showNotification('اطلاعات جدول در کلیپبورد کپی گردید.');
+    }
+
+    // لود اولیه آرام بدون باز شدن خودکار هیچ پاپآپی
+    window.onload = function() {
+      loadScenario(1);
+    };
+  </script>
+<script>
+if ("serviceWorker" in navigator) {
+  (function () {
+    var hadController = !!navigator.serviceWorker.controller;
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("./sw.js").then(function (reg) {
+        // فوری بررسی نسخه جدید (مهم برای PWA standalone روی موبایل)
+        reg.update().catch(function () {});
+      }).catch(function () {});
+    });
+    // نسخهٔ جدید نصب شد → وقتی کاربر روی صفحهٔ اول است و فرمی باز نیست، یک‌بار بازخوانی تا پوستهٔ تازه بیاید
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (!hadController) { hadController = true; return; }
+      var tryReload = function () {
+        var home = document.getElementById("screen-home") || document.getElementById("screen-people");
+        var formOpen = document.querySelector(".screen.active") && !(home && home.classList.contains("active"));
+        if (formOpen) return false;
+        location.reload();
+        return true;
+      };
+      if (!tryReload()) { var iv = setInterval(function () { if (tryReload()) clearInterval(iv); }, 2000); }
+    });
+  })();
+}
+</script>
+</body>
+</html>
