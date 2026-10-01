@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20260930112838">
+  <meta name="x-build" content="20261001194604">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","issueCustomInquiry","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   function call(fn, args) {
     return fetch(API, {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20260930112838" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261001194604" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -349,6 +349,7 @@
     .home-issued { background: #cfe8d4; color: #0d3a22; border-color: #3d7a52; }
     .home-bad { background: #f0d4d4; color: #5c1212; border-color: #a34a4a; }
     .home-hold { background: #e2e8f0; color: #1e293b; border-color: #64748b; }
+    .home-custom { background: #dbeafe; color: #1e3a8a; border-color: #2563eb; }
     .home-short { background: #d7e4f2; color: #16324d; border-color: #3d6a8a; }
     .home-pkg { background: #efe7f8; color: #3b2060; border-color: #6b4c9a; }
     .pkg-card { cursor: pointer; text-align: center; }
@@ -452,6 +453,10 @@
           تعلیق شده
           <span class="count" id="count-hold">—</span>
         </button>
+        <button class="home-btn home-custom" type="button" onclick="openCustomInquiry()">
+          استعلام دلخواه
+          <span class="count" id="count-custom">—</span>
+        </button>
 
         <button class="home-btn home-short" type="button" onclick="openShortPath()">
           مسیر کوتاه
@@ -513,6 +518,10 @@
       <label>پکیج <span class="req">*</span></label>
       <select id="inquiry-package" onchange="onInquiryPackageChange()"></select>
       <div class="hint" style="text-align:center;margin-top:4px">با تغییر پکیج، همه فیلدهای فرم از روی همان پکیج از نو پر می‌شوند</div>
+      <div id="custom-dest-wrap" style="display:none">
+        <label>مقصد استعلام</label>
+        <select id="custom-dest"></select>
+      </div>
       </div>
 
       <div class="calc-table">
@@ -1636,6 +1645,7 @@
       if (s === 'ابطال' || s === 'ابطال شد') return 'ابطال شد';
       if (s === 'ناقص' || s === 'مغایرت') return 'مغایرت';
       if (s === 'تعلیق شده') return 'تعلیق شده';
+      if (s === 'استعلام دلخواه') return 'استعلام دلخواه';
       return 'در صف بررسی';
     }
 
@@ -1650,11 +1660,14 @@
       var i = cardsByFilter('صادر شده').length;
       var b = cardsByFilter('مغایرت').length;
       var h = cardsByFilter('تعلیق شده').length;
+      var custom = cardsByFilter('استعلام دلخواه').length;
       document.getElementById('count-queue').textContent = q + ' مورد';
       document.getElementById('count-issued').textContent = i + ' مورد';
       document.getElementById('count-bad').textContent = b + ' مورد';
       var holdEl = document.getElementById('count-hold');
       if (holdEl) holdEl.textContent = h + ' مورد';
+      var customEl = document.getElementById('count-custom');
+      if (customEl) customEl.textContent = custom + ' مورد';
     }
 
     function renderInboxList() {
@@ -2191,6 +2204,7 @@
 
     function openCard(card) {
       if (!state.bootstrap) return toast('گزینه‌های فرم هنوز بارگذاری نشده', true);
+      state.customNew = false;
       if (typeof cancelIncomplete === 'function') cancelIncomplete();
       state.formMode = 'inquiry';
       state.previewPackageName = '';
@@ -2239,12 +2253,16 @@
       document.getElementById('form-back').textContent = data.preview ? 'بازگشت به پکیج‌ها' : 'بازگشت';
       document.getElementById('employer').value = data.employer || '';
       fillPackageSelect(data.packageName || '');
-      document.getElementById('form-title').textContent = data.preview
+      document.getElementById('form-title').textContent = data.customNew
+        ? 'استعلام دلخواه'
+        : (data.preview
         ? ('پیش‌نمایش ' + (data.displayName || data.packageName || data.employer || ''))
-        : (data.employer || 'فرم محاسبه');
-      document.getElementById('form-meta').textContent = data.preview
+        : (data.employer || 'فرم محاسبه'));
+      document.getElementById('form-meta').textContent = data.customNew
+        ? 'پکیج را انتخاب کنید تا ساختار فرم از کش مرورگر پر شود'
+        : (data.preview
         ? 'حالت دستی فرم محاسبه — همگام با جدول پکیج Data_Offers'
-        : data.salesperson;
+        : data.salesperson);
       setHeaderDates(cardDate(data));
       document.getElementById('sales-extra-note').value = data.extraNote || '';
       setManagerNoteValue(data.note);
@@ -2257,8 +2275,15 @@
         reopenBtn.style.display = (!data.preview && isIssued) ? 'inline-block' : 'none';
       }
       state.cardStatus = data.status || '';
+      state.customNew = !!data.customNew;
+      var destWrap = document.getElementById('custom-dest-wrap');
+      if (destWrap) destWrap.style.display = state.customNew ? '' : 'none';
+      if (state.customNew) fillCustomDest();
       var finishBtn = document.getElementById('finish');
-      if (finishBtn && !data.preview) {
+      var moreBtn = document.getElementById('more-actions');
+      if (finishBtn) finishBtn.style.display = state.customNew ? 'none' : '';
+      if (moreBtn) moreBtn.style.display = state.customNew ? 'none' : '';
+      if (finishBtn && !data.preview && !state.customNew) {
         var held = state.cardStatus === 'تعلیق شده';
         finishBtn.textContent = held ? 'بازگشت به صف' : 'تعلیق';
         finishBtn.disabled = false;
@@ -2537,6 +2562,29 @@
         .issuePriceList(payload);
     }
 
+    function fillCustomDest() {
+      var el = document.getElementById('custom-dest');
+      if (!el || !state.bootstrap) return;
+      var html = '<option value="custom">استعلام دلخواه</option>';
+      (state.bootstrap.people || []).forEach(function (name) {
+        var label = (state.bootstrap.peopleLabels && state.bootstrap.peopleLabels[name]) || name;
+        html += '<option value="' + escapeHtml(name) + '">' + escapeHtml(label) + '</option>';
+      });
+      el.innerHTML = html;
+    }
+
+    function openCustomInquiry() {
+      if (!state.bootstrap) return toast('گزینه‌های فرم هنوز بارگذاری نشده', true);
+      state.customNew = true;
+      state.salesperson = '';
+      state.row = 0;
+      state.outSheet = '';
+      state.formDirty = false;
+      showScreen('screen-form');
+      fillInquiryForm({ customNew: true, values: {}, totals: {}, pdfs: [] });
+      document.querySelectorAll('#out-sheets button').forEach(function (b) { b.classList.remove('on'); });
+    }
+
     function issuePdf() {
       if (!state.outSheet) return toast('شیت لیست قیمت را انتخاب کنید', true);
       var pkgEl = document.getElementById('inquiry-package');
@@ -2546,7 +2594,27 @@
       var btn = document.getElementById('issue');
       btn.disabled = true;
       btn.textContent = 'در حال صدور...';
-      runIssuePdf(collectPayload());
+      var payload = collectPayload();
+      if (state.customNew) {
+        var destEl = document.getElementById('custom-dest');
+        payload.destination = destEl ? destEl.value : 'custom';
+        if (!payload.employer) {
+          state.issuing = false;
+          btn.disabled = false;
+          btn.textContent = 'صدور لیست قیمت';
+          return toast('نام کارفرما را وارد کنید', true);
+        }
+        google.script.run
+          .withSuccessHandler(function (res) {
+            onIssuePdfSuccess(res);
+            state.customNew = false;
+            toast(payload.destination === 'custom' ? 'لیست در استعلام دلخواه ماند' : 'لیست برای بازاریاب صادر شد');
+          })
+          .withFailureHandler(onIssuePdfFailure)
+          .issueCustomInquiry(payload);
+        return;
+      }
+      runIssuePdf(payload);
     }
 
     function suspendDaysLeft(c) {
