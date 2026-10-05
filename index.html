@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261002201253">
+  <meta name="x-build" content="20261005100640">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261002201253" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261005100640" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1208,14 +1208,15 @@
       }
       return 0;
     }
-    function pricesFromCube(values) {
+    function applyCubePrices(values, prices) {
       var cube = state.engine && state.engine.priceCube;
-      if (!cube || !cube.fields) return null;
-      var prices = {};
-      (state.bootstrap.fields || []).forEach(function (f) { prices[f.key] = ''; });
+      if (!cube || !cube.fields) return prices;
       Object.keys(cube.fields).forEach(function (key) {
         var spec = cube.fields[key];
         if (!spec || !spec.inputs || !spec.map) return;
+        var hasPrice = false;
+        for (var mk in spec.map) { hasPrice = true; break; }
+        if (!hasPrice) return;
         var id = spec.inputs.map(function (k) {
           return String(values[k] == null ? '' : values[k]).trim();
         }).join('\u0001');
@@ -1226,8 +1227,6 @@
       return prices;
     }
     function computeLocalPrices(values) {
-      var fromCube = pricesFromCube(values);
-      if (fromCube) return fromCube;
       var eng = state.engine;
       var prices = {};
       var fallback = state.lastPrices || {};
@@ -1377,7 +1376,7 @@
         }
       }
 
-      return prices;
+      return applyCubePrices(values, prices);
     }
     function computeLocalTotals(prices, profitPct) {
       var sum = 0;
