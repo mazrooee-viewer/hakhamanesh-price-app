@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261005103255">
+  <meta name="x-build" content="20261008214603">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbycunrhs9C9vh-r7uVq7GEZvgjA_Iv1a-PZ9zaCEASLH3KGFIwhxHK2gGFMGiRbpxi3_g/exec) */
 (function () {
@@ -69,7 +69,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261005103255" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261008214603" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -219,7 +219,7 @@
                 <th class="p-3.5">شرح قطعه در سند</th>
                 <th class="p-3.5">کلید داده کنترلی ستون L</th>
                 <th class="p-3.5 text-center">ردیف متناظر شیت All</th>
-                <th class="p-3.5 text-left">قیمت جدید (ریال)</th>
+                <th class="p-3.5 text-left">قیمت جدید (تومان)</th>
                 <th class="p-3.5 text-center w-24">ضریب اطمینان</th>
                 <th class="p-3.5 text-center w-36">وضعیت تطبیق</th>
               </tr>
@@ -337,9 +337,14 @@
       <h3 class="font-black text-slate-900 text-sm sm:text-base">دسته‌بندی محصول را انتخاب کنید</h3>
       <p class="text-xs text-slate-600 leading-relaxed">عکس انتخاب شد. قبل از خواندن، بگویید این کاتالوگ مربوط به کدام دسته است.</p>
       <select id="modalCategorySelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 text-center">
-        <option value="doors" selected>درب طبقه و کابین</option>
-        <option value="motors">موتور آسانسور</option>
+        <option value="motors" selected>موتور</option>
         <option value="tablo">تابلو فرمان</option>
+        <option value="doors">درب طبقه و کابین</option>
+        <option value="rails">ریل (فقط نمایش)</option>
+        <option value="cabin">کابین (فقط نمایش)</option>
+        <option value="parts">خرده ریز (فقط نمایش)</option>
+        <option value="cabinFrame">شاسی کابین (فقط نمایش)</option>
+        <option value="floorFrame">شاسی طبقه (فقط نمایش)</option>
       </select>
       <div class="flex items-center justify-center gap-2.5 pt-2">
         <button onclick="closeCategoryModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">انصراف</button>
@@ -436,15 +441,15 @@
   <div id="modalCurrency" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200 flex flex-col gap-4 text-center">
       <h3 class="font-black text-slate-900 text-sm sm:text-base">واحد پول قیمت‌های عکس</h3>
-      <p class="text-xs text-slate-600 leading-relaxed">شیت All به ریال است. اگر عکس تومان باشد، هر قیمت در ۱۰ ضرب می‌شود.</p>
+      <p class="text-xs text-slate-600 leading-relaxed">شیت‌های لیست قیمت به تومان هستند. اگر عکس ریال باشد، هر قیمت بر ۱۰ تقسیم می‌شود.</p>
       <div class="flex flex-col gap-2.5 text-right">
         <label class="flex items-center justify-center gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
-          <input type="radio" name="moneyUnit" value="rial" checked class="text-sky-600 focus:ring-sky-500">
-          <span class="text-xs font-bold text-slate-800">قیمت ها بر اساس ریال هست</span>
+          <input type="radio" name="moneyUnit" value="toman" checked class="text-sky-600 focus:ring-sky-500">
+          <span class="text-xs font-bold text-slate-800">قیمت ها بر اساس تومان هست</span>
         </label>
         <label class="flex items-center justify-center gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
-          <input type="radio" name="moneyUnit" value="toman" class="text-sky-600 focus:ring-sky-500">
-          <span class="text-xs font-bold text-slate-800">قیمت ها بر اساس تومان هست</span>
+          <input type="radio" name="moneyUnit" value="rial" class="text-sky-600 focus:ring-sky-500">
+          <span class="text-xs font-bold text-slate-800">قیمت ها بر اساس ریال هست</span>
         </label>
       </div>
       <div class="flex items-center justify-center gap-2.5 pt-2">
@@ -990,7 +995,7 @@
             </span>
           `;
         } else if (r.statusLabel) {
-          var tone = r.status === 'visible-only'
+          var tone = (r.status === 'visible-only' || r.status === 'unsupported')
             ? 'bg-amber-50 text-amber-800 border-amber-200'
             : r.status === 'matched'
               ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
@@ -1029,7 +1034,7 @@
       document.getElementById('summaryCount').innerHTML = fromPhoto
         ? `تعداد اقلام عکس: <b>${items.length} قلم</b> (همهٔ ردیف‌های عکس نشان داده می‌شوند)`
         : `تعداد اقلام سند: <b>${items.length} قلم</b> | ردیفهای هدف در شیت All: <b class="text-sky-700">${totalTargetRows} ردیف</b> (شامل ${dualCount} ثبت دوگانه MR/MRL)`;
-      document.getElementById('summaryTotal').innerHTML = `مجموع ارزش فاکتور: <b>${total.toLocaleString('fa-IR')} ریال</b>`;
+      document.getElementById('summaryTotal').innerHTML = `مجموع ارزش فاکتور: <b>${total.toLocaleString('fa-IR')} تومان</b>`;
       var commitBtn = document.getElementById('commitAllBtn');
       if (commitBtn) {
         var matched = previewFromPhoto ? previewItems.filter(function (row) { return row && row.status === 'matched' && row.key && row.price; }).length : 0;
@@ -1112,10 +1117,14 @@
       modal.classList.remove('flex');
     }
 
+    const SUPPORTED_CATEGORIES = { motors: true, tablo: true, doors: true };
+
     function confirmCategoryAndNext() {
-      pendingCategory = document.getElementById('modalCategorySelect').value || 'doors';
+      pendingCategory = document.getElementById('modalCategorySelect').value || 'motors';
       closeCategoryModal();
-      openBrandModal(pendingCategory);
+      // سه سؤال همیشگی: نوع کالا → مالیات → واحد پول. برند فقط برای دسته‌هایی که تطبیق با شیت دارند.
+      if (SUPPORTED_CATEGORIES[pendingCategory]) openBrandModal(pendingCategory);
+      else confirmDoorBrandAndNext();
     }
 
     function openBrandModal(category) {
@@ -1190,10 +1199,10 @@
       closeTaxModal();
       closeCurrencyModal();
       runPreviewExtraction({
-        category: pendingCategory || 'doors',
+        category: pendingCategory || 'motors',
         add: tax && tax.value === 'add',
-        toman: !!(unit && unit.value === 'toman'),
-        brand: brandEl ? brandEl.value : ''
+        rial: !!(unit && unit.value === 'rial'),
+        brand: brandEl && SUPPORTED_CATEGORIES[pendingCategory] ? brandEl.value : ''
       });
     }
 
@@ -1202,7 +1211,7 @@
         showNotification('عکسی برای استخراج انتخاب نشده است.');
         return;
       }
-      const category = opts.category || pendingCategory || 'doors';
+      const category = opts.category || pendingCategory || 'motors';
       document.getElementById('tableTitle').innerText = 'در حال خواندن همهٔ کالاهای عکس...';
       document.getElementById('tableSubtitle').innerText = pickedFile.name;
       previewFromPhoto = false;
@@ -1216,7 +1225,7 @@
         const payload = {
           category: category,
           add: !!opts.add,
-          toman: !!opts.toman,
+          rial: !!opts.rial,
           brand: opts.brand || ''
         };
         const apply = function(result) {
@@ -1227,7 +1236,7 @@
           const items = result.items || [];
           document.getElementById('tableTitle').innerText = 'کالاهای داخل عکس (' + items.length + ' قلم)';
           previewFromPhoto = true;
-          var moneyNote = opts.toman ? 'قیمت تومان بود و در ۱۰ ضرب شد تا ریال شیت شود. ' : '';
+          var moneyNote = opts.rial ? 'قیمت عکس ریال بود و بر ۱۰ تقسیم شد تا تومانِ شیت شود. ' : '';
           document.getElementById('tableSubtitle').innerText = moneyNote + (opts.add
             ? 'پیش‌نمایش با ۱۰٪ اضافه. تا تأیید شما چیزی در شیت All نوشته نمی‌شود.'
             : 'پیش‌نمایش با قیمت عین عکس. تا تأیید شما چیزی در شیت All نوشته نمی‌شود.');
@@ -1280,7 +1289,7 @@
         showNotification('جدول خالی است.');
         return;
       }
-      let txt = "ردیف\tشرح کالا\tکلید ستون L\tصفحه و ردیف شیت\tقیمت (ریال)\n";
+      let txt = "ردیف\tشرح کالا\tکلید ستون L\tصفحه و ردیف شیت\tقیمت (تومان)\n";
       activeData.forEach((r, i) => {
         txt += `${i + 1}\t${r.name}\t${r.key}\t${r.row}\t${r.price}\n`;
       });
