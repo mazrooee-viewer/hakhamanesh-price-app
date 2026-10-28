@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261028151831">
+  <meta name="x-build" content="20261028153156">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261028151831" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261028153156" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -467,10 +467,21 @@
       box-sizing: border-box; pointer-events: none; z-index: 2;
     }
     .pdfs a { color: #1d4ed8; font-weight: 700; }
+    #issue-queue-chip {
+      position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; z-index: 70;
+      max-width: calc(100vw - 96px); padding: 8px 14px; border-radius: 999px;
+      background: #f3e2b8; color: #4a3208; border: 1.5px solid #b8892a;
+      font-family: Vazirmatn, Tahoma, sans-serif; font-size: 12px; font-weight: 800;
+      text-align: center; box-shadow: 0 6px 16px rgba(15, 23, 42, .18); display: none;
+      pointer-events: none;
+    }
+    body:has(.nav) #issue-queue-chip { bottom: 88px; }
+    body:has(#screen-form.active) #issue-queue-chip { bottom: 116px; }
   </style>
 </head>
 <body>
   <div id="toast" class="toast"></div>
+  <div id="issue-queue-chip"></div>
   <button id="back-fab" type="button" onclick="triggerAppBack()">بازگشت</button>
 
   <section id="screen-home" class="screen active">
@@ -1141,6 +1152,8 @@
       outSheet: 'Traction',
       attachment: '',
       issuing: false,
+      issueJobs: [],
+      issueRunning: false,
       finishing: false,
       finishQueued: false,
       filter: 'در صف بررسی',
@@ -2284,6 +2297,7 @@
       document.getElementById('form-back').textContent = 'بازگشت';
       state.salesperson = card.salesperson;
       state.row = card.row;
+      state.finishQueued = false;
       state.formDirty = false;
       state.openToken = (state.openToken || 0) + 1;
       var token = state.openToken;
@@ -2360,6 +2374,7 @@
         finishBtn.textContent = held ? 'بازگشت به صف' : 'تعلیق';
         finishBtn.disabled = false;
       }
+      syncIssueState();
 
       var box = document.getElementById('form-fields');
       box.innerHTML = '';
@@ -2579,12 +2594,59 @@
         .previewMazroueiTotals(collectPayload());
     }
 
-    function resetIssueButton() {
-      state.issuing = false;
+    function issueCardKey(p) {
+      p = p || {};
+      if (p.customNew) return 'custom|' + String(p.employer || '').trim();
+      return String(p.salesperson || '') + '|' + String(p.row || '');
+    }
+
+    function currentIssueKey() {
+      if (state.customNew) {
+        var emp = document.getElementById('employer');
+        return 'custom|' + String((emp && emp.value) || '').trim();
+      }
+      return String(state.salesperson || '') + '|' + String(state.row || '');
+    }
+
+    function pendingIssueJob(key) {
+      for (var i = 0; i < state.issueJobs.length; i++) {
+        if (state.issueJobs[i].key === key) return state.issueJobs[i];
+      }
+      return null;
+    }
+
+    function issueFormIsOpen(key) {
+      var scr = document.getElementById('screen-form');
+      return !!(scr && scr.classList.contains('active') && state.formMode === 'inquiry' && currentIssueKey() === key);
+    }
+
+    function renderIssueQueueChip() {
+      var chip = document.getElementById('issue-queue-chip');
+      if (!chip) return;
+      var jobs = state.issueJobs;
+      if (!jobs.length) { chip.style.display = 'none'; chip.textContent = ''; return; }
+      var running = jobs[0].running ? jobs[0] : null;
+      var waiting = jobs.length - (running ? 1 : 0);
+      var parts = [];
+      if (running) parts.push('در حال صدور: ' + (running.label || ''));
+      if (waiting > 0) parts.push(waiting + ' مورد در صف');
+      chip.textContent = parts.join(' — ');
+      chip.style.display = 'block';
+    }
+
+    function syncIssueState() {
+      var job = state.formMode === 'package' ? null : pendingIssueJob(currentIssueKey());
+      state.issuing = !!job;
       var btn = document.getElementById('issue');
-      if (!btn) return;
-      btn.disabled = false;
-      btn.textContent = 'صدور لیست قیمت';
+      if (btn) {
+        btn.disabled = !!job;
+        btn.textContent = job ? (job.running ? 'در حال صدور...' : 'در صف صدور...') : 'صدور لیست قیمت';
+      }
+      renderIssueQueueChip();
+    }
+
+    function resetIssueButton() {
+      syncIssueState();
     }
 
     function onIssuePdfSuccess(res) {
@@ -2604,35 +2666,122 @@
       if (state.finishQueued) runFinish();
     }
 
-    function runIssuePdf(payload) {
-      google.script.run
+    function removeIssueJob(job) {
+      state.issueJobs = state.issueJobs.filter(function (j) { return j !== job; });
+      state.issueRunning = false;
+    }
+
+    function cancelIssueJob(job) {
+      var same = issueFormIsOpen(job.key);
+      removeIssueJob(job);
+      if (same) {
+        state.finishQueued = false;
+        var finish = document.getElementById('finish');
+        if (finish) {
+          finish.disabled = false;
+          finish.textContent = state.cardStatus === 'تعلیق شده' ? 'بازگشت به صف' : 'تعلیق';
+        }
+      }
+      syncIssueState();
+      toast('صدور متوقف شد');
+      processIssueQueue();
+    }
+
+    function finishInBackground(job) {
+      var payload = JSON.parse(JSON.stringify(job.payload));
+      payload.statusAction = 'اتمام';
+      var prev = snapshotCardFor(payload.salesperson, payload.row);
+      var sj = pf() ? pf().enqueueStatus(payload, prev) : { id: String(Date.now()), payload: payload, prev: prev };
+      if (pf()) {
+        state.allCards = pf().applyOptimisticStatus(state.allCards, payload.salesperson, payload.row, 'اتمام');
+        pf().writeInbox(state.allCards);
+      }
+      sendStatusJob(sj, 'finishInquiry');
+    }
+
+    function completeIssueJob(job, res, err) {
+      var same = issueFormIsOpen(job.key);
+      removeIssueJob(job);
+      if (same && job.finishAfter) state.finishQueued = true;
+      if (err) {
+        if (same) onIssuePdfFailure(err);
+        else {
+          syncIssueState();
+          toast('صدور برای «' + (job.label || '') + '» انجام نشد: ' + ((err && err.message) || ''), true);
+          if (job.finishAfter) finishInBackground(job);
+        }
+      } else if (same) {
+        onIssuePdfSuccess(res);
+        if (job.custom) {
+          state.customNew = false;
+          toast(job.payload.destination === 'custom' ? 'لیست در استعلام دلخواه ماند' : 'لیست برای بازاریاب صادر شد');
+        }
+      } else {
+        syncIssueState();
+        toast('لیست قیمت ' + (res && res.pdfIndex ? res.pdfIndex + ' ' : '') + 'برای «' + (job.label || '') + '» صادر شد');
+        if (job.finishAfter) finishInBackground(job);
+        loadInbox(true);
+      }
+      processIssueQueue();
+    }
+
+    function runIssueJob(job, allowMismatch) {
+      var payload = JSON.parse(JSON.stringify(job.payload));
+      if (allowMismatch) payload.allowPriceMismatch = true;
+      var run = google.script.run
         .withSuccessHandler(function (res) {
           if (res && res.needPriceConfirm) {
-            askPriceRuleConfirm(res.messages).then(function (ok) {
-              if (!ok) {
-                resetIssueButton();
-                if (state.finishQueued) {
-                  state.finishQueued = false;
-                  var finish = document.getElementById('finish');
-                  if (finish) {
-                    finish.disabled = false;
-                    finish.textContent = 'اتمام فرایند';
-                  }
-                }
-                toast('صدور متوقف شد');
-                return;
-              }
-              var next = collectPayload();
-              next.allowPriceMismatch = true;
-              runIssuePdf(next);
+            if (job.custom) {
+              completeIssueJob(job, null, new Error(((res.messages || []).join(' — ')) || 'قیمت با قوانین سازگار نیست'));
+              return;
+            }
+            askPriceRuleConfirm(['کارفرما: ' + (job.label || '')].concat(res.messages || [])).then(function (ok) {
+              if (!ok) return cancelIssueJob(job);
+              runIssueJob(job, true);
             });
             return;
           }
-          onIssuePdfSuccess(res);
+          completeIssueJob(job, res, null);
         })
-        .withFailureHandler(onIssuePdfFailure)
-        .issuePriceList(payload);
+        .withFailureHandler(function (err) { completeIssueJob(job, null, err); });
+      if (job.custom) run.issueCustomInquiry(payload);
+      else run.issuePriceList(payload);
     }
+
+    function processIssueQueue() {
+      if (state.issueRunning) return;
+      var job = state.issueJobs[0];
+      if (!job) { syncIssueState(); return; }
+      state.issueRunning = true;
+      job.running = true;
+      syncIssueState();
+      runIssueJob(job, false);
+    }
+
+    function enqueueIssueJob(payload, isCustom) {
+      var key = issueCardKey({ customNew: isCustom, salesperson: payload.salesperson, row: payload.row, employer: payload.employer });
+      if (pendingIssueJob(key)) return toast('این کارت هم‌اکنون در صف صدور است', true);
+      var job = {
+        id: String(Date.now()) + '-' + Math.random().toString(36).slice(2, 6),
+        key: key,
+        payload: JSON.parse(JSON.stringify(payload)),
+        custom: !!isCustom,
+        label: String(payload.employer || '').trim() || String(payload.salesperson || ''),
+        running: false,
+        finishAfter: false
+      };
+      var waitingBehind = state.issueJobs.length;
+      state.issueJobs.push(job);
+      toast(waitingBehind ? 'در صف صدور قرار گرفت؛ می‌توانید کارت دیگری را باز کنید' : 'صدور شروع شد؛ می‌توانید کارت دیگری را باز کنید');
+      syncIssueState();
+      processIssueQueue();
+    }
+
+    window.addEventListener('beforeunload', function (e) {
+      if (state.issueJobs.length) { e.preventDefault(); e.returnValue = ''; }
+    });
+    var employerEl = document.getElementById('employer');
+    if (employerEl) employerEl.addEventListener('input', function () { if (state.customNew) syncIssueState(); });
 
     function fillCustomDest() {
       var el = document.getElementById('custom-dest');
@@ -2651,6 +2800,7 @@
       state.salesperson = '';
       state.row = 0;
       state.outSheet = '';
+      state.finishQueued = false;
       state.formDirty = false;
       showScreen('screen-form');
       fillInquiryForm({ customNew: true, values: {}, totals: {}, pdfs: [] });
@@ -2661,32 +2811,16 @@
       if (!state.outSheet) return toast('شیت لیست قیمت را انتخاب کنید', true);
       var pkgEl = document.getElementById('inquiry-package');
       if (!pkgEl || !String(pkgEl.value || '').trim()) return toast('پکیج را انتخاب کنید', true);
-      if (state.issuing) return;
-      state.issuing = true;
-      var btn = document.getElementById('issue');
-      btn.disabled = true;
-      btn.textContent = 'در حال صدور...';
+      if (pendingIssueJob(currentIssueKey())) return toast('این کارت هم‌اکنون در صف صدور است', true);
       var payload = collectPayload();
       if (state.customNew) {
         var destEl = document.getElementById('custom-dest');
         payload.destination = destEl ? destEl.value : 'custom';
-        if (!payload.employer) {
-          state.issuing = false;
-          btn.disabled = false;
-          btn.textContent = 'صدور لیست قیمت';
-          return toast('نام کارفرما را وارد کنید', true);
-        }
-        google.script.run
-          .withSuccessHandler(function (res) {
-            onIssuePdfSuccess(res);
-            state.customNew = false;
-            toast(payload.destination === 'custom' ? 'لیست در استعلام دلخواه ماند' : 'لیست برای بازاریاب صادر شد');
-          })
-          .withFailureHandler(onIssuePdfFailure)
-          .issueCustomInquiry(payload);
+        if (!payload.employer) return toast('نام کارفرما را وارد کنید', true);
+        enqueueIssueJob(payload, true);
         return;
       }
-      runIssuePdf(payload);
+      enqueueIssueJob(payload, false);
     }
 
     function suspendDaysLeft(c) {
@@ -2763,6 +2897,8 @@
       if (state.finishing) return;
       if (state.issuing) {
         state.finishQueued = true;
+        var pendingJob = pendingIssueJob(currentIssueKey());
+        if (pendingJob) pendingJob.finishAfter = true;
         var finish = document.getElementById('finish');
         finish.disabled = true;
         finish.textContent = 'منتظر صدور...';
@@ -2773,13 +2909,17 @@
     }
 
     function snapshotCard() {
+      return snapshotCardFor(state.salesperson, state.row);
+    }
+
+    function snapshotCardFor(salesperson, row) {
       var list = state.allCards || [];
       for (var i = 0; i < list.length; i++) {
-        if (String(list[i].salesperson || '') === String(state.salesperson || '') && Number(list[i].row) === Number(state.row)) {
+        if (String(list[i].salesperson || '') === String(salesperson || '') && Number(list[i].row) === Number(row)) {
           return pf() ? pf().clone(list[i]) : list[i];
         }
       }
-      return { salesperson: state.salesperson, row: state.row, status: 'در صف بررسی' };
+      return { salesperson: salesperson, row: row, status: 'در صف بررسی' };
     }
 
     function sendStatusJob(job, fn) {
