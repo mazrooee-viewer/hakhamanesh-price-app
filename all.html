@@ -7,25 +7,76 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261008214603">
+  <meta name="x-build" content="20261028132145">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbycunrhs9C9vh-r7uVq7GEZvgjA_Iv1a-PZ9zaCEASLH3KGFIwhxHK2gGFMGiRbpxi3_g/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbycunrhs9C9vh-r7uVq7GEZvgjA_Iv1a-PZ9zaCEASLH3KGFIwhxHK2gGFMGiRbpxi3_g/exec";
   var FNS = ["previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
-  function call(fn, args) {
+  var KEY_STORE = "plApiToken";
+  function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
+  function setKey(k) { try { localStorage.setItem(KEY_STORE, k); } catch (e) {} }
+  try {
+    var sp = new URLSearchParams(location.search);
+    var urlKey = sp.get("key");
+    if (urlKey) {
+      setKey(urlKey.trim());
+      sp.delete("key");
+      var rest = sp.toString();
+      history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "") + location.hash);
+    }
+  } catch (e) {}
+  var asking = null;
+  function askKey(reason) {
+    if (!asking) {
+      asking = Promise.resolve().then(function () {
+        var k = window.prompt(reason === "AUTH_INVALID" ? "کلید دسترسی معتبر نیست. کلید جدید را وارد کنید:" : "کلید دسترسی را وارد کنید:");
+        k = String(k || "").trim();
+        if (k) setKey(k);
+        return k;
+      });
+      var clear = function () { asking = null; };
+      asking.then(clear, clear);
+    }
+    return asking;
+  }
+  function authMessage(err) {
+    if (err === "AUTH_FORBIDDEN") return "این کلید اجازهٔ این بخش را ندارد";
+    if (err === "AUTH_REQUIRED" || err === "AUTH_INVALID") return "کلید دسترسی لازم است";
+    return err;
+  }
+  function rawCall(fn, args) {
+    var used = getKey();
     return fetch(API, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ fn: fn, args: args }),
+      body: JSON.stringify({ fn: fn, args: args, token: used }),
       redirect: "follow",
       credentials: "omit"
     }).then(function (r) { return r.text(); }).then(function (t) {
       var o;
       try { o = JSON.parse(t); } catch (e) { throw new Error("پاسخ نامعتبر سرور"); }
-      if (!o || !o.ok) throw new Error((o && o.error) || "خطای سرور");
-      return o.result;
+      return { o: o, used: used };
+    });
+  }
+  function call(fn, args) {
+    return rawCall(fn, args).then(function (res) {
+      var o = res.o;
+      if (o && o.ok) return o.result;
+      var err = (o && o.error) || "خطای سرور";
+      if (err !== "AUTH_REQUIRED" && err !== "AUTH_INVALID") throw new Error(authMessage(err));
+      var retry = function () {
+        return rawCall(fn, args).then(function (res2) {
+          if (res2.o && res2.o.ok) return res2.o.result;
+          throw new Error(authMessage((res2.o && res2.o.error) || "خطای سرور"));
+        });
+      };
+      if (getKey() && getKey() !== res.used) return retry();
+      return askKey(err).then(function (k) {
+        if (!k) throw new Error(authMessage(err));
+        return retry();
+      });
     });
   }
   function store(key, v) { try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), v: v })); } catch (e) {} }
@@ -69,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261008214603" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261028132145" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -218,10 +269,10 @@
                 <th class="p-3.5 text-center w-10 text-slate-400">#</th>
                 <th class="p-3.5">شرح قطعه در سند</th>
                 <th class="p-3.5">کلید داده کنترلی ستون L</th>
+                <th class="p-3.5 text-center w-36">وضعیت تطبیق</th>
                 <th class="p-3.5 text-center">ردیف متناظر شیت All</th>
                 <th class="p-3.5 text-left">قیمت جدید (تومان)</th>
                 <th class="p-3.5 text-center w-24">ضریب اطمینان</th>
-                <th class="p-3.5 text-center w-36">وضعیت تطبیق</th>
               </tr>
             </thead>
             <tbody id="tableBody" class="divide-y divide-slate-100 text-xs text-slate-700">
@@ -340,7 +391,7 @@
         <option value="motors" selected>موتور</option>
         <option value="tablo">تابلو فرمان</option>
         <option value="doors">درب طبقه و کابین</option>
-        <option value="rails">ریل (فقط نمایش)</option>
+        <option value="rails">ریل</option>
         <option value="cabin">کابین (فقط نمایش)</option>
         <option value="parts">خرده ریز (فقط نمایش)</option>
         <option value="cabinFrame">شاسی کابین (فقط نمایش)</option>
@@ -366,7 +417,7 @@
         </button>
       </div>
 
-      <p class="text-xs text-slate-600 leading-relaxed">
+      <p id="brandModalHint" class="text-xs text-slate-600 leading-relaxed">
         برند این لیست را انتخاب کنید. اگر چند برند در یک عکس است، گزینهٔ ترکیبی را بزنید.
       </p>
 
@@ -437,11 +488,40 @@
     </div>
   </div>
 
+  <!-- مودال نوع موتور (فقط وقتی نوع کالا = موتور؛ چندانتخابی) -->
+  <div id="modalMotorType" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200 flex flex-col gap-4 text-center">
+      <h3 class="font-black text-slate-900 text-sm sm:text-base">نوع موتور را انتخاب کنید</h3>
+      <p class="text-xs text-slate-600 leading-relaxed">می‌توانید یک یا چند گزینه را انتخاب کنید. «گیرلس» شامل MR، MRL و 1:1 است. اگر هیچ‌کدام انتخاب نشود، گیربکس و گیرلس در نظر گرفته می‌شوند و هیدرولیک فقط وقتی که در نام قلم نوشته شده باشد.</p>
+      <div class="flex flex-col gap-2.5 text-right">
+        <label class="flex items-center justify-center gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
+          <input type="checkbox" name="motorType" value="gearbox" class="rounded text-sky-600 focus:ring-sky-500">
+          <span class="text-xs font-bold text-slate-800">گیربکس</span>
+        </label>
+        <label class="flex items-center justify-center gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
+          <input type="checkbox" name="motorType" value="gearless" class="rounded text-sky-600 focus:ring-sky-500">
+          <span class="text-xs font-bold text-slate-800">گیرلس</span>
+        </label>
+        <label class="flex items-center justify-center gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
+          <input type="checkbox" name="motorType" value="hydraulic" class="rounded text-sky-600 focus:ring-sky-500">
+          <span class="text-xs font-bold text-slate-800">هیدرولیک</span>
+        </label>
+      </div>
+      <div class="flex items-center justify-center gap-2.5 pt-2">
+        <button onclick="closeMotorTypeModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">انصراف</button>
+        <button onclick="confirmMotorTypeAndNext()" class="px-5 py-2.5 text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white rounded-xl shadow-xs transition flex items-center gap-1.5">
+          <span>مرحله بعد: برند</span>
+          <svg class="w-4 h-4 transform -scale-x-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- مودال واحد پول عکس -->
   <div id="modalCurrency" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200 flex flex-col gap-4 text-center">
       <h3 class="font-black text-slate-900 text-sm sm:text-base">واحد پول قیمت‌های عکس</h3>
-      <p class="text-xs text-slate-600 leading-relaxed">شیت‌های لیست قیمت به تومان هستند. اگر عکس ریال باشد، هر قیمت بر ۱۰ تقسیم می‌شود.</p>
+      <p class="text-xs text-slate-600 leading-relaxed">شیت‌های لیست قیمت به تومان هستند. اگر عکس ریال باشد، هر قیمت بر ۱۰ تقسیم می‌شود. اگر میلیون یا میلیارد تومان باشد، قیمت در ۱٬۰۰۰٬۰۰۰ یا ۱٬۰۰۰٬۰۰۰٬۰۰۰ ضرب می‌شود.</p>
       <div class="flex flex-col gap-2.5 text-right">
         <label class="flex items-center justify-center gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
           <input type="radio" name="moneyUnit" value="toman" checked class="text-sky-600 focus:ring-sky-500">
@@ -450,6 +530,14 @@
         <label class="flex items-center justify-center gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
           <input type="radio" name="moneyUnit" value="rial" class="text-sky-600 focus:ring-sky-500">
           <span class="text-xs font-bold text-slate-800">قیمت ها بر اساس ریال هست</span>
+        </label>
+        <label class="flex items-center justify-center gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
+          <input type="radio" name="moneyUnit" value="million" class="text-sky-600 focus:ring-sky-500">
+          <span class="text-xs font-bold text-slate-800">قیمت ها بر اساس میلیون تومان هست</span>
+        </label>
+        <label class="flex items-center justify-center gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
+          <input type="radio" name="moneyUnit" value="billion" class="text-sky-600 focus:ring-sky-500">
+          <span class="text-xs font-bold text-slate-800">قیمت ها بر اساس میلیارد تومان هست</span>
         </label>
       </div>
       <div class="flex items-center justify-center gap-2.5 pt-2">
@@ -965,6 +1053,14 @@
         } else {
           keysHtml = `<span class="text-sky-700 font-bold" dir="ltr">${r.key}</span>`;
         }
+        // ریل چندبرندی (تصمیم مدیر 1405/07/29): لیست کشویی برند همین ردیف برای اصلاح حدس اپ.
+        if (previewFromPhoto && Array.isArray(r.railChoices) && r.railChoices.length) {
+          var railOpts = '<option value="">— برند این ردیف —</option>' + r.railChoices.map(function (c, ci) {
+            var sel = r.railBrand && c.brand === r.railBrand ? ' selected' : '';
+            return `<option value="${ci}"${sel}>${c.brand}${c.key ? '' : ' (کلید این سایز نیست)'}</option>`;
+          }).join('');
+          keysHtml += `<div class="mt-1.5"><select data-rail-idx="${idx}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-[11px] font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500">${railOpts}</select></div>`;
+        }
 
         // تولید ظاهر ردیفهای متناظر شیت All (تکی یا دوگانه MR/MRL)
         let rowsHtml = '';
@@ -995,12 +1091,20 @@
             </span>
           `;
         } else if (r.statusLabel) {
-          var tone = (r.status === 'visible-only' || r.status === 'unsupported')
+          var tone = (r.status === 'visible-only' || r.status === 'unsupported' || r.status === 'kw-candidate' || r.status === 'review')
             ? 'bg-amber-50 text-amber-800 border-amber-200'
             : r.status === 'matched'
               ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
               : 'bg-sky-50 text-sky-800 border-sky-200';
           statusHtml = `<span class="inline-flex items-center gap-1 ${tone} px-2 py-1 rounded-full text-[11px] font-extrabold">${r.statusLabel}</span>`;
+          // کاندید کیلوواتی: دکمهٔ «انتخاب» تا کاربر خودش همین ردیف را تأیید کند (بعد از انتخاب → matched).
+          if (r.status === 'kw-candidate') {
+            statusHtml += `<div class="mt-1.5"><button type="button" data-pick-idx="${idx}" class="px-3 py-1 text-[11px] font-extrabold bg-sky-600 hover:bg-sky-700 text-white rounded-lg shadow-xs transition">انتخاب این ردیف</button></div>`;
+          }
+          // حذف از پیش‌نمایش (فقط جدول؛ به شیت چیزی نمی‌نویسد/پاک نمی‌کند). برای هر ردیف عکس.
+          if (previewFromPhoto) {
+            statusHtml += `<div class="mt-1.5"><button type="button" data-remove-idx="${idx}" class="px-3 py-1 text-[11px] font-extrabold bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 rounded-lg shadow-xs transition">حذف از پیش‌نمایش</button></div>`;
+          }
         } else {
           statusHtml = `
             <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-bold">
@@ -1009,6 +1113,21 @@
             </span>
           `;
         }
+
+        // تصمیم مدیر 1405/07/18: وضعیت تطبیق فقط دو باکس کنار هم، YES سبز و NO قرمز؛ باکس فعال پر رنگ است.
+        // YES = کلید قطعی است. NO = قطعی نیست (بررسی/کاندید/ثبت‌نشدنی). شرح دقیق وضعیت در tooltip می‌ماند.
+        // YES روی «کاندید» = همان انتخاب دستی؛ NO = حذف از پیش‌نمایش (فقط پیش‌نمایش عکس). نگهبان‌ها دور زده نمی‌شوند.
+        const isYes = (r.dualRows && r.dualRows.length > 1) || r.status === 'matched' || (!r.statusLabel && r.status !== 'review');
+        const canPick = r.status === 'kw-candidate';
+        const canRemove = !!previewFromPhoto;
+        const boxBase = 'px-3 py-1 text-[11px] font-black rounded-lg border transition';
+        const yesCls = isYes ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-white text-emerald-700 border-emerald-300 ' + (canPick ? 'hover:bg-emerald-50' : 'opacity-40 cursor-default');
+        const noCls = !isYes ? 'bg-rose-600 text-white border-rose-700' : 'bg-white text-rose-700 border-rose-300 ' + (canRemove ? 'hover:bg-rose-50' : 'opacity-40 cursor-default');
+        const tip = String(r.statusLabel || (isYes ? 'تطبیق قطعی' : '')).replace(/"/g, '&quot;');
+        statusHtml = `<div class="flex flex-row items-center justify-center gap-1.5" title="${tip}">
+          <button type="button" ${canPick ? `data-pick-idx="${idx}"` : 'disabled'} class="${boxBase} ${yesCls}">YES</button>
+          <button type="button" ${canRemove ? `data-remove-idx="${idx}"` : 'disabled'} class="${boxBase} ${noCls}">NO</button>
+        </div>`;
 
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50/80 transition';
@@ -1019,14 +1138,20 @@
             ${r.note ? `<div class="text-[10px] font-semibold text-slate-500 mt-0.5">${r.note}</div>` : ''}
           </td>
           <td class="p-3.5">${keysHtml}</td>
+          <td class="p-3.5 text-center">${statusHtml}</td>
           <td class="p-3.5 text-center">${rowsHtml}</td>
           <td class="p-3.5 text-left font-black text-slate-900">${Number(r.price).toLocaleString('fa-IR')}</td>
           <td class="p-3.5 text-center">
             <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg text-xs font-black">${r.conf || '100%'}</span>
           </td>
-          <td class="p-3.5 text-center">${statusHtml}</td>
         `;
         tbody.appendChild(tr);
+        var pickBtn = tr.querySelector('button[data-pick-idx]');
+        if (pickBtn) pickBtn.addEventListener('click', function () { pickKwCandidate(idx); });
+        var removeBtn = tr.querySelector('button[data-remove-idx]');
+        if (removeBtn) removeBtn.addEventListener('click', function () { removePreviewItem(idx); });
+        var railSel = tr.querySelector('select[data-rail-idx]');
+        if (railSel) railSel.addEventListener('change', function () { pickRailBrand(idx, railSel.value); });
       });
 
       const totalTargetRows = items.length + dualCount;
@@ -1041,6 +1166,71 @@
         commitBtn.disabled = matched === 0;
         commitBtn.title = matched ? (matched + ' ردیف تطبیق‌شده منتقل می‌شود') : 'ردیف تطبیق‌شده‌ای نیست';
       }
+    }
+
+    // انتخاب دستی یک کاندید کیلوواتی: همین ردیف «تطبیق انتخاب‌شده» می‌شود و در انتقال می‌آید.
+    // کاندیدهای دیگر همان نام قلم (همان قیمت) که هنوز انتخاب نشده‌اند دست‌نخورده می‌مانند و جداگانه قابل انتخاب‌اند.
+    function pickKwCandidate(idx) {
+      var item = previewItems[idx];
+      if (!item || item.status !== 'kw-candidate') return;
+      item.status = 'matched';
+      item.statusLabel = 'انتخاب‌شده توسط شما';
+      item.note = (item.note ? item.note + ' | ' : '') + 'کاندید کیلوواتی — انتخاب دستی';
+      renderTable(previewItems);
+    }
+
+    // انتخاب دستی برند یک ردیف ریل (فقط حافظهٔ صفحه، بدون تماس سرور). قیمت مشکوک همچنان «بررسی» می‌ماند.
+    function pickRailBrand(idx, choiceIdx) {
+      var item = previewItems[idx];
+      if (!item || !Array.isArray(item.railChoices)) return;
+      var choice = choiceIdx === '' ? null : item.railChoices[Number(choiceIdx)];
+      item.railBrand = choice ? choice.brand : '';
+      item.railBrandSource = choice ? 'manual' : '';
+      item.key = choice && choice.key ? choice.key : '';
+      item.row = choice && choice.row ? 'ردیف ' + choice.row : '—';
+      if (item.priceIssues && item.priceIssues.length) {
+        item.status = 'review';
+        item.statusLabel = 'نیاز به بررسی — قیمت مشکوک: ' + item.priceIssues.join('، ');
+      } else if (item.key) {
+        item.status = 'matched';
+        item.statusLabel = 'تطبیق قطعی — برند انتخاب‌شده توسط شما: ' + item.railBrand;
+      } else {
+        item.status = 'visible-only';
+        item.statusLabel = choice ? 'کلید ریل برای «' + choice.brand + '» با این سایز در شیت All نیست — ثبت نمی‌شود' : 'برند انتخاب نشده — ثبت نمی‌شود';
+      }
+      item.note = '';
+      recheckRailConflicts();
+      renderTable(previewItems);
+    }
+
+    // همان قانون تداخل سرور (resolveDuplicateMatches_) بعد از تغییر برند: دو ردیف ریل با یک کلید → فقط اولی ثبت می‌شود.
+    function recheckRailConflicts() {
+      var seen = {};
+      previewItems.forEach(function (it) {
+        if (!it || !Array.isArray(it.railChoices)) return;
+        var wasConflict = it.railConflict || /^(تداخل|تکراری)/.test(String(it.statusLabel || ''));
+        if (it.status === 'visible-only' && wasConflict && it.key) {
+          it.status = 'matched';
+          it.statusLabel = 'تطبیق قطعی — برند: ' + it.railBrand;
+        }
+        it.railConflict = false;
+        if (it.status !== 'matched' || !it.key) return;
+        var k = String(it.key).replace(/\s+/g, '');
+        if (!seen[k]) { seen[k] = it; return; }
+        it.status = 'visible-only';
+        it.railConflict = true;
+        it.statusLabel = Number(seen[k].price) === Number(it.price)
+          ? 'تکراری — همین کلید با همین قیمت قبلاً آمده'
+          : 'تداخل — همین کلید با قیمت ' + Number(seen[k].price).toLocaleString('fa-IR') + ' قبلاً تطبیق خورده؛ ثبت نمی‌شود';
+      });
+    }
+
+    // حذف یک ردیف از جدول پیش‌نمایش عکس؛ فقط حافظهٔ صفحه، نه شیت. ردیف حذف‌شده هرگز منتقل نمی‌شود.
+    function removePreviewItem(idx) {
+      if (!previewFromPhoto || idx < 0 || idx >= previewItems.length) return;
+      previewItems.splice(idx, 1);
+      recheckRailConflicts();
+      renderTable(previewItems);
     }
 
     function confirmTransferToAll() {
@@ -1117,19 +1307,49 @@
       modal.classList.remove('flex');
     }
 
-    const SUPPORTED_CATEGORIES = { motors: true, tablo: true, doors: true };
+    const SUPPORTED_CATEGORIES = { motors: true, tablo: true, doors: true, rails: true };
 
     function confirmCategoryAndNext() {
       pendingCategory = document.getElementById('modalCategorySelect').value || 'motors';
       closeCategoryModal();
       // سه سؤال همیشگی: نوع کالا → مالیات → واحد پول. برند فقط برای دسته‌هایی که تطبیق با شیت دارند.
-      if (SUPPORTED_CATEGORIES[pendingCategory]) openBrandModal(pendingCategory);
+      if (pendingCategory === 'motors') openMotorTypeModal();
+      else if (SUPPORTED_CATEGORIES[pendingCategory]) openBrandModal(pendingCategory);
       else confirmDoorBrandAndNext();
     }
 
+    // سؤال «نوع موتور» (چندانتخابی) فقط برای دستهٔ موتور؛ بین نوع کالا و برند.
+    function openMotorTypeModal() {
+      document.querySelectorAll('input[name="motorType"]').forEach(function (el) { el.checked = false; });
+      var modal = document.getElementById('modalMotorType');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeMotorTypeModal() {
+      var modal = document.getElementById('modalMotorType');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function confirmMotorTypeAndNext() {
+      closeMotorTypeModal();
+      openBrandModal('motors');
+    }
+
+    function selectedMotorTypes() {
+      var out = [];
+      document.querySelectorAll('input[name="motorType"]:checked').forEach(function (el) { out.push(el.value); });
+      return out;
+    }
+
     function openBrandModal(category) {
-      var titles = { doors: 'برند درب را انتخاب کنید', motors: 'برند موتور را انتخاب کنید', tablo: 'برند تابلو فرمان را انتخاب کنید' };
+      var titles = { doors: 'برند درب را انتخاب کنید', motors: 'برند موتور را انتخاب کنید', tablo: 'برند تابلو فرمان را انتخاب کنید', rails: 'برند پیش‌فرض ریل را انتخاب کنید' };
       document.getElementById('brandModalTitle').textContent = titles[category] || 'برند را انتخاب کنید';
+      var hint = document.getElementById('brandModalHint');
+      if (hint) hint.textContent = category === 'rails'
+        ? 'برند هر ردیف از متن خودش خوانده می‌شود؛ این برند فقط برای ردیف‌هایی است که برند ندارند. بعداً کنار هر ردیف هم می‌توانید برند را عوض کنید.'
+        : 'برند این لیست را انتخاب کنید. اگر چند برند در یک عکس است، گزینهٔ ترکیبی را بزنید.';
       var sel = document.getElementById('modalBrandSelect');
       sel.innerHTML = '<option value="">در حال خواندن برندها...</option>';
       var modal = document.getElementById('modalDoorBrand');
@@ -1202,6 +1422,8 @@
         category: pendingCategory || 'motors',
         add: tax && tax.value === 'add',
         rial: !!(unit && unit.value === 'rial'),
+        unit: unit ? unit.value : 'toman',
+        motorTypes: pendingCategory === 'motors' ? selectedMotorTypes() : [],
         brand: brandEl && SUPPORTED_CATEGORIES[pendingCategory] ? brandEl.value : ''
       });
     }
@@ -1226,6 +1448,8 @@
           category: category,
           add: !!opts.add,
           rial: !!opts.rial,
+          unit: opts.unit || (opts.rial ? 'rial' : 'toman'),
+          motorTypes: opts.motorTypes || [],
           brand: opts.brand || ''
         };
         const apply = function(result) {
@@ -1236,7 +1460,9 @@
           const items = result.items || [];
           document.getElementById('tableTitle').innerText = 'کالاهای داخل عکس (' + items.length + ' قلم)';
           previewFromPhoto = true;
-          var moneyNote = opts.rial ? 'قیمت عکس ریال بود و بر ۱۰ تقسیم شد تا تومانِ شیت شود. ' : '';
+          var moneyNote = opts.rial ? 'قیمت عکس ریال بود و بر ۱۰ تقسیم شد تا تومانِ شیت شود. '
+            : opts.unit === 'million' ? 'قیمت عکس میلیون تومان بود و در ۱٬۰۰۰٬۰۰۰ ضرب شد. '
+            : opts.unit === 'billion' ? 'قیمت عکس میلیارد تومان بود و در ۱٬۰۰۰٬۰۰۰٬۰۰۰ ضرب شد. ' : '';
           document.getElementById('tableSubtitle').innerText = moneyNote + (opts.add
             ? 'پیش‌نمایش با ۱۰٪ اضافه. تا تأیید شما چیزی در شیت All نوشته نمی‌شود.'
             : 'پیش‌نمایش با قیمت عین عکس. تا تأیید شما چیزی در شیت All نوشته نمی‌شود.');

@@ -7,25 +7,76 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261008214603">
+  <meta name="x-build" content="20261028132145">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
   var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","issueCustomInquiry","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
-  function call(fn, args) {
+  var KEY_STORE = "plApiToken";
+  function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
+  function setKey(k) { try { localStorage.setItem(KEY_STORE, k); } catch (e) {} }
+  try {
+    var sp = new URLSearchParams(location.search);
+    var urlKey = sp.get("key");
+    if (urlKey) {
+      setKey(urlKey.trim());
+      sp.delete("key");
+      var rest = sp.toString();
+      history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "") + location.hash);
+    }
+  } catch (e) {}
+  var asking = null;
+  function askKey(reason) {
+    if (!asking) {
+      asking = Promise.resolve().then(function () {
+        var k = window.prompt(reason === "AUTH_INVALID" ? "کلید دسترسی معتبر نیست. کلید جدید را وارد کنید:" : "کلید دسترسی را وارد کنید:");
+        k = String(k || "").trim();
+        if (k) setKey(k);
+        return k;
+      });
+      var clear = function () { asking = null; };
+      asking.then(clear, clear);
+    }
+    return asking;
+  }
+  function authMessage(err) {
+    if (err === "AUTH_FORBIDDEN") return "این کلید اجازهٔ این بخش را ندارد";
+    if (err === "AUTH_REQUIRED" || err === "AUTH_INVALID") return "کلید دسترسی لازم است";
+    return err;
+  }
+  function rawCall(fn, args) {
+    var used = getKey();
     return fetch(API, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ fn: fn, args: args }),
+      body: JSON.stringify({ fn: fn, args: args, token: used }),
       redirect: "follow",
       credentials: "omit"
     }).then(function (r) { return r.text(); }).then(function (t) {
       var o;
       try { o = JSON.parse(t); } catch (e) { throw new Error("پاسخ نامعتبر سرور"); }
-      if (!o || !o.ok) throw new Error((o && o.error) || "خطای سرور");
-      return o.result;
+      return { o: o, used: used };
+    });
+  }
+  function call(fn, args) {
+    return rawCall(fn, args).then(function (res) {
+      var o = res.o;
+      if (o && o.ok) return o.result;
+      var err = (o && o.error) || "خطای سرور";
+      if (err !== "AUTH_REQUIRED" && err !== "AUTH_INVALID") throw new Error(authMessage(err));
+      var retry = function () {
+        return rawCall(fn, args).then(function (res2) {
+          if (res2.o && res2.o.ok) return res2.o.result;
+          throw new Error(authMessage((res2.o && res2.o.error) || "خطای سرور"));
+        });
+      };
+      if (getKey() && getKey() !== res.used) return retry();
+      return askKey(err).then(function (k) {
+        if (!k) throw new Error(authMessage(err));
+        return retry();
+      });
     });
   }
   function store(key, v) { try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), v: v })); } catch (e) {} }
@@ -69,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261008214603" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261028132145" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
