@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261028153156">
+  <meta name="x-build" content="20261028161911">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261028153156" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261028161911" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1154,6 +1154,7 @@
       issuing: false,
       issueJobs: [],
       issueRunning: false,
+      issueConfirming: false,
       finishing: false,
       finishQueued: false,
       filter: 'در صف بررسی',
@@ -2807,20 +2808,70 @@
       document.querySelectorAll('#out-sheets button').forEach(function (b) { b.classList.remove('on'); });
     }
 
+    // کلیدهایی که قیمتشان از جدول قیمت اپ می‌آید و برای گزینهٔ واقعی (نه «ندارد») نباید خالی بماند.
+    var HAVE_PRICE_APP_REQUIRED = ['motorBrand', 'panelBrand', 'rail', 'cabin', 'floorDoor', 'smallParts', 'installDoor', 'installMech', 'installIron', 'ups', 'photocell', 'doorCover'];
+
+    // آلرت Have Price روی خود فرم اپ: ستون Have Price شیت (در priceCells.have) + مبالغی که مدیر در فرم می‌بیند.
+    function listAppHavePriceViolations(values, prices) {
+      var meta = (state.bootstrap && state.bootstrap.priceCells) || {};
+      var messages = [];
+      var known = false;
+      ((state.bootstrap && state.bootstrap.fields) || []).forEach(function (f) {
+        var flag = meta[f.key] && meta[f.key].have;
+        if (!flag) return;
+        known = true;
+        var raw = String(prices && prices[f.key] != null ? prices[f.key] : '').trim();
+        var name = f.header || f.key;
+        if (flag === 'no') {
+          if (parseNum(raw) > 0) messages.push('ردیف ' + name + ' نباید دارای قیمت باشد ولی قیمت برای آن درج شده');
+          return;
+        }
+        if (HAVE_PRICE_APP_REQUIRED.indexOf(f.key) < 0) return;
+        var chosen = String((values && values[f.key]) || '').trim();
+        if (!chosen || chosen === 'ندارد') return;
+        if (raw === '' || raw === '-') messages.push('ردیف ' + name + ' باید دارای قیمت باشد ولی قیمتی برای آن درج نشده');
+      });
+      return { known: known, messages: messages };
+    }
+
+    function readFormPrices() {
+      var prices = {};
+      ((state.bootstrap && state.bootstrap.fields) || []).forEach(function (f) {
+        var el = document.getElementById('p-' + f.key);
+        prices[f.key] = el ? el.value : '';
+      });
+      return prices;
+    }
+
     function issuePdf() {
       if (!state.outSheet) return toast('شیت لیست قیمت را انتخاب کنید', true);
       var pkgEl = document.getElementById('inquiry-package');
       if (!pkgEl || !String(pkgEl.value || '').trim()) return toast('پکیج را انتخاب کنید', true);
       if (pendingIssueJob(currentIssueKey())) return toast('این کارت هم‌اکنون در صف صدور است', true);
+      if (state.issueConfirming) return;
       var payload = collectPayload();
-      if (state.customNew) {
+      var isCustom = !!state.customNew;
+      if (isCustom) {
         var destEl = document.getElementById('custom-dest');
         payload.destination = destEl ? destEl.value : 'custom';
         if (!payload.employer) return toast('نام کارفرما را وارد کنید', true);
-        enqueueIssueJob(payload, true);
+      }
+      var check = listAppHavePriceViolations(payload.values, readFormPrices());
+      if (!check.known) {
+        enqueueIssueJob(payload, isCustom);
         return;
       }
-      enqueueIssueJob(payload, false);
+      payload.allowPriceMismatch = true;
+      if (!check.messages.length) {
+        enqueueIssueJob(payload, isCustom);
+        return;
+      }
+      state.issueConfirming = true;
+      askPriceRuleConfirm(check.messages).then(function (ok) {
+        state.issueConfirming = false;
+        if (!ok) return toast('صدور متوقف شد');
+        enqueueIssueJob(payload, isCustom);
+      });
     }
 
     function suspendDaysLeft(c) {
