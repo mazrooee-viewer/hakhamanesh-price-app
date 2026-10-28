@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261028161911">
+  <meta name="x-build" content="20261028164348">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261028161911" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261028164348" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1698,7 +1698,7 @@
       var edited = cardEditedDate(c);
       var parts = [];
       if (created) {
-        parts.push('<span class="date">تاریخ صدور: ' + escapeHtml(created) + '</span>');
+        parts.push('<span class="date">تاریخ ایجاد: ' + escapeHtml(created) + '</span>');
         if (state.filter === 'تعلیق شده') {
           var left = suspendDaysLeft(c);
           if (left > 0) parts.push('<span class="date">تا ' + left + ' روز دیگر در صف برمی‌گردد</span>');
