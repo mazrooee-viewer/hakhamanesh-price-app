@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261030143702">
+  <meta name="x-build" content="20261030150207">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbycunrhs9C9vh-r7uVq7GEZvgjA_Iv1a-PZ9zaCEASLH3KGFIwhxHK2gGFMGiRbpxi3_g/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261030143702" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261030150207" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1364,6 +1364,7 @@
       modal.classList.add('flex');
       var applied = '';
       var apply = function (list) {
+        list = sortBrandOptions(list);
         var sig = JSON.stringify(list || []);
         if (sig === applied) return;
         var prev = applied ? sel.value : '';
@@ -1389,6 +1390,24 @@
       };
       if (!brandCacheGet(category)) sel.innerHTML = '<option value="">در حال خواندن برندها...</option>';
       loadBrands(category, apply);
+    }
+
+    // ترتیب الفبایی (فارسی: آ ا ب پ ت ... ی؛ لاتین قبل از فارسی)؛ گزینهٔ «ترکیبی/بدون پیش‌فرض» همیشه آخر.
+    var brandCollator = (function () {
+      try { return new Intl.Collator('fa', { numeric: true, sensitivity: 'base' }); } catch (e) { return null; }
+    })();
+    function sortBrandOptions(list) {
+      var items = (list || []).slice();
+      var tail = items.filter(function (it) { return it && it.id === 'mixed'; });
+      var head = items.filter(function (it) { return !(it && it.id === 'mixed'); });
+      head.sort(function (a, b) {
+        var x = String((a && a.label) || ''), y = String((b && b.label) || '');
+        var xl = /^[A-Za-z0-9]/.test(x), yl = /^[A-Za-z0-9]/.test(y);
+        if (xl !== yl) return xl ? -1 : 1;
+        if (brandCollator) return brandCollator.compare(x, y);
+        return x < y ? -1 : x > y ? 1 : 0;
+      });
+      return head.concat(tail);
     }
 
     // فهرست برندها: اول از حافظهٔ مرورگر (فوری)، بعد تازه‌سازی بی‌صدا از سرور؛ برای باز شدن فوری پنجرهٔ برند.
