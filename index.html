@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261030095839">
+  <meta name="x-build" content="20261030100543">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261030095839" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261030100543" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -282,6 +282,22 @@
     }
     #screen-form.active .wrap { padding-bottom: 108px; }
     body:has(#screen-form.active) .toast { bottom: 96px; }
+    body.kb-open #screen-form.active .form-dock,
+    body.kb-open #tb-fab { display: none !important; }
+    body.kb-open #screen-form.active .wrap { padding-bottom: 60vh; }
+    body.kb-open .toast { bottom: 72px; }
+    #kb-done {
+      display: none;
+      position: fixed;
+      left: 12px; bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+      z-index: 85;
+      border: 0; border-radius: 999px;
+      padding: 10px 22px;
+      background: var(--navy, #0f172a); color: #fff;
+      font-family: Vazirmatn, Tahoma, sans-serif; font-weight: 800; font-size: 14px;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, .3);
+    }
+    body.kb-open #kb-done { display: block; }
     #screen-form.package-preview .form-dock .package-only { display: block; flex: 1; }
     .more-panel {
       display: none;
@@ -671,6 +687,7 @@
       <textarea id="manager-note" class="note" placeholder="نظر خود را بنویسید"></textarea>
       </div>
 
+      <button id="kb-done" type="button" onclick="closeKeyboard()">تمام</button>
       <div id="form-dock" class="form-dock">
         <div class="actions" id="form-main-actions">
           <button class="btn btn-main inquiry-only" id="issue" type="button" onclick="issuePdf()">صدور لیست قیمت</button>
@@ -1843,6 +1860,49 @@
     }
 
     function pf() { return window.PriceFast || null; }
+
+    (function () {
+      var blurTimer = null;
+      function isTextField(el) {
+        if (!el || !el.tagName) return false;
+        var t = el.tagName.toLowerCase();
+        if (t === 'textarea') return !el.readOnly;
+        if (t === 'input') return /^(text|search|tel|number|email|url|password|)$/.test(el.type || '');
+        return false;
+      }
+      function inForm(el) {
+        var form = document.getElementById('screen-form');
+        return !!(form && form.classList.contains('active') && form.contains(el));
+      }
+      function reveal(el) {
+        if (!el || !el.scrollIntoView) return;
+        try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { el.scrollIntoView(); }
+      }
+      document.addEventListener('focusin', function (e) {
+        var el = e.target;
+        if (!isTextField(el) || !inForm(el)) return;
+        clearTimeout(blurTimer);
+        document.body.classList.add('kb-open');
+        setTimeout(function () { reveal(el); }, 350);
+      });
+      document.addEventListener('focusout', function () {
+        clearTimeout(blurTimer);
+        blurTimer = setTimeout(function () {
+          if (!isTextField(document.activeElement)) document.body.classList.remove('kb-open');
+        }, 120);
+      });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', function () {
+          var el = document.activeElement;
+          if (isTextField(el) && inForm(el)) setTimeout(function () { reveal(el); }, 100);
+        });
+      }
+      window.closeKeyboard = function () {
+        var el = document.activeElement;
+        if (el && el.blur) el.blur();
+        document.body.classList.remove('kb-open');
+      };
+    })();
 
     function runGas(fn) {
       var args = Array.prototype.slice.call(arguments, 1);
