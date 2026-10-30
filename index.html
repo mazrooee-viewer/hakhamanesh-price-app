@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261028172757">
+  <meta name="x-build" content="20261030095839">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261028172757" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261030095839" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -913,7 +913,7 @@
 
   function optimisticStatusName(action) {
     if (action === 'تعلیق') return 'تعلیق شده';
-    if (action === 'بازگشت') return 'در صف بررسی';
+    if (action === 'بازگشت' || action === 'بازگشایی') return 'در صف بررسی';
     return action;
   }
 
@@ -1049,6 +1049,11 @@
       if (p.statusAction === 'بازگشت') {
         if (!found) return false;
         return String(found.status || '').trim() === 'تعلیق شده';
+      }
+      if (p.statusAction === 'بازگشایی') {
+        if (!found) return false;
+        var rs = String(found.status || '').trim();
+        return rs === 'صادر شد' || rs === 'صادر شده';
       }
       if (p.statusAction === 'اتمام') return !!found;
       if (p.statusAction === 'ناقص' || p.statusAction === 'مغایرت') {
@@ -2587,18 +2592,18 @@
 
     function reopenCard(salesperson, row, employer) {
       if (!confirm('آیا مایلید استعلام «' + (employer || '') + '» جهت اصلاح مجدداً به صف بررسی منتقل شود؟')) return;
-      toast('در حال انتقال به صف بررسی...');
-      runGas('reopenInquiryToQueue', { salesperson: salesperson, row: row })
-        .then(function () {
-          toast('کارت با موفقیت به صف بررسی بازگردانده شد');
-          loadInbox(true);
-          if (document.getElementById('screen-form').classList.contains('active')) {
-            goHome();
-          }
-        })
-        .catch(function (err) {
-          toast((err && err.message) || 'خطا در بازگرداندن کارت', true);
-        });
+      var payload = { salesperson: salesperson, row: row, statusAction: 'بازگشایی' };
+      var prev = snapshotCardFor(salesperson, row);
+      var job = pf() ? pf().enqueueStatus(payload, prev) : { id: String(Date.now()), payload: payload, prev: prev };
+      if (pf()) {
+        state.allCards = pf().applyOptimisticStatus(state.allCards, salesperson, row, 'در صف بررسی');
+        pf().writeInbox(state.allCards);
+        updateHomeCounts();
+        if (document.getElementById('screen-inbox').classList.contains('active')) renderInboxList();
+      }
+      toast('کارت به صف بررسی بازگردانده شد');
+      if (document.getElementById('screen-form').classList.contains('active')) goHome();
+      sendStatusJob(job, 'reopenInquiryToQueue');
     }
 
     function setOutSheet(name) {
@@ -3048,7 +3053,7 @@
       if (!pf()) return;
       pf().readStatusQueue().forEach(function (job) {
         var action = job.payload && job.payload.statusAction;
-        var handler = action === 'مغایرت' ? 'markInquiryIncomplete' : (action === 'ابطال شد' ? 'revokeOfferInquiry' : (action === 'تعلیق' ? 'suspendInquiry' : (action === 'بازگشت' ? 'resumeSuspendedInquiry' : 'finishInquiry')));
+        var handler = action === 'مغایرت' ? 'markInquiryIncomplete' : (action === 'ابطال شد' ? 'revokeOfferInquiry' : (action === 'تعلیق' ? 'suspendInquiry' : (action === 'بازگشت' ? 'resumeSuspendedInquiry' : (action === 'بازگشایی' ? 'reopenInquiryToQueue' : 'finishInquiry'))));
         sendStatusJob(job, handler);
       });
     }
