@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261030150207">
+  <meta name="x-build" content="20261030211329">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261030150207" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261030211329" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -476,6 +476,21 @@
       font-weight: 800;
       font-family: Vazirmatn, Tahoma, sans-serif;
     }
+    .mismatch-badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      font-family: Vazirmatn, Tahoma, sans-serif;
+      background: #fee2e2; color: #991b1b; border: 1px solid #f87171;
+    }
+    .mismatch-detail { margin-top: 4px; font-size: 11px; color: #991b1b; }
+    .mismatch-banner {
+      margin: 10px 0; padding: 10px 12px; border-radius: 12px; text-align: center;
+      background: #fee2e2; color: #991b1b; border: 1px solid #f87171; font-weight: 800; font-size: 13px;
+    }
     .issue-badge.running { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
     .issue-badge.queued { background: #e0e7ff; color: #3730a3; border: 1px solid #818cf8; }
     .issue-badge.running::before {
@@ -722,6 +737,7 @@
         <button class="btn btn-bad" type="button" onclick="submitIncompleteReason('مغایرت پکیج انتخابی با موارد انتخاب‌‌شده در فرم محاسبه')">مغایرت پکیج انتخابی با موارد انتخاب‌‌شده در فرم محاسبه</button>
         <button class="btn btn-ghost" type="button" onclick="cancelIncomplete()" style="margin-top:5px; background: #fff; color: #333; border: 1px solid #ddd;">انصراف</button>
       </div>
+      <div id="sheet-mismatch" class="mismatch-banner" style="display:none"></div>
       <div id="pdfs" class="pdfs"></div>
     </div>
   </section>
@@ -1851,7 +1867,7 @@
           ? '<div style="margin-top:8px;"><button type="button" class="btn btn-sm" onclick="event.stopPropagation(); reopenCard(\'' + escapeHtml(c.salesperson) + '\', ' + c.row + ', \'' + escapeHtml(c.employer) + '\')" style="background:#f59e0b; color:#fff; border:none; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:700; cursor:pointer;">اصلاح کردن</button></div>'
           : '';
         return '<div class="card">' +
-          '<div class="who">' + escapeHtml(c.salespersonLabel || c.salesperson) + '</div>' + issueBadgeHtml(c) +
+          '<div class="who">' + escapeHtml(c.salespersonLabel || c.salesperson) + '</div>' + issueBadgeHtml(c) + sheetMismatchBadgeHtml(c) +
           '<div class="name">' + (c.code ? ('<span style="color:#0f766e;">' + escapeHtml(String(c.code)) + '</span> — ') : '') + escapeHtml(c.employer) + '</div>' +
           '<div class="spec">' + (c.packageName ? (escapeHtml(packageDisplayName(c.packageName)) + ' — ') : '') + escapeHtml(c.system) + ' — ظرفیت ' + escapeHtml(c.caps) + ' — توقف ' + escapeHtml(c.stop) + '</div>' +
           cardDatesHtml(c) +
@@ -2314,6 +2330,7 @@
         extraNote: card.extraNote || '',
         packageName: card.packageName || (card.inquiry && card.inquiry.packageName) || '',
         date: card.date || '',
+        sheetMismatch: card.sheetMismatch || '',
         values: card.inquiry.values,
         totals: {},
         prices: {},
@@ -2323,7 +2340,7 @@
     }
 
     function inquiryFingerprint(d) {
-      return JSON.stringify([d.employer, d.values, d.note, d.extraNote, d.pdfs, d.attachment, d.status, d.packageName]);
+      return JSON.stringify([d.employer, d.values, d.note, d.extraNote, d.pdfs, d.attachment, d.status, d.packageName, d.sheetMismatch || '']);
     }
 
     function openPackagePreview(packageName) {
@@ -2430,6 +2447,7 @@
       document.getElementById('profitPct').value = (data.totals && data.totals.profitPct) || '';
       setTotals(data.totals || {});
       renderPdfs(data.pdfs || []);
+      renderSheetMismatchBanner(data.preview ? '' : data.sheetMismatch);
       var reopenBtn = document.getElementById('reopen-inquiry');
       if (reopenBtn) {
         var isIssued = (data.status === 'صادر شد' || data.status === 'صادر شده');
@@ -2707,6 +2725,48 @@
       return '<div class="issue-badge ' + st + '">' + (st === 'running' ? 'در حال صدور' : 'در صف صدور') + '</div>';
     }
 
+    function sheetMismatchBadgeHtml(c) {
+      var t = String((c && c.sheetMismatch) || '').trim();
+      if (!t) return '';
+      var detail = t.replace(/^مغایرت با شیت\s*—\s*/, '');
+      return '<div class="mismatch-badge" title="' + escapeHtml(t) + '">مغایرت با شیت</div>' +
+        (detail && detail !== t ? '<div class="mismatch-detail">' + escapeHtml(detail) + '</div>' : '');
+    }
+
+    function renderSheetMismatchBanner(text) {
+      var el = document.getElementById('sheet-mismatch');
+      if (!el) return;
+      var t = String(text || '').trim();
+      el.style.display = t ? 'block' : 'none';
+      el.textContent = t ? ('⚠️ ' + t + ' — شیت زنده را بررسی و اصلاح کنید، سپس دوباره صدور بزنید') : '';
+    }
+
+    function setCardSheetMismatch(salesperson, row, text) {
+      var hit = false;
+      (state.allCards || []).forEach(function (c) {
+        if (c && c.salesperson === salesperson && Number(c.row) === Number(row)) { c.sheetMismatch = text || ''; hit = true; }
+      });
+      if (hit && pf()) { try { pf().writeInbox(state.allCards); } catch (e) {} }
+      return hit;
+    }
+
+    function haltIssueQueueOnMismatch(job, res) {
+      var dropped = state.issueJobs.filter(function (j) { return j !== job; });
+      state.issueJobs = [];
+      state.issueRunning = false;
+      state.finishQueued = false;
+      var same = issueFormIsOpen(job.key);
+      setCardSheetMismatch(res.salesperson || job.payload.salesperson, res.row || job.payload.row, res.label || 'مغایرت با شیت');
+      if (same) renderSheetMismatchBanner(res.label || 'مغایرت با شیت');
+      syncIssueState();
+      var finish = document.getElementById('finish');
+      if (finish && same) finish.disabled = false;
+      toast('مغایرت با شیت: قیمت اپ ' + (res.appFinal || '') + ' با شیت ' + (res.sheetFinal || '') + ' یکسان نیست؛ صدور متوقف شد' +
+        (dropped.length ? (' و ' + dropped.length + ' مورد داخل صف لغو شد') : '') +
+        (job.custom ? ' — کارت ذخیره شد؛ بعد از اصلاح شیت از لیست بازش کنید' : ''), true);
+      loadInbox(true);
+    }
+
     function renderIssueQueueChip() {
       var chip = document.getElementById('issue-queue-chip');
       if (!chip) return;
@@ -2791,6 +2851,7 @@
     function completeIssueJob(job, res, err) {
       var same = issueFormIsOpen(job.key);
       removeIssueJob(job);
+      if (!err) setCardSheetMismatch(job.payload.salesperson, job.payload.row, '');
       if (same && job.finishAfter) state.finishQueued = true;
       if (err) {
         if (same) onIssuePdfFailure(err);
@@ -2800,6 +2861,7 @@
           if (job.finishAfter) finishInBackground(job);
         }
       } else if (same) {
+        renderSheetMismatchBanner('');
         onIssuePdfSuccess(res);
         if (job.custom) {
           state.customNew = false;
@@ -2819,6 +2881,10 @@
       if (allowMismatch) payload.allowPriceMismatch = true;
       var run = google.script.run
         .withSuccessHandler(function (res) {
+          if (res && res.sheetMismatch) {
+            haltIssueQueueOnMismatch(job, res);
+            return;
+          }
           if (res && res.needPriceConfirm) {
             if (job.custom) {
               completeIssueJob(job, null, new Error(((res.messages || []).join(' — ')) || 'قیمت با قوانین سازگار نیست'));
@@ -2944,6 +3010,8 @@
         payload.destination = destEl ? destEl.value : 'custom';
         if (!payload.employer) return toast('نام کارفرما را وارد کنید', true);
       }
+      var finalEl = document.getElementById('costToman');
+      payload.appFinal = finalEl ? String(finalEl.value || '').trim() : '';
       var check = listAppHavePriceViolations(payload.values, readFormPrices());
       if (!check.known) {
         enqueueIssueJob(payload, isCustom);
