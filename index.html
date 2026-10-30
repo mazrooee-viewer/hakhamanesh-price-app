@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261030102707">
+  <meta name="x-build" content="20261030103645">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261030102707" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261030103645" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -467,6 +467,27 @@
       box-sizing: border-box; pointer-events: none; z-index: 2;
     }
     .pdfs a { color: #1d4ed8; font-weight: 700; }
+    .issue-badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      font-family: Vazirmatn, Tahoma, sans-serif;
+    }
+    .issue-badge.running { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
+    .issue-badge.queued { background: #e0e7ff; color: #3730a3; border: 1px solid #818cf8; }
+    .issue-badge.running::before {
+      content: '';
+      display: inline-block;
+      width: 8px; height: 8px;
+      margin-left: 6px;
+      border-radius: 50%;
+      background: #f59e0b;
+      animation: issue-pulse 1s ease-in-out infinite;
+    }
+    @keyframes issue-pulse { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
     #issue-queue-chip {
       position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; z-index: 70;
       max-width: calc(100vw - 96px); padding: 8px 14px; border-radius: 999px;
@@ -1830,7 +1851,7 @@
           ? '<div style="margin-top:8px;"><button type="button" class="btn btn-sm" onclick="event.stopPropagation(); reopenCard(\'' + escapeHtml(c.salesperson) + '\', ' + c.row + ', \'' + escapeHtml(c.employer) + '\')" style="background:#f59e0b; color:#fff; border:none; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:700; cursor:pointer;">اصلاح کردن</button></div>'
           : '';
         return '<div class="card">' +
-          '<div class="who">' + escapeHtml(c.salespersonLabel || c.salesperson) + '</div>' +
+          '<div class="who">' + escapeHtml(c.salespersonLabel || c.salesperson) + '</div>' + issueBadgeHtml(c) +
           '<div class="name">' + (c.code ? ('<span style="color:#0f766e;">' + escapeHtml(String(c.code)) + '</span> — ') : '') + escapeHtml(c.employer) + '</div>' +
           '<div class="spec">' + (c.packageName ? (escapeHtml(packageDisplayName(c.packageName)) + ' — ') : '') + escapeHtml(c.system) + ' — ظرفیت ' + escapeHtml(c.caps) + ' — توقف ' + escapeHtml(c.stop) + '</div>' +
           cardDatesHtml(c) +
@@ -2674,6 +2695,18 @@
       return !!(scr && scr.classList.contains('active') && state.formMode === 'inquiry' && currentIssueKey() === key);
     }
 
+    function cardIssueState(c) {
+      var job = pendingIssueJob(issueCardKey({ salesperson: c && c.salesperson, row: c && c.row }));
+      if (!job) return '';
+      return job.running ? 'running' : 'queued';
+    }
+
+    function issueBadgeHtml(c) {
+      var st = cardIssueState(c);
+      if (!st) return '';
+      return '<div class="issue-badge ' + st + '">' + (st === 'running' ? 'در حال صدور' : 'در صف صدور') + '</div>';
+    }
+
     function renderIssueQueueChip() {
       var chip = document.getElementById('issue-queue-chip');
       if (!chip) return;
@@ -2697,6 +2730,8 @@
         btn.textContent = job ? (job.running ? 'در حال صدور...' : 'در صف صدور...') : 'صدور لیست قیمت';
       }
       renderIssueQueueChip();
+      var inbox = document.getElementById('screen-inbox');
+      if (inbox && inbox.classList.contains('active') && typeof renderInboxList === 'function') renderInboxList();
     }
 
     function resetIssueButton() {
