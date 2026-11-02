@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261102172543">
+  <meta name="x-build" content="20261102194244">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbycunrhs9C9vh-r7uVq7GEZvgjA_Iv1a-PZ9zaCEASLH3KGFIwhxHK2gGFMGiRbpxi3_g/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261102172543" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261102194244" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -240,7 +240,7 @@
         <div class="flex items-center gap-2">
           <button id="commitAllBtn" onclick="confirmTransferToAll()" disabled class="px-3.5 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl transition flex items-center gap-1.5">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            <span>تایید انتقال به شیت All</span>
+            <span id="commitAllLabel">تایید انتقال به شیت All</span>
           </button>
           <button onclick="copyTableData()" class="px-3.5 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition flex items-center gap-1.5 border border-slate-200/60">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
@@ -1163,10 +1163,30 @@
       document.getElementById('summaryTotal').innerHTML = `مجموع ارزش فاکتور: <b>${total.toLocaleString('fa-IR')} تومان</b>`;
       var commitBtn = document.getElementById('commitAllBtn');
       if (commitBtn) {
-        var matched = previewFromPhoto ? previewItems.filter(function (row) { return row && row.status === 'matched' && row.key && row.price; }).length : 0;
-        commitBtn.disabled = matched === 0;
-        commitBtn.title = matched ? (matched + ' ردیف تطبیق‌شده منتقل می‌شود') : 'ردیف تطبیق‌شده‌ای نیست';
+        var matchedRows = previewFromPhoto ? previewItems.filter(function (row) { return row && row.status === 'matched' && row.key && row.price; }) : [];
+        var matched = matchedRows.filter(function (row) { return !row.committed; }).length;
+        var allDone = matchedRows.length > 0 && matched === 0;
+        setCommitButtonState(allDone ? 'done' : 'idle');
+        commitBtn.disabled = !allDone && matched === 0;
+        commitBtn.title = allDone ? 'همهٔ ردیف‌های تطبیق‌شده در شیت All ثبت شده‌اند'
+          : (matched ? (matched + ' ردیف تطبیق‌شده منتقل می‌شود') : 'ردیف تطبیق‌شده‌ای نیست');
       }
+    }
+
+    function setCommitButtonState(state) {
+      var btn = document.getElementById('commitAllBtn');
+      var label = document.getElementById('commitAllLabel');
+      if (!btn) return;
+      var done = state === 'done';
+      btn.classList.toggle('bg-emerald-600', !done);
+      btn.classList.toggle('hover:bg-emerald-700', !done);
+      btn.classList.toggle('text-white', !done);
+      btn.classList.toggle('bg-emerald-100', done);
+      btn.classList.toggle('text-emerald-700', done);
+      btn.classList.toggle('border', done);
+      btn.classList.toggle('border-emerald-200', done);
+      btn.classList.toggle('pointer-events-none', done);
+      if (label) label.textContent = done ? 'همگی منتقل شد' : 'تایید انتقال به شیت All';
     }
 
     // انتخاب دستی یک کاندید کیلوواتی: همین ردیف «تطبیق انتخاب‌شده» می‌شود و در انتقال می‌آید.
@@ -1235,9 +1255,10 @@
     }
 
     function confirmTransferToAll() {
-      var rows = (previewItems || []).filter(function (row) {
-        return row && row.status === 'matched' && row.key && row.price;
-      }).map(function (row) {
+      var sentItems = (previewItems || []).filter(function (row) {
+        return row && row.status === 'matched' && row.key && row.price && !row.committed;
+      });
+      var rows = sentItems.map(function (row) {
         return { key: row.key, price: row.price, status: row.status };
       });
       if (!previewFromPhoto || !rows.length) {
@@ -1259,11 +1280,23 @@
           showNotification((result && result.error) || 'انتقال انجام نشد.');
           return;
         }
-        showNotification(result.written + ' قیمت در شیت All نوشته شد' + (result.unchanged ? ' (' + result.unchanged + ' قیمت بدون تغییر ثبت نشد)' : '') + '. تاریخ: ' + (result.date || '') + (result.warning ? ' — ' + result.warning : ''));
+        showNotification(result.written + ' قیمت در شیت All نوشته شد' + (result.unchanged ? ' (' + result.unchanged + ' قیمت بدون تغییر ثبت نشد)' : '') + (result.repaired ? ' (' + result.repaired + ' قیمت ناقص مبدأ تکمیل شد)' : '') + '. تاریخ: ' + (result.date || '') + (result.warning ? ' — ' + result.warning : ''));
+        // فقط قلم‌هایی که واقعاً در All و مبدأ نشستند «منتقل‌شده» می‌شوند؛ ناقص ماندن یک قلم دکمه را فعال نگه می‌دارد تا دوباره انتقال داده شود.
+        var doneSet = null;
+        if (Array.isArray(result.doneKeys)) { doneSet = {}; result.doneKeys.forEach(function (k) { doneSet[k] = true; }); }
+        var marked = false;
+        sentItems.forEach(function (row) {
+          var okRow = doneSet ? doneSet[String(row.key).trim()] === true : Number(result.written) >= rows.length;
+          if (okRow) { row.committed = true; marked = true; }
+        });
+        if (marked) renderTable(previewItems);
       };
       var fail = function (err) {
         restoreBtn();
-        showNotification((err && err.message) || 'انتقال انجام نشد.');
+        var msg = (err && err.message) || 'انتقال انجام نشد.';
+        // انتقال تکرارپذیر است: قیمت‌های ثبت‌شده دوباره نوشته نمی‌شوند و سلول‌های ناقص مبدأ کامل می‌شوند.
+        if (/Exceeded maximum execution time|timed out|time.?out/i.test(msg)) msg += ' — اجرا نیمه‌کاره ماند؛ دوباره «تایید انتقال» را بزنید.';
+        showNotification(msg);
       };
       if (window.google && google.script && google.script.run) {
         google.script.run.withSuccessHandler(done).withFailureHandler(fail)
@@ -1617,6 +1650,7 @@
       pendingCategory = '';
       var commitBtn = document.getElementById('commitAllBtn');
       if (commitBtn) commitBtn.disabled = true;
+      setCommitButtonState('idle');
       var status = document.getElementById('filePickStatus');
       if (status) status.textContent = '';
       var input = document.getElementById('fileInput');
