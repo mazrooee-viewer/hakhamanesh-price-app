@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261102203430">
+  <meta name="x-build" content="20261103214051">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261102203430" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261103214051" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -221,10 +221,6 @@
       font-weight: 500;
     }
     .attach, .pdf-link { display: inline-block; margin-top: 8px; margin-left: 10px; font-size: 13px; font-weight: 700; color: #1d4ed8; }
-    .base-badge {
-      display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 999px;
-      background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; font-size: 12px; font-weight: 800;
-    }
     .empty { text-align: center; color: var(--muted); padding: 48px 12px; }
     .btn {
       border: none; font-family: inherit; border-radius: 14px;
@@ -364,6 +360,18 @@
     }
     .calc-row input.price[readonly].price-formula { background: #cfe2f3; }
     .calc-row input.price[readonly].price-changed { background: #fff2cc; }
+    .price-wrap { display: flex; align-items: center; gap: 4px; min-width: 0; }
+    .price-wrap .price { flex: 1; min-width: 0; width: auto; }
+    .age {
+      flex: 0 0 auto; border: 0; border-radius: 999px; padding: 2px 6px;
+      font-family: inherit; font-size: 10px; font-weight: 700; line-height: 1.5;
+      cursor: pointer;
+    }
+    .age-fresh { background: #15803d; color: #fff; }
+    .age-week { background: #bbf7d0; color: #14532d; }
+    .age-warn { background: #fdba74; color: #7c2d12; }
+    .age-old { background: #fecaca; color: #7f1d1d; }
+    .age-none { background: #e2e8f0; color: #64748b; }
     .calc-row input[type="number"] {
       text-align: center; font-size: 13px;
     }
@@ -1362,6 +1370,53 @@
       });
       return prices;
     }
+    // PRICE_AGE_START
+    function jalaliToGregorian_(jy, jm, jd) {
+      jy += 1595;
+      var days = -355668 + (365 * jy) + (Math.floor(jy / 33) * 8) + Math.floor(((jy % 33) + 3) / 4) + jd + ((jm < 7) ? (jm - 1) * 31 : ((jm - 7) * 30) + 186);
+      var gy = 400 * Math.floor(days / 146097);
+      days %= 146097;
+      if (days > 36524) {
+        gy += 100 * Math.floor(--days / 36524);
+        days %= 36524;
+        if (days >= 365) days++;
+      }
+      gy += 4 * Math.floor(days / 1461);
+      days %= 1461;
+      if (days > 365) {
+        gy += Math.floor((days - 1) / 365);
+        days = (days - 1) % 365;
+      }
+      var gd = days + 1;
+      var leap = (gy % 4 === 0 && gy % 100 !== 0) || (gy % 400 === 0);
+      var md = [0, 31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+      var gm = 1;
+      for (; gm <= 12 && gd > md[gm]; gm++) gd -= md[gm];
+      return { y: gy, m: gm, d: gd };
+    }
+    function priceAgeInfo(shamsi, todayIso) {
+      var m = String(shamsi || '').match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+      if (!m) return { cls: 'age-none', text: '—', title: 'بدون تاریخ' };
+      var g = jalaliToGregorian_(+m[1], +m[2], +m[3]);
+      var today = String(todayIso || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tehran' })).split('-');
+      var days = Math.round((Date.UTC(+today[0], +today[1] - 1, +today[2]) - Date.UTC(g.y, g.m - 1, g.d)) / 86400000);
+      var title = String(shamsi).trim();
+      if (!isFinite(days) || days < 0) days = 0;
+      if (days <= 0) return { cls: 'age-fresh', text: 'امروز', title: title };
+      var n = String(days).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
+      if (days < 7) return { cls: 'age-week', text: n + ' روز', title: title };
+      if (days <= 14) return { cls: 'age-warn', text: n + ' روز', title: title };
+      return { cls: 'age-old', text: n + ' روز', title: title };
+    }
+    // PRICE_AGE_END
+    function freshDate_(key) {
+      var map = (state.engine && state.engine.freshness) || {};
+      return map[String(key || '').trim()] || '';
+    }
+    function markFresh_(field, key) {
+      var d = freshDate_(key);
+      if (d) state.priceDates[field] = d;
+    }
     function computeLocalPrices(values) {
       var eng = state.engine;
       var prices = {};
@@ -1369,10 +1424,12 @@
       (state.bootstrap.fields || []).forEach(function (f) {
         prices[f.key] = fallback[f.key] || '';
       });
+      state.priceDates = {};
       if (!eng) return prices;
 
       var motor = findMotor(values);
       prices.motorBrand = fmtPrice(motor ? motor.price : 0);
+      if (motor) markFresh_('motorBrand', motor.key);
 
       var panel = null;
       var power = motor && motor.panel ? String(motor.panel).trim() : '';
@@ -1385,7 +1442,10 @@
         return false;
       });
       if (String(values.panelBrand || '').trim() === 'ندارد') prices.panelBrand = '0';
-      else prices.panelBrand = fmtPrice(panel && power ? (panel.prices[power] || 0) : 0);
+      else {
+        prices.panelBrand = fmtPrice(panel && power ? (panel.prices[power] || 0) : 0);
+        if (panel && power) markFresh_('panelBrand', panel.key + '/' + power);
+      }
 
       var upsAmount = lookupUpsPrice(values, eng);
       prices.ups = values.ups === 'دارد' ? (upsAmount ? fmtPrice(upsAmount) : '-') : '';
@@ -1404,8 +1464,12 @@
       if (door) {
         var doorMul = values.input === 'ساده' ? 1 : 2;
         prices.floorDoor = fmtPrice(roundToman(door.floorPrice * stops));
+        if (!eq(values.floorDoor, 'ندارد')) markFresh_('floorDoor', door.floorKey);
         if (values.cabinDoor === 'ندارد') prices.cabinDoor = '';
-        else prices.cabinDoor = fmtPrice(roundToman(door.cabinPrice * doorMul));
+        else {
+          prices.cabinDoor = fmtPrice(roundToman(door.cabinPrice * doorMul));
+          markFresh_('cabinDoor', door.cabinKey);
+        }
       }
 
       var cabinName = String(values.cabin || '').trim();
@@ -1432,6 +1496,7 @@
         var unit = rail.sizes[railSize] || 0;
         var qty = eng.railStops[String(values.stop)] || 0;
         prices.rail = fmtPrice(roundToman(unit * qty));
+        if (railSize) markFresh_('rail', rail.name + '/' + railSize);
       }
 
       if (values.smallParts === 'دارد') {
@@ -1535,6 +1600,7 @@
       state.lastPrices = prices;
       applyCalcState({ prices: prices, totals: computeLocalTotals(prices, payload.profitPct) });
       applyPriceHighlight(payload.values);
+      applyAgeBadges();
     }
 
     function toast(msg, bad) {
@@ -1681,11 +1747,6 @@
       var s = String(value == null ? '' : value).trim();
       if (!s || s === 'FALSE' || s === 'TRUE' || s === 'false' || s === 'true') return '';
       return s;
-    }
-
-    // کارت صادرشده با قیمت پایهٔ پکیج؛ متن «بر اساس پکیج فعال» برای کارت‌های قدیمیِ همین مسیر است.
-    function isBasePriceNote(note) {
-      return /صادر با قیمت پایه|بر اساس پکیج فعال/.test(String(note == null ? '' : note));
     }
 
     var MANAGER_NOTE_PRESETS = [
@@ -1882,7 +1943,6 @@
           ? '<a class="pdf-link" href="' + escapeHtml(c.pdf1) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">لیست قیمت ۱</a>'
           : '';
         var isIssued = (c.status === 'صادر شد' || c.status === 'صادر شده');
-        var baseBadge = (isIssued && isBasePriceNote(c.note)) ? '<div class="base-badge">صادر با قیمت پایه</div>' : '';
         var reopenBtnHtml = isIssued
           ? '<div style="margin-top:8px;"><button type="button" class="btn btn-sm" onclick="event.stopPropagation(); reopenCard(\'' + escapeHtml(c.salesperson) + '\', ' + c.row + ', \'' + escapeHtml(c.employer) + '\')" style="background:#f59e0b; color:#fff; border:none; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:700; cursor:pointer;">اصلاح کردن</button></div>'
           : '';
@@ -1891,7 +1951,6 @@
           '<div class="name">' + (c.code ? ('<span style="color:#0f766e;">' + escapeHtml(String(c.code)) + '</span> — ') : '') + escapeHtml(c.employer) + '</div>' +
           '<div class="spec">' + (c.packageName ? (escapeHtml(packageDisplayName(c.packageName)) + ' — ') : '') + escapeHtml(c.system) + ' — ظرفیت ' + escapeHtml(c.caps) + ' — توقف ' + escapeHtml(c.stop) + '</div>' +
           cardDatesHtml(c) +
-          baseBadge +
           attach + pdf + reopenBtnHtml +
           '</div>';
       }).join('');
@@ -2142,10 +2201,8 @@
           return;
         }
         var failed = (res && res.failed) || [];
-        var baseCards = Number(res && res.baseCards) || 0;
-        var baseNote = baseCards ? (' — ' + baseCards + ' استعلام بازاریاب با قیمت پایه صادر شد') : '';
-        if (failed.length) toast('صادر شد ولی ناقص: ' + failed.join(' و ') + baseNote, true);
-        else toast('لیست قیمت پکیج صادر شد' + baseNote);
+        if (failed.length) toast('صادر شد ولی ناقص: ' + failed.join(' و '), true);
+        else toast('لیست قیمت پکیج صادر شد');
         state.packageIssuing = '';
         setBasePriceIssueBtn(false);
       }).catch(function (err) {
@@ -2496,7 +2553,8 @@
       box.innerHTML = '';
       b.fields.forEach(function (f) {
         box.innerHTML += '<div class="calc-row">' +
-          '<input class="price" id="p-' + f.key + '" type="text" readonly>' +
+          '<div class="price-wrap"><input class="price" id="p-' + f.key + '" type="text" readonly>' +
+          '<button type="button" class="age age-none" id="age-' + f.key + '" data-title="بدون تاریخ">—</button></div>' +
           '<select id="f-' + f.key + '"></select>' +
           '<div class="part">' + escapeHtml(f.header) + (f.required ? ' *' : '') + '</div>' +
           '</div>';
@@ -2520,7 +2578,16 @@
       if (calcModeIsAuto()) applyConditionTable();
       setOutSheet(data.suggestedOutSheet || 'Traction');
       if (state.engine && !data.preview) applyLocalCalc();
-      else applyPriceHighlight(data.values || {});
+      else { state.priceDates = {}; applyPriceHighlight(data.values || {}); applyAgeBadges(); }
+      var ageBox = document.getElementById('form-fields');
+      if (ageBox && !ageBox._ageBound) {
+        ageBox._ageBound = true;
+        ageBox.onclick = function (ev) {
+          var t = ev.target;
+          if (!t || !t.classList || !t.classList.contains('age')) return;
+          toast(t.getAttribute('data-title') || 'بدون تاریخ');
+        };
+      }
     }
 
     function currentFormValues() {
@@ -2603,6 +2670,18 @@
       if (profitEl) profitEl.value = t.profitAmount || '';
       document.getElementById('costToman').value = t.costToman || '';
       document.getElementById('costRial').value = t.costRial || '';
+    }
+
+    function applyAgeBadges() {
+      var dates = state.priceDates || {};
+      (state.bootstrap.fields || []).forEach(function (f) {
+        var el = document.getElementById('age-' + f.key);
+        if (!el) return;
+        var info = priceAgeInfo(dates[f.key]);
+        el.className = 'age ' + info.cls;
+        el.textContent = info.text;
+        el.setAttribute('data-title', info.title);
+      });
     }
 
     function setPrices(prices) {
