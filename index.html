@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261105150100">
+  <meta name="x-build" content="20261105203937">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261105150100" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261105203937" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1595,9 +1595,16 @@
         costRial: fmtPrice(mround(costToman, 5000000) * 10)
       };
     }
+    // ردیف‌های Have Price = NO قیمتی در جمع ندارند (همان قاعدهٔ ستون D فرم محاسبه).
+    function dropNeverPriced(prices) {
+      var out = {};
+      Object.keys(prices || {}).forEach(function (k) { if (!fieldNeverPriced(k)) out[k] = prices[k]; });
+      return out;
+    }
+
     function applyLocalCalc() {
       var payload = collectPayload();
-      var prices = computeLocalPrices(payload.values);
+      var prices = dropNeverPriced(computeLocalPrices(payload.values));
       state.lastPrices = prices;
       applyCalcState({ prices: prices, totals: computeLocalTotals(prices, payload.profitPct) });
       applyPriceHighlight(payload.values);
@@ -2642,9 +2649,12 @@
       var box = document.getElementById('form-fields');
       box.innerHTML = '';
       b.fields.forEach(function (f) {
-        box.innerHTML += '<div class="calc-row">' +
+        // ردیفی که ستون Have Price فرم محاسبه برایش NO است ذاتاً قیمت نمی‌گیرد: خانهٔ قیمت و برچسب تاریخ ندارد.
+        var noPrice = fieldNeverPriced(f.key);
+        box.innerHTML += '<div class="calc-row' + (noPrice ? ' no-price' : '') + '">' +
+          (noPrice ? '<div class="price-wrap price-none"></div>' :
           '<div class="price-wrap"><input class="price" id="p-' + f.key + '" type="text" readonly>' +
-          '<button type="button" class="age age-none" id="age-' + f.key + '" data-title="بدون تاریخ">—</button></div>' +
+          '<button type="button" class="age age-none" id="age-' + f.key + '" data-title="بدون تاریخ">—</button></div>') +
           '<select id="f-' + f.key + '"></select>' +
           '<div class="part">' + escapeHtml(f.header) + (f.required ? ' *' : '') + '</div>' +
           '</div>';
@@ -2689,6 +2699,11 @@
         values[f.key] = el ? el.value : '';
       });
       return values;
+    }
+
+    function fieldNeverPriced(key) {
+      var cells = (state.bootstrap && state.bootstrap.priceCells) || {};
+      return !!(cells[key] && cells[key].have === 'no');
     }
 
     function applyPriceHighlight(values) {
@@ -2758,13 +2773,28 @@
       }
     }
 
+    // صفر در اپ مدیر «-» نمایش داده می‌شود (مثل قالب حسابداری فرم محاسبه)؛ مقدار واقعی در data-raw می‌ماند.
+    function setPriceCell(el, v) {
+      if (!el) return;
+      var raw = v == null ? '' : String(v);
+      var t = raw.trim();
+      var zero = t !== '' && (t === '-' || (/\d/.test(t) && parseNum(t) === 0));
+      el.value = zero ? '-' : raw;
+      el.setAttribute('data-raw', raw);
+    }
+
+    function priceCellRaw(el) {
+      if (!el) return '';
+      var r = el.getAttribute('data-raw');
+      return r == null ? el.value : r;
+    }
+
     function setTotals(t) {
-      document.getElementById('total').value = t.total || '';
+      setPriceCell(document.getElementById('total'), t.total);
       if (t.profitPct) document.getElementById('profitPct').value = t.profitPct;
-      var profitEl = document.getElementById('profitAmount');
-      if (profitEl) profitEl.value = t.profitAmount || '';
-      document.getElementById('costToman').value = t.costToman || '';
-      document.getElementById('costRial').value = t.costRial || '';
+      setPriceCell(document.getElementById('profitAmount'), t.profitAmount);
+      setPriceCell(document.getElementById('costToman'), t.costToman);
+      setPriceCell(document.getElementById('costRial'), t.costRial);
     }
 
     function applyAgeBadges() {
@@ -2782,7 +2812,7 @@
     function setPrices(prices) {
       (state.bootstrap.fields || []).forEach(function (f) {
         var el = document.getElementById('p-' + f.key);
-        if (el) el.value = (prices && prices[f.key]) || '';
+        if (el) setPriceCell(el, prices && prices[f.key] != null ? prices[f.key] : '');
       });
     }
 
@@ -3198,7 +3228,7 @@
       var prices = {};
       ((state.bootstrap && state.bootstrap.fields) || []).forEach(function (f) {
         var el = document.getElementById('p-' + f.key);
-        prices[f.key] = el ? el.value : '';
+        prices[f.key] = priceCellRaw(el);
       });
       return prices;
     }
@@ -3217,7 +3247,7 @@
         if (!payload.employer) return toast('نام کارفرما را وارد کنید', true);
       }
       var finalEl = document.getElementById('costToman');
-      payload.appFinal = finalEl ? String(finalEl.value || '').trim() : '';
+      payload.appFinal = String(priceCellRaw(finalEl) || '').trim();
       var check = listAppHavePriceViolations(payload.values, readFormPrices());
       if (!check.known) {
         enqueueIssueJob(payload, isCustom);
