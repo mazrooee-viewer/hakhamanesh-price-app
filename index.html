@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261103214051">
+  <meta name="x-build" content="20261105145642">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261103214051" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261105145642" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1697,7 +1697,7 @@
       applySystemLists(values.system || '', values);
       applyConditionTable(name, values);
       if (pkg.outSheet) setOutSheet(pkg.outSheet);
-      if (state.engine && state.formMode !== 'package') applyLocalCalc();
+      if (state.engine) applyLocalCalc();
       else applyPriceHighlight(values);
     }
 
@@ -1707,7 +1707,7 @@
     }
 
     function applyConditionTable(packageName, baseValues) {
-      if (!calcModeIsAuto()) return;
+      if (!calcModeIsAuto() || state.formMode === 'package') return;
       if (!window.PriceFast || !PriceFast.conditionPatch) return;
       var rules = (state.engine && state.engine.conditionRules) || (state.bootstrap && state.bootstrap.conditionRules) || [];
       var pkgName = packageName || ((document.getElementById('inquiry-package') || {}).value || '');
@@ -2423,27 +2423,61 @@
       return JSON.stringify([d.employer, d.values, d.note, d.extraNote, d.pdfs, d.attachment, d.status, d.packageName, d.sheetMismatch || '']);
     }
 
+    // درصد سود پیش‌نمایش پکیج فقط در همین مرورگر می‌ماند (پیش‌نمایش دیگر به فرم محاسبهٔ شیت دست نمی‌زند).
+    var PACKAGE_PREVIEW_PCT_KEY = 'mgrPackagePreviewPct';
+    function readPackagePreviewPct() {
+      try { return localStorage.getItem(PACKAGE_PREVIEW_PCT_KEY) || ''; } catch (e) { return ''; }
+    }
+    function writePackagePreviewPct(value) {
+      try { localStorage.setItem(PACKAGE_PREVIEW_PCT_KEY, String(value == null ? '' : value)); } catch (e) {}
+    }
+
+    // دادهٔ پیش‌نمایش از کاتالوگ پکیج‌ها (buildPackageFormCatalog_ روی Data_Offers، همراه getPriceEngineData/bootstrap و کش مرورگر)؛ بدون تماس سرور.
+    function packagePreviewData(packageName) {
+      var pkg = findPackageStruct(packageName);
+      if (!pkg) return null;
+      var name = pkg.packageName || packageName;
+      var display = pkg.displayName || name;
+      var values = {};
+      (state.bootstrap.fields || []).forEach(function (f) {
+        values[f.key] = (pkg.values && pkg.values[f.key]) || '';
+      });
+      return {
+        ok: true,
+        preview: true,
+        packageName: name,
+        displayName: display,
+        salesperson: '',
+        row: 0,
+        employer: display,
+        attachment: '',
+        status: 'پیش‌نمایش',
+        note: '',
+        extraNote: '',
+        date: '',
+        values: values,
+        totals: { profitPct: readPackagePreviewPct() },
+        prices: {},
+        pdfs: ['', '', '', ''],
+        suggestedOutSheet: pkg.outSheet || ''
+      };
+    }
+
     function openPackagePreview(packageName) {
       if (!state.bootstrap) return toast('گزینه‌های فرم هنوز بارگذاری نشده', true);
       if (!packageName) return;
+      var data = packagePreviewData(packageName);
+      if (!data) {
+        toast('ساختار این پکیج هنوز در اپ نیست؛ چند ثانیه بعد دوباره بزنید', true);
+        return;
+      }
       state.formMode = 'package';
-      state.previewPackageName = packageName;
+      state.previewPackageName = data.packageName;
       state.salesperson = '';
       state.row = 0;
-      document.getElementById('screen-form').classList.add('package-preview');
-      document.getElementById('form-back').textContent = 'بازگشت به پکیج‌ها';
-      document.getElementById('form-title').textContent = packageName;
-      document.getElementById('form-meta').textContent = 'پیش‌نمایش دستی — در حال همگام‌سازی با Data_Offers...';
-      setHeaderDates(todayJalali());
       showScreen('screen-form');
-      toast('پیش‌نمایش پکیج مثل حالت دستی شیت');
-      loadPackageProfitTable(packageName);
-      runGas('previewPackageForm', packageName).then(function (data) {
-        fillInquiryForm(data);
-      }).catch(function (err) {
-        toast((err && err.message) || 'پیش‌نمایش انجام نشد', true);
-        openPackages();
-      });
+      loadPackageProfitTable(data.packageName);
+      fillInquiryForm(data);
     }
 
     function backFromForm() {
@@ -2519,7 +2553,7 @@
       document.getElementById('form-meta').textContent = data.customNew
         ? 'پکیج را انتخاب کنید تا ساختار فرم از کش مرورگر پر شود'
         : (data.preview
-        ? 'حالت دستی فرم محاسبه — همگام با جدول پکیج Data_Offers'
+        ? 'پیش‌نمایش در اپ از جدول پکیج Data_Offers — فرم محاسبهٔ شیت تغییر نمی‌کند'
         : data.salesperson);
       setHeaderDates(cardDate(data));
       document.getElementById('sales-extra-note').value = data.extraNote || '';
@@ -2571,13 +2605,15 @@
       setPrices(data.prices || {});
       applySystemLists(document.getElementById('f-system').value, data.values || {});
       bindPriceRecalc();
+      // پیش‌نمایش پکیج همیشه مثل حالت دستی است (قفل فیلدها و جدول شرطی حالت اتومات روی آن اعمال نمی‌شود).
+      var autoLocked = calcModeIsAuto() && !data.preview;
       (b.fields || []).forEach(function (f) {
         var el = document.getElementById('f-' + f.key);
-        if (el) el.disabled = calcModeIsAuto();
+        if (el) el.disabled = autoLocked;
       });
-      if (calcModeIsAuto()) applyConditionTable();
+      if (autoLocked) applyConditionTable();
       setOutSheet(data.suggestedOutSheet || 'Traction');
-      if (state.engine && !data.preview) applyLocalCalc();
+      if (state.engine) applyLocalCalc();
       else { state.priceDates = {}; applyPriceHighlight(data.values || {}); applyAgeBadges(); }
       var ageBox = document.getElementById('form-fields');
       if (ageBox && !ageBox._ageBound) {
@@ -2628,13 +2664,16 @@
         el.onchange = function () {
           if (f.key === 'system') applySystemLists(this.value, {});
           applyConditionTable();
-          if (state.engine && state.formMode !== 'package') applyLocalCalc();
+          if (state.engine) applyLocalCalc();
           else applyPriceHighlight(currentFormValues());
         };
       });
       var pct = document.getElementById('profitPct');
       if (pct) {
-        pct.oninput = function () { if (state.engine) applyLocalCalc(); };
+        pct.oninput = function () {
+          if (state.formMode === 'package') writePackagePreviewPct(this.value);
+          if (state.engine) applyLocalCalc();
+        };
       }
     }
 
@@ -3395,7 +3434,7 @@
       if (pf() && pf().writeEngine) pf().writeEngine(data);
       if (document.getElementById('screen-form').classList.contains('active')) {
         fillPackageSelect((document.getElementById('inquiry-package') && document.getElementById('inquiry-package').value) || '');
-        if (state.formMode !== 'package') applyLocalCalc();
+        applyLocalCalc();
       }
     }).catch(function (err) {
       if (!cachedEngine) toast((err && err.message) || 'جداول قیمت لود نشد', true);
