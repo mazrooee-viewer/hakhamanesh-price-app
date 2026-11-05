@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261105145642">
+  <meta name="x-build" content="20261105150100">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261105145642" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261105150100" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1234,6 +1234,7 @@
       shortPathSaving: false,
       packageCatalog: [],
       packageLists: [],
+      profitTables: {},
       packageIssuing: '',
       formMode: 'inquiry',
       ignorePackageChange: false,
@@ -2109,15 +2110,57 @@
       });
     }
 
+    // کاتالوگ پکیج‌ها + جدول سود همه‌شان در کش مرورگر؛ صفحه فوری از کش باز می‌شود و سرور در پس‌زمینه تازه‌اش می‌کند.
+    var PACKAGE_CATALOG_CACHE_KEY = 'pricePackageCatalogCache';
+    var packageCatalogFetch = null;
+
+    function readPackageCatalogCache() {
+      try {
+        var raw = localStorage.getItem(PACKAGE_CATALOG_CACHE_KEY);
+        var data = raw ? JSON.parse(raw) : null;
+        return data && Array.isArray(data.packages) ? data : null;
+      } catch (e) { return null; }
+    }
+
+    function writePackageCatalogCache() {
+      try {
+        localStorage.setItem(PACKAGE_CATALOG_CACHE_KEY, JSON.stringify({
+          packages: state.packageCatalog || [],
+          lists: state.packageLists || [],
+          profitTables: state.profitTables || {}
+        }));
+      } catch (e) {}
+    }
+
+    function applyPackageCatalogData(data) {
+      state.packageCatalog = (data && data.packages) || [];
+      state.packageLists = (data && data.lists) || [];
+      if (data && data.profitTables) state.profitTables = data.profitTables;
+    }
+
+    function fetchPackageCatalog() {
+      if (packageCatalogFetch) return packageCatalogFetch;
+      packageCatalogFetch = runGas('getPackageCatalog').then(function (data) {
+        packageCatalogFetch = null;
+        applyPackageCatalogData(data);
+        writePackageCatalogCache();
+        return data;
+      }, function (err) {
+        packageCatalogFetch = null;
+        throw err;
+      });
+      return packageCatalogFetch;
+    }
+
     function loadPackages() {
       var catalogBox = document.getElementById('package-catalog');
-      if (catalogBox) catalogBox.innerHTML = '<div class="empty">در حال بارگذاری...</div>';
-      runGas('getPackageCatalog').then(function (data) {
-        state.packageCatalog = (data && data.packages) || [];
-        state.packageLists = (data && data.lists) || [];
-        renderPackageCatalog();
+      var hasRows = (state.packageCatalog || []).length > 0;
+      if (hasRows) renderPackageCatalog();
+      else if (catalogBox) catalogBox.innerHTML = '<div class="empty">در حال بارگذاری...</div>';
+      fetchPackageCatalog().then(function () {
+        if (document.getElementById('screen-packages').classList.contains('active')) renderPackageCatalog();
       }).catch(function (err) {
-        if (catalogBox) catalogBox.innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری انجام نشد') + '</div>';
+        if (!hasRows && catalogBox) catalogBox.innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری انجام نشد') + '</div>';
         toast((err && err.message) || 'بارگذاری انجام نشد', true);
       });
     }
@@ -2301,18 +2344,27 @@
       var btn = document.getElementById('save-profit-table');
       state.profitLoadToken = (state.profitLoadToken || 0) + 1;
       var token = state.profitLoadToken;
-      state.profitTableRows = [];
+      var cached = (state.profitTables || {})[packageName];
+      state.profitTableRows = cached ? JSON.parse(JSON.stringify(cached.rows || [])) : [];
       state.profitTableDirty = false;
-      box.innerHTML = '<div class="empty">در حال بارگذاری...</div>';
-      if (btn) btn.disabled = true;
+      if (cached) renderPackageProfitTable();
+      else {
+        box.innerHTML = '<div class="empty">در حال بارگذاری...</div>';
+        if (btn) btn.disabled = true;
+      }
       runGas('getPackageProfitTable', packageName).then(function (data) {
         if (token !== state.profitLoadToken) return;
-        state.profitTableRows = (data && data.rows) || [];
-        state.profitTableDirty = false;
+        var rows = (data && data.rows) || [];
+        state.profitTables = state.profitTables || {};
+        state.profitTables[packageName] = { missing: !!(data && data.missing), rows: rows };
+        writePackageCatalogCache();
+        if (state.profitTableDirty || state.profitTableSaving) return;
+        state.profitTableRows = JSON.parse(JSON.stringify(rows));
         renderPackageProfitTable();
-        if (data && data.missing) toast('ستون جدول سود این پکیج در شیت نیست', true);
+        if (data && data.missing && !cached) toast('ستون جدول سود این پکیج در شیت نیست', true);
       }).catch(function (err) {
         if (token !== state.profitLoadToken) return;
+        if (cached) return;
         box.innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری جدول سود انجام نشد') + '</div>';
         toast((err && err.message) || 'بارگذاری جدول سود انجام نشد', true);
       });
@@ -2353,8 +2405,12 @@
       state.profitTableSaving = true;
       btn.disabled = true;
       btn.textContent = 'در حال ذخیره...';
-      runGas('savePackageProfitTable', { packageName: state.previewPackageName, rows: rows }).then(function () {
+      var savedName = state.previewPackageName;
+      runGas('savePackageProfitTable', { packageName: savedName, rows: rows }).then(function () {
         state.profitTableDirty = false;
+        state.profitTables = state.profitTables || {};
+        state.profitTables[savedName] = { rows: rows };
+        writePackageCatalogCache();
         toast('جدول سود ذخیره شد');
         loadPackageProfitTable(state.previewPackageName);
       }).catch(function (err) {
@@ -2816,6 +2872,15 @@
     }
 
     function refreshTotals() {
+      // پیش‌نمایش پکیج کاملاً محلی است؛ در استعلام هم اول نتیجهٔ موتور مرورگر نشان داده می‌شود و سرور تأیید می‌کند.
+      var hasEngine = !!(state.engine || (state.bootstrap && state.bootstrap.packages));
+      if (hasEngine) {
+        try { applyLocalCalc(); } catch (e) { hasEngine = false; }
+      }
+      if (state.formMode === 'package') {
+        toast(hasEngine ? 'مبالغ به‌روز شد' : 'جداول قیمت هنوز بارگذاری نشده', !hasEngine);
+        return;
+      }
       google.script.run
         .withSuccessHandler(function (res) {
           applyCalcState(res || {});
@@ -3426,6 +3491,10 @@
     }).catch(function (err) {
       if (!cachedBoot) toast((err && err.message) || 'بارگذاری گزینه‌ها انجام نشد', true);
     });
+
+    var cachedPackageCatalog = readPackageCatalogCache();
+    if (cachedPackageCatalog) applyPackageCatalogData(cachedPackageCatalog);
+    fetchPackageCatalog().catch(function () {});
 
     var cachedEngine = pf() && pf().readEngine ? pf().readEngine() : null;
     if (cachedEngine) state.engine = cachedEngine;
