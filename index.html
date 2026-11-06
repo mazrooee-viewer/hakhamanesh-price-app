@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261106162013">
+  <meta name="x-build" content="20261106162109">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","issueCustomInquiry","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","issueCustomInquiry","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261106162013" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261106162109" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -525,6 +525,59 @@
     }
     body:has(.nav) #issue-queue-chip { bottom: 88px; }
     body:has(#screen-form.active) #issue-queue-chip { bottom: 116px; }
+
+    /* ===== به روز رسانی قیمت ها (PriceUpdate.js) ===== */
+    .home-prices { background: var(--navy); color: #fff; border-color: var(--gold); }
+    .home-prices .count { color: #f3e2b8; }
+    body[data-prices-only="1"] #back-fab { display: none !important; }
+    body[data-prices-only="1"] .screen:not(#screen-prices):not(#screen-uploader) { display: none !important; }
+    /* ===== آپلود لیست قیمت (Uploader.js؛ صفحهٔ UploaderApp.html در قاب جدا تا CSS/JS دو اپ قاطی نشود) ===== */
+    .home-upload { background: #fff4d6; color: #4a3208; border-color: var(--gold); }
+    #screen-uploader.active { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+    #screen-uploader .up-frame-wrap { flex: 1; min-height: 0; position: relative; background: #f8fafc; }
+    #up-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #f8fafc; }
+    #up-loading { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center; color: var(--muted); font-size: 14px; font-weight: 700; background: #f8fafc; text-align: center; padding: 16px; }
+    body[data-prices-only="1"]:has(#screen-uploader.active) #back-fab { display: block !important; }
+    .pu-upload-all { width: 100%; padding: 11px 12px; font-size: 14px; font-weight: 800; margin-bottom: 12px; }
+    .pu-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .pu-tab { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; text-align: right; font-family: inherit; color: var(--navy); cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
+    .pu-tab.on { border-color: var(--navy); box-shadow: inset 0 0 0 1px var(--navy); }
+    .pu-tab .t-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+    .pu-tab .t-name { font-weight: 800; font-size: 14px; }
+    .pu-tab .t-sub { font-size: 11px; color: var(--muted); }
+    .pu-tab .t-count { font-size: 12px; font-weight: 800; color: var(--muted); }
+    .pu-tab.complete .t-count { color: var(--green); }
+    .pu-bar { height: 6px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+    .pu-bar > i { display: block; height: 100%; width: 0; background: var(--green); border-radius: 99px; transition: width .35s ease; }
+    .pu-notice { background: #fff7ed; color: #9a3412; border-radius: 12px; padding: 10px 12px; font-size: 12.5px; font-weight: 700; margin-bottom: 12px; line-height: 1.7; }
+    .pu-notice.ok { background: #dcfce7; color: #14532d; }
+    .pu-group { background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; margin-bottom: 12px; }
+    .pu-ghead { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; background: #f8fafc; border-bottom: 1px solid var(--line); }
+    .pu-ghead h2 { margin: 0; font-size: 14px; font-weight: 800; }
+    .pu-gcount { font-size: 12px; color: var(--muted); font-weight: 700; display: flex; align-items: center; gap: 6px; }
+    .pu-group.complete .pu-ghead { background: #dcfce7; }
+    .pu-group.complete .pu-gcount { color: #15803d; }
+    .pu-tick { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; border: 2px solid var(--line); color: transparent; font-size: 13px; font-weight: 800; line-height: 1; transition: all .2s ease; }
+    .pu-tick.on, .pu-item.done .pu-tick { background: var(--green); border-color: var(--green); color: #fff; }
+    .pu-item { padding: 10px 14px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+    .pu-item:last-child { border-bottom: 0; }
+    .pu-item.busy { opacity: .6; pointer-events: none; }
+    .pu-row { display: flex; align-items: center; gap: 10px; }
+    .pu-main { flex: 1; min-width: 0; }
+    .pu-name { font-size: 13.5px; font-weight: 700; }
+    .pu-sub { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+    .pu-acts { display: flex; gap: 6px; flex-shrink: 0; }
+    .pu-btn { border: 1px solid var(--line); background: #fff; color: var(--navy); border-radius: 10px; padding: 6px 10px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .pu-same { border-color: var(--green); color: #15803d; }
+    .pu-up { background: var(--gold); border-color: var(--gold); color: #111; }
+    .pu-save { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .pu-item.done .pu-acts { display: none; }
+    .pu-edit { display: flex; gap: 6px; align-items: center; }
+    .pu-edit input { flex: 1; min-width: 0; border: 1px solid var(--line); background: #f8fafc; color: var(--navy); border-radius: 10px; padding: 8px 10px; font-family: inherit; font-size: 14px; font-weight: 700; direction: ltr; text-align: left; }
+    .pu-edit .unit { font-size: 12px; color: var(--muted); }
+    .pu-item.pu-w .pu-row { flex-wrap: wrap; }
+    .pu-item.pu-w .pu-acts { width: 100%; justify-content: flex-end; padding-inline-start: 32px; }
+    .pu-err { font-size: 11.5px; color: var(--red); font-weight: 700; }
   </style>
 </head>
 <body>
@@ -571,6 +624,14 @@
         <button class="home-btn home-short" type="button" onclick="openShortPath()">
           مسیر کوتاه
           <span class="count">ویرایش قیمت قطعات</span>
+        </button>
+        <button class="home-btn home-prices" type="button" onclick="openPriceUpdate()">
+          به روز رسانی قیمت ها
+          <span class="count" id="count-prices">—</span>
+        </button>
+        <button class="home-btn home-upload" type="button" onclick="openUploader(null)">
+          آپلود لیست قیمت
+          <span class="count">خواندن عکس لیست و ثبت در شیت All</span>
         </button>
         <button class="home-btn home-pkg" type="button" onclick="openPackages()">
           پکیج‌ها
@@ -789,6 +850,52 @@
         <button class="btn btn-main" id="save-short-path" type="button" onclick="saveShortPath()" disabled>ذخیره قیمت‌ها</button>
         <button class="btn btn-ghost" type="button" onclick="loadShortPath()">بازخوانی</button>
       </div>
+    </div>
+  </section>
+
+  <section id="screen-prices" class="screen">
+    <div class="top">
+      <div class="top-row">
+        <div>
+          <h1>به روز رسانی قیمت ها</h1>
+          <div class="meta" id="pu-meta">روزانه: قطعات رایج · هر شنبه: سایر قطعات</div>
+        </div>
+        <div class="date-badge" data-date-slot></div>
+      </div>
+    </div>
+    <div class="wrap">
+      <button class="pu-btn pu-up pu-upload-all" type="button" onclick="openUploader(null)">آپلود عکس لیست قیمت</button>
+      <div class="pu-tabs">
+        <button class="pu-tab on" id="pu-tab-daily" type="button" onclick="puShowTab('daily')">
+          <span class="t-row"><span class="t-name">روزانه</span><span class="t-count" id="pu-cnt-daily">—</span></span>
+          <span class="t-sub">قطعات رایج · مسیر کوتاه</span>
+          <span class="pu-bar"><i id="pu-bar-daily"></i></span>
+        </button>
+        <button class="pu-tab" id="pu-tab-weekly" type="button" onclick="puShowTab('weekly')">
+          <span class="t-row"><span class="t-name">هر شنبه</span><span class="t-count" id="pu-cnt-weekly">—</span></span>
+          <span class="t-sub">سایر قطعات · به تفکیک برند</span>
+          <span class="pu-bar"><i id="pu-bar-weekly"></i></span>
+        </button>
+      </div>
+      <div id="pu-daily"><div class="empty">در حال بارگذاری...</div></div>
+      <div id="pu-weekly" style="display:none"></div>
+      <button class="btn btn-ghost" type="button" style="width:100%;margin-top:4px" onclick="loadPriceUpdate()">بازخوانی</button>
+    </div>
+  </section>
+
+  <section id="screen-uploader" class="screen">
+    <div class="top">
+      <div class="top-row">
+        <div>
+          <h1>آپلود لیست قیمت</h1>
+          <div class="meta" id="up-meta">عکس یا PDF لیست قیمت را انتخاب کنید</div>
+        </div>
+        <div class="date-badge" data-date-slot></div>
+      </div>
+    </div>
+    <div class="up-frame-wrap">
+      <div id="up-loading">در حال بارگذاری آپلودر...</div>
+      <iframe id="up-frame" title="آپلود لیست قیمت"></iframe>
     </div>
   </section>
 
@@ -1234,6 +1341,7 @@
       shortPathSaving: false,
       packageCatalog: [],
       packageLists: [],
+      profitTables: {},
       packageIssuing: '',
       formMode: 'inquiry',
       ignorePackageChange: false,
@@ -1264,7 +1372,7 @@
     }
     function panelSheetModel(model) {
       var m = String(model || '').trim();
-      if (m === 'AC2') return 'OPEN';
+      if (m === 'AC2' || m === 'AC1') return 'OPEN';
       if (m === 'VVVF') return 'CLOSE';
       return m;
     }
@@ -1402,7 +1510,7 @@
       var days = Math.round((Date.UTC(+today[0], +today[1] - 1, +today[2]) - Date.UTC(g.y, g.m - 1, g.d)) / 86400000);
       var title = String(shamsi).trim();
       if (!isFinite(days) || days < 0) days = 0;
-      if (days <= 0) return { cls: 'age-fresh', text: 'امروز', title: title };
+      if (days <= 0) return { cls: 'age-fresh', text: '✓', title: title + ' (امروز)' };
       var n = String(days).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
       if (days < 7) return { cls: 'age-week', text: n + ' روز', title: title };
       if (days <= 14) return { cls: 'age-warn', text: n + ' روز', title: title };
@@ -1597,9 +1705,16 @@
         costRial: fmtPrice(mround(costToman, 5000000) * 10)
       };
     }
+    // ردیف‌های Have Price = NO قیمتی در جمع ندارند (همان قاعدهٔ ستون D فرم محاسبه).
+    function dropNeverPriced(prices) {
+      var out = {};
+      Object.keys(prices || {}).forEach(function (k) { if (!fieldNeverPriced(k)) out[k] = prices[k]; });
+      return out;
+    }
+
     function applyLocalCalc() {
       var payload = collectPayload();
-      var prices = computeLocalPrices(payload.values);
+      var prices = dropNeverPriced(computeLocalPrices(payload.values));
       state.lastPrices = prices;
       applyCalcState({ prices: prices, totals: computeLocalTotals(prices, payload.profitPct) });
       applyPriceHighlight(payload.values);
@@ -1645,6 +1760,7 @@
       var active = document.querySelector('.screen.active');
       var id = active ? active.id : '';
       if (id === 'screen-form') backFromForm();
+      else if (id === 'screen-uploader') closeUploader();
       else showHome();
     }
 
@@ -1700,7 +1816,7 @@
       applySystemLists(values.system || '', values);
       applyConditionTable(name, values);
       if (pkg.outSheet) setOutSheet(pkg.outSheet);
-      if (state.engine && state.formMode !== 'package') applyLocalCalc();
+      if (state.engine) applyLocalCalc();
       else applyPriceHighlight(values);
     }
 
@@ -1710,7 +1826,7 @@
     }
 
     function applyConditionTable(packageName, baseValues) {
-      if (!calcModeIsAuto()) return;
+      if (!calcModeIsAuto() || state.formMode === 'package') return;
       if (!window.PriceFast || !PriceFast.conditionPatch) return;
       var rules = (state.engine && state.engine.conditionRules) || (state.bootstrap && state.bootstrap.conditionRules) || [];
       var pkgName = packageName || ((document.getElementById('inquiry-package') || {}).value || '');
@@ -2075,6 +2191,284 @@
       });
     }
 
+
+    // ===== به روز رسانی قیمت ها (سرور: PriceUpdate.js) =====
+    var puState = { board: null, tab: 'daily', editing: 0, err: {}, busy: {}, mism: {}, queue: Promise.resolve() };
+    function puPricesOnly() { return document.body.getAttribute('data-prices-only') === '1'; }
+    function puFa(v) { return String(v == null ? '' : v).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; }); }
+    function puMoney(v) { return (v === '' || v == null) ? 'بدون قیمت' : puFa(formatShortPathPrice(v)); }
+    function puAge(date, today) {
+      if (!date) return '<span class="age age-none">بدون تاریخ</span>';
+      var info = priceAgeInfo(date, puTodayIso());
+      return '<span class="age ' + info.cls + '" title="' + escapeHtml(info.title) + '">' + escapeHtml(info.text) + '</span>';
+    }
+    function puTodayIso() { return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tehran' }); }
+    function puParse(v) {
+      var s = String(v == null ? '' : v).replace(/[۰-۹]/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); })
+        .replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }).replace(/[,،٬\s]/g, '');
+      return /^\d+$/.test(s) ? Number(s) : NaN;
+    }
+    function openPriceUpdate() {
+      setHeaderDates(todayJalali());
+      showScreen('screen-prices');
+      if (puState.board) puRender();
+      loadPriceUpdate();
+    }
+    function loadPriceUpdate(quiet) {
+      return runGas('getPriceUpdateBoard').then(function (b) {
+        puState.board = b;
+        puRender();
+        puHomeCount();
+      }).catch(function (err) {
+        if (!quiet) {
+          if (!puState.board) document.getElementById('pu-daily').innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری انجام نشد') + '</div>';
+          toast((err && err.message) || 'بارگذاری انجام نشد', true);
+        }
+      });
+    }
+    function puHomeCount() {
+      var b = puState.board, el = document.getElementById('count-prices');
+      if (!b || !el) return;
+      var d = b.dailyTotal - b.dailyLeft, w = b.weeklyTotal - b.weeklyLeft;
+      el.textContent = 'روزانه ' + puFa(d) + ' از ' + puFa(b.dailyTotal) + ' · هفتگی ' + puFa(w) + ' از ' + puFa(b.weeklyTotal);
+    }
+    function puShowTab(tab) {
+      puState.tab = tab;
+      document.getElementById('pu-tab-daily').classList.toggle('on', tab === 'daily');
+      document.getElementById('pu-tab-weekly').classList.toggle('on', tab === 'weekly');
+      document.getElementById('pu-daily').style.display = tab === 'daily' ? '' : 'none';
+      document.getElementById('pu-weekly').style.display = tab === 'weekly' ? '' : 'none';
+    }
+    function puRecount() {
+      var b = puState.board;
+      b.dailyLeft = b.daily.filter(function (x) { return !x.done; }).length;
+      b.weeklyLeft = b.weekly.filter(function (g) { return !g.complete; }).length;
+    }
+    function puRender() {
+      var b = puState.board;
+      if (!b) return;
+      puRecount();
+      var dd = b.dailyTotal - b.dailyLeft, wd = b.weeklyTotal - b.weeklyLeft;
+      document.getElementById('pu-cnt-daily').textContent = puFa(dd) + ' از ' + puFa(b.dailyTotal);
+      document.getElementById('pu-cnt-weekly').textContent = puFa(wd) + ' از ' + puFa(b.weeklyTotal);
+      document.getElementById('pu-bar-daily').style.width = (b.dailyTotal ? dd / b.dailyTotal * 100 : 0) + '%';
+      document.getElementById('pu-bar-weekly').style.width = (b.weeklyTotal ? wd / b.weeklyTotal * 100 : 0) + '%';
+      document.getElementById('pu-tab-daily').classList.toggle('complete', b.dailyTotal > 0 && !b.dailyLeft);
+      document.getElementById('pu-tab-weekly').classList.toggle('complete', b.weeklyTotal > 0 && !b.weeklyLeft);
+      puRenderDaily();
+      puRenderWeekly();
+      puHomeCount();
+    }
+    function puGroupHead(title, done, total) {
+      var all = total > 0 && done === total;
+      return '<div class="pu-ghead"><h2>' + escapeHtml(title) + '</h2><span class="pu-gcount">' + puFa(done) + ' از ' + puFa(total) +
+        ' <span class="pu-tick' + (all ? ' on' : '') + '">✓</span></span></div>';
+    }
+    function puRenderDaily() {
+      var b = puState.board, box = document.getElementById('pu-daily');
+      var html = '';
+      if (b.holiday) html += '<div class="pu-notice">امروز تعطیل است؛ استعلام روزانه لازم نیست.</div>';
+      else if (!b.dailyLeft) html += '<div class="pu-notice ok">همهٔ قطعات رایج امروز به‌روز شد ✓</div>';
+      var cats = [], byCat = {};
+      b.daily.forEach(function (it) { if (!byCat[it.cat]) { byCat[it.cat] = []; cats.push(it.cat); } byCat[it.cat].push(it); });
+      cats.forEach(function (cat) {
+        var items = byCat[cat], done = items.filter(function (x) { return x.done; }).length;
+        html += '<section class="pu-group' + (done === items.length ? ' complete' : '') + '">' + puGroupHead(cat, done, items.length);
+        items.forEach(function (it) {
+          var busy = puState.busy['d' + it.row];
+          html += '<div class="pu-item' + (it.done ? ' done' : '') + (busy ? ' busy' : '') + '"><div class="pu-row">' +
+            '<span class="pu-tick">✓</span>' +
+            '<div class="pu-main"><div class="pu-name">' + escapeHtml(it.name) + '</div><div class="pu-sub">' + puMoney(it.price) + ' ' + puAge(it.date) + '</div></div>' +
+            '<div class="pu-acts"><button class="pu-btn pu-same" type="button" onclick="puDailySame(' + it.row + ')">بدون تغییر</button>' +
+            '<button class="pu-btn" type="button" onclick="puDailyEdit(' + it.row + ')">قیمت جدید</button></div></div>';
+          if (puState.editing === it.row && !it.done) {
+            html += '<div class="pu-edit"><input id="pu-in-' + it.row + '" type="text" inputmode="numeric" placeholder="مثلاً 310,000,000" aria-label="قیمت جدید ' + escapeHtml(it.name) + '" onkeydown="if(event.key===\'Enter\')puDailySave(' + it.row + ')">' +
+              '<span class="unit">تومان</span><button class="pu-btn pu-save" type="button" onclick="puDailySave(' + it.row + ')">ثبت</button></div>' +
+              (puState.err[it.row] ? '<div class="pu-err">' + escapeHtml(puState.err[it.row]) + '</div>' : '');
+          }
+          html += '</div>';
+        });
+        html += '</section>';
+      });
+      box.innerHTML = html || '<div class="empty">ردیفی در شیت مسیر کوتاه نیست</div>';
+      if (puState.editing) { var inp = document.getElementById('pu-in-' + puState.editing); if (inp) inp.focus(); }
+    }
+    function puWeekLabel(b) {
+      var due = b.weeklyDueDate;
+      if (!due) return 'هفتهٔ ' + puFa(b.weekStart) + ' · تا امروز روز کاری نبوده؛ استعلام هفتگی از اولین روز کاری شروع می‌شود.';
+      var txt = 'هفتهٔ ' + puFa(b.weekStart);
+      if (due !== b.weekStart) txt += ' · شنبه تعطیل بود؛ شروع از ' + puFa(due);
+      if (b.weeklyLate) txt += ' · عقب افتاده';
+      return txt + '. هر گروه را با «عکس لیست» (آپلودر) یا «بدون تغییر» ببندید؛ قیمت‌هایی که آپلودر ثبت کند خودکار تیک می‌خورند.';
+    }
+    function puRenderWeekly() {
+      var b = puState.board, box = document.getElementById('pu-weekly');
+      var html = '<div class="pu-notice' + (!b.weeklyLeft ? ' ok' : '') + '">' + (!b.weeklyLeft ? 'همهٔ گروه‌های این هفته بسته شد ✓' : escapeHtml(puWeekLabel(b))) + '</div>';
+      var cats = [], byCat = {};
+      b.weekly.forEach(function (g, i) { g._i = i; if (!byCat[g.cat]) { byCat[g.cat] = []; cats.push(g.cat); } byCat[g.cat].push(g); });
+      cats.forEach(function (cat) {
+        var gs = byCat[cat], done = gs.filter(function (g) { return g.complete; }).length;
+        html += '<section class="pu-group' + (done === gs.length ? ' complete' : '') + '">' + puGroupHead(cat, done, gs.length);
+        gs.forEach(function (g) {
+          var busy = puState.busy['w' + g._i];
+          var sub = g.complete ? 'همهٔ ' + puFa(g.total) + ' قلم این هفته به‌روز شد'
+            : puFa(g.done) + ' از ' + puFa(g.total) + ' قلم · ' + (g.oldest ? 'قدیمی‌ترین: ' + puFa(g.oldest) : 'بدون تاریخ');
+          html += '<div class="pu-item pu-w' + (g.complete ? ' done' : '') + (busy ? ' busy' : '') + '"><div class="pu-row">' +
+            '<span class="pu-tick">✓</span>' +
+            '<div class="pu-main"><div class="pu-name">' + escapeHtml(String(g.brand).replace(/\//g, ' / ')) + '</div><div class="pu-sub">' + sub + '</div></div>' +
+            '<div class="pu-acts"><button class="pu-btn pu-same" type="button" onclick="puGroupSame(' + g._i + ')">' + (g.done ? 'بقیه بدون تغییر' : 'بدون تغییر') + '</button>' +
+            '<button class="pu-btn pu-up" type="button" onclick="puOpenUploader(' + g._i + ')">عکس لیست</button>' +
+            '</div></div>' + puMismHtml(g) + '</div>';
+        });
+        html += '</section>';
+      });
+      box.innerHTML = html;
+    }
+    function puMismHtml(g) {
+      var bad = !g.complete && puState.mism[g.id];
+      if (!bad || !bad.length) return '';
+      var list = bad.slice(0, 4).map(function (m) { return '<li><bdi dir="ltr">' + escapeHtml(m.key || ('ردیف ' + m.row)) + '</bdi> — ' + escapeHtml(m.reason || '') + '</li>'; }).join('');
+      return '<div class="pu-err">این اقلام تأیید نشد؛ قیمت شیت را اصلاح کنید یا به مهندس مزروعی اطلاع دهید:<ul style="margin:4px 0 0;padding-inline-start:18px">' + list +
+        (bad.length > 4 ? '<li>و ' + puFa(bad.length - 4) + ' قلم دیگر</li>' : '') + '</ul></div>';
+    }
+    function puItem(row) { return (puState.board.daily || []).filter(function (x) { return x.row === row; })[0]; }
+    function puEnqueue(fn) { puState.queue = puState.queue.then(fn, fn); return puState.queue; }
+    function puDailyEdit(row) { puState.editing = row; puState.err[row] = ''; puRenderDaily(); }
+    function puDailySame(row) { puDailySubmit(row, { row: row, same: true }, 'ثبت شد: بدون تغییر'); }
+    function puDailySave(row) {
+      var el = document.getElementById('pu-in-' + row), it = puItem(row);
+      var v = puParse(el ? el.value : '');
+      if (!isFinite(v) || v <= 0) { puState.err[row] = 'قیمت را به عدد تومان وارد کنید'; puRenderDaily(); return; }
+      if (it && it.price !== '' && Number(it.price) === v) return puDailySubmit(row, { row: row, same: true }, 'قیمت برابر بود؛ «بدون تغییر» ثبت شد');
+      puDailySubmit(row, { row: row, price: v }, 'قیمت جدید ثبت شد');
+    }
+    function puDailySubmit(row, payload, okMsg) {
+      var it = puItem(row);
+      if (!it) return;
+      var prev = { done: it.done, date: it.date, price: it.price };
+      it.done = true; it.date = puState.board.today;
+      if (payload.price) it.price = payload.price;
+      puState.editing = 0; puState.busy['d' + row] = true;
+      puRender();
+      puEnqueue(function () {
+        return runGas('savePriceUpdateDaily', payload).then(function () {
+          toast(okMsg);
+        }).catch(function (err) {
+          it.done = prev.done; it.date = prev.date; it.price = prev.price;
+          toast((err && err.message) || 'ثبت انجام نشد', true);
+        }).then(function () { delete puState.busy['d' + row]; puRender(); });
+      });
+    }
+    function puGroupSame(i) {
+      var g = puState.board.weekly[i];
+      if (!g || puState.busy['w' + i]) return;
+      puState.busy['w' + i] = true;
+      puRender();
+      puEnqueue(function () {
+        return runGas('confirmPriceUpdateGroup', { id: g.id }).then(function (res) {
+          var bad = (res && res.mismatches) || [];
+          puState.mism[g.id] = bad;
+          if (!bad.length) {
+            g.done = g.total; g.complete = true;
+            toast('گروه «' + g.brand + '» بسته شد');
+          } else {
+            g.done = Math.max(0, g.total - bad.length);
+            toast(puFa(bad.length) + ' قلم تأیید نشد؛ زیر همین گروه را ببینید', true);
+          }
+        }).catch(function (err) {
+          toast((err && err.message) || 'ثبت انجام نشد', true);
+        }).then(function () { delete puState.busy['w' + i]; puRender(); });
+      });
+    }
+    // ===== آپلود لیست قیمت (سرور: Uploader.js؛ صفحه: UploaderApp.html در iframe[srcdoc]) =====
+    // صفحهٔ آپلودر یک بار با getUploaderPage گرفته و در قاب گذاشته می‌شود و تا بسته شدن اپ زنده می‌ماند.
+    // همهٔ google.script.run آپلودر از __uploaderBridge همین صفحه (runGas) رد می‌شود؛ فقط توابع UP_FNS_ مجازند.
+    var UP_CAT_ = { 'موتور': 'motors', 'تابلو فرمان': 'tablo', 'درب': 'doors', 'ریل': 'rails', 'کابین': 'cabin', 'کارسلینگ': 'cabinFrame', 'خرده‌ریز': 'parts' };
+    var UP_FNS_ = { previewImageCatalog: true, listCatalogBrands: true, commitMatchedCatalogPrices: true };
+    var upState = { loaded: false, loading: false, prefill: null, groupKey: '', from: 'screen-home', committed: false };
+    window.__uploaderBridge = {
+      call: function (fn, argsJson, ok, fail) {
+        if (!UP_FNS_[fn]) { fail('تابع مجاز نیست: ' + fn); return; }
+        var args;
+        try { args = JSON.parse(argsJson || '[]'); } catch (e) { fail('درخواست نامعتبر'); return; }
+        runGas.apply(null, [fn].concat(args)).then(function (res) {
+          ok(JSON.stringify(res === undefined ? null : res));
+        }, function (err) {
+          fail((err && err.message) || String(err || 'ارتباط با سرور برقرار نشد'));
+        });
+      },
+      prefill: function () { return JSON.stringify(upState.prefill); },
+      notify: function (type, json) {
+        if (type === 'ready') { upHideLoading(); return; }
+        if (type === 'committed') {
+          upState.committed = true;
+          loadPriceUpdate(true);
+        }
+      }
+    };
+    function upFrameWin() {
+      var f = document.getElementById('up-frame');
+      try { return upState.loaded && f && f.contentWindow ? f.contentWindow : null; } catch (e) { return null; }
+    }
+    function upHideLoading() { var el = document.getElementById('up-loading'); if (el) el.style.display = 'none'; }
+    function upEnsureLoaded() {
+      if (upState.loaded || upState.loading) return;
+      upState.loading = true;
+      var box = document.getElementById('up-loading');
+      box.style.display = 'flex';
+      box.textContent = 'در حال بارگذاری آپلودر...';
+      runGas('getUploaderPage').then(function (html) {
+        var frame = document.getElementById('up-frame');
+        frame.onload = upHideLoading;
+        frame.srcdoc = String(html || '');
+        upState.loaded = true;
+      }).catch(function (err) {
+        box.innerHTML = '<div>' + escapeHtml((err && err.message) || 'آپلودر بارگذاری نشد') + '</div>' +
+          '<button class="btn btn-ghost" type="button" onclick="upEnsureLoaded()">تلاش دوباره</button>';
+      }).then(function () { upState.loading = false; });
+    }
+    // prefill: { category, brand, label } از گروه هفتگی؛ null = بدون پیش‌فرض
+    function openUploader(prefill) {
+      var active = document.querySelector('.screen.active');
+      if (active && active.id !== 'screen-uploader') upState.from = active.id;
+      var key = prefill ? prefill.category + '|' + prefill.brand : '';
+      var win = upFrameWin();
+      if (win && key !== upState.groupKey) {
+        try { if (!(win.__uploaderHasPending && win.__uploaderHasPending()) && win.__uploaderReset) win.__uploaderReset(); } catch (e) {}
+      }
+      upState.prefill = prefill || null;
+      upState.groupKey = key;
+      document.getElementById('up-meta').textContent = prefill
+        ? 'پیش‌فرض: ' + prefill.label + ' (در پنجره‌ها قابل تغییر است)'
+        : 'عکس یا PDF لیست قیمت را انتخاب کنید';
+      setHeaderDates(todayJalali());
+      showScreen('screen-uploader');
+      upEnsureLoaded();
+    }
+    function puOpenUploader(i) {
+      var g = puState.board && puState.board.weekly[i];
+      if (!g) return openUploader(null);
+      openUploader({ category: UP_CAT_[g.cat] || '', brand: g.brand, label: g.cat + ' · ' + String(g.brand).replace(/\//g, ' / ') });
+    }
+    function closeUploader() {
+      var to = upState.from || 'screen-home';
+      if (puPricesOnly() || to === 'screen-prices') {
+        showScreen('screen-prices');
+        if (puState.board) puRender();
+        if (upState.committed) { upState.committed = false; loadPriceUpdate(true); }
+        return;
+      }
+      if (to === 'screen-home' || !document.getElementById(to)) showHome();
+      else showScreen(to);
+    }
+
+    // بعد از برگشت از آپلودر، تیک‌ها از شیت تازه می‌شوند
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState !== 'visible') return;
+      var active = document.querySelector('.screen.active');
+      if (active && active.id === 'screen-prices') loadPriceUpdate(true);
+    });
+
     function openPackages() {
       setHeaderDates(todayJalali());
       showScreen('screen-packages');
@@ -2112,15 +2506,57 @@
       });
     }
 
+    // کاتالوگ پکیج‌ها + جدول سود همه‌شان در کش مرورگر؛ صفحه فوری از کش باز می‌شود و سرور در پس‌زمینه تازه‌اش می‌کند.
+    var PACKAGE_CATALOG_CACHE_KEY = 'pricePackageCatalogCache';
+    var packageCatalogFetch = null;
+
+    function readPackageCatalogCache() {
+      try {
+        var raw = localStorage.getItem(PACKAGE_CATALOG_CACHE_KEY);
+        var data = raw ? JSON.parse(raw) : null;
+        return data && Array.isArray(data.packages) ? data : null;
+      } catch (e) { return null; }
+    }
+
+    function writePackageCatalogCache() {
+      try {
+        localStorage.setItem(PACKAGE_CATALOG_CACHE_KEY, JSON.stringify({
+          packages: state.packageCatalog || [],
+          lists: state.packageLists || [],
+          profitTables: state.profitTables || {}
+        }));
+      } catch (e) {}
+    }
+
+    function applyPackageCatalogData(data) {
+      state.packageCatalog = (data && data.packages) || [];
+      state.packageLists = (data && data.lists) || [];
+      if (data && data.profitTables) state.profitTables = data.profitTables;
+    }
+
+    function fetchPackageCatalog() {
+      if (packageCatalogFetch) return packageCatalogFetch;
+      packageCatalogFetch = runGas('getPackageCatalog').then(function (data) {
+        packageCatalogFetch = null;
+        applyPackageCatalogData(data);
+        writePackageCatalogCache();
+        return data;
+      }, function (err) {
+        packageCatalogFetch = null;
+        throw err;
+      });
+      return packageCatalogFetch;
+    }
+
     function loadPackages() {
       var catalogBox = document.getElementById('package-catalog');
-      if (catalogBox) catalogBox.innerHTML = '<div class="empty">در حال بارگذاری...</div>';
-      runGas('getPackageCatalog').then(function (data) {
-        state.packageCatalog = (data && data.packages) || [];
-        state.packageLists = (data && data.lists) || [];
-        renderPackageCatalog();
+      var hasRows = (state.packageCatalog || []).length > 0;
+      if (hasRows) renderPackageCatalog();
+      else if (catalogBox) catalogBox.innerHTML = '<div class="empty">در حال بارگذاری...</div>';
+      fetchPackageCatalog().then(function () {
+        if (document.getElementById('screen-packages').classList.contains('active')) renderPackageCatalog();
       }).catch(function (err) {
-        if (catalogBox) catalogBox.innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری انجام نشد') + '</div>';
+        if (!hasRows && catalogBox) catalogBox.innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری انجام نشد') + '</div>';
         toast((err && err.message) || 'بارگذاری انجام نشد', true);
       });
     }
@@ -2304,18 +2740,27 @@
       var btn = document.getElementById('save-profit-table');
       state.profitLoadToken = (state.profitLoadToken || 0) + 1;
       var token = state.profitLoadToken;
-      state.profitTableRows = [];
+      var cached = (state.profitTables || {})[packageName];
+      state.profitTableRows = cached ? JSON.parse(JSON.stringify(cached.rows || [])) : [];
       state.profitTableDirty = false;
-      box.innerHTML = '<div class="empty">در حال بارگذاری...</div>';
-      if (btn) btn.disabled = true;
+      if (cached) renderPackageProfitTable();
+      else {
+        box.innerHTML = '<div class="empty">در حال بارگذاری...</div>';
+        if (btn) btn.disabled = true;
+      }
       runGas('getPackageProfitTable', packageName).then(function (data) {
         if (token !== state.profitLoadToken) return;
-        state.profitTableRows = (data && data.rows) || [];
-        state.profitTableDirty = false;
+        var rows = (data && data.rows) || [];
+        state.profitTables = state.profitTables || {};
+        state.profitTables[packageName] = { missing: !!(data && data.missing), rows: rows };
+        writePackageCatalogCache();
+        if (state.profitTableDirty || state.profitTableSaving) return;
+        state.profitTableRows = JSON.parse(JSON.stringify(rows));
         renderPackageProfitTable();
-        if (data && data.missing) toast('ستون جدول سود این پکیج در شیت نیست', true);
+        if (data && data.missing && !cached) toast('ستون جدول سود این پکیج در شیت نیست', true);
       }).catch(function (err) {
         if (token !== state.profitLoadToken) return;
+        if (cached) return;
         box.innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری جدول سود انجام نشد') + '</div>';
         toast((err && err.message) || 'بارگذاری جدول سود انجام نشد', true);
       });
@@ -2356,8 +2801,12 @@
       state.profitTableSaving = true;
       btn.disabled = true;
       btn.textContent = 'در حال ذخیره...';
-      runGas('savePackageProfitTable', { packageName: state.previewPackageName, rows: rows }).then(function () {
+      var savedName = state.previewPackageName;
+      runGas('savePackageProfitTable', { packageName: savedName, rows: rows }).then(function () {
         state.profitTableDirty = false;
+        state.profitTables = state.profitTables || {};
+        state.profitTables[savedName] = { rows: rows };
+        writePackageCatalogCache();
         toast('جدول سود ذخیره شد');
         loadPackageProfitTable(state.previewPackageName);
       }).catch(function (err) {
@@ -2426,27 +2875,61 @@
       return JSON.stringify([d.employer, d.values, d.note, d.extraNote, d.pdfs, d.attachment, d.status, d.packageName, d.sheetMismatch || '']);
     }
 
+    // درصد سود پیش‌نمایش پکیج فقط در همین مرورگر می‌ماند (پیش‌نمایش دیگر به فرم محاسبهٔ شیت دست نمی‌زند).
+    var PACKAGE_PREVIEW_PCT_KEY = 'mgrPackagePreviewPct';
+    function readPackagePreviewPct() {
+      try { return localStorage.getItem(PACKAGE_PREVIEW_PCT_KEY) || ''; } catch (e) { return ''; }
+    }
+    function writePackagePreviewPct(value) {
+      try { localStorage.setItem(PACKAGE_PREVIEW_PCT_KEY, String(value == null ? '' : value)); } catch (e) {}
+    }
+
+    // دادهٔ پیش‌نمایش از کاتالوگ پکیج‌ها (buildPackageFormCatalog_ روی Data_Offers، همراه getPriceEngineData/bootstrap و کش مرورگر)؛ بدون تماس سرور.
+    function packagePreviewData(packageName) {
+      var pkg = findPackageStruct(packageName);
+      if (!pkg) return null;
+      var name = pkg.packageName || packageName;
+      var display = pkg.displayName || name;
+      var values = {};
+      (state.bootstrap.fields || []).forEach(function (f) {
+        values[f.key] = (pkg.values && pkg.values[f.key]) || '';
+      });
+      return {
+        ok: true,
+        preview: true,
+        packageName: name,
+        displayName: display,
+        salesperson: '',
+        row: 0,
+        employer: display,
+        attachment: '',
+        status: 'پیش‌نمایش',
+        note: '',
+        extraNote: '',
+        date: '',
+        values: values,
+        totals: { profitPct: readPackagePreviewPct() },
+        prices: {},
+        pdfs: ['', '', '', ''],
+        suggestedOutSheet: pkg.outSheet || ''
+      };
+    }
+
     function openPackagePreview(packageName) {
       if (!state.bootstrap) return toast('گزینه‌های فرم هنوز بارگذاری نشده', true);
       if (!packageName) return;
+      var data = packagePreviewData(packageName);
+      if (!data) {
+        toast('ساختار این پکیج هنوز در اپ نیست؛ چند ثانیه بعد دوباره بزنید', true);
+        return;
+      }
       state.formMode = 'package';
-      state.previewPackageName = packageName;
+      state.previewPackageName = data.packageName;
       state.salesperson = '';
       state.row = 0;
-      document.getElementById('screen-form').classList.add('package-preview');
-      document.getElementById('form-back').textContent = 'بازگشت به پکیج‌ها';
-      document.getElementById('form-title').textContent = packageName;
-      document.getElementById('form-meta').textContent = 'پیش‌نمایش دستی — در حال همگام‌سازی با Data_Offers...';
-      setHeaderDates(todayJalali());
       showScreen('screen-form');
-      toast('پیش‌نمایش پکیج مثل حالت دستی شیت');
-      loadPackageProfitTable(packageName);
-      runGas('previewPackageForm', packageName).then(function (data) {
-        fillInquiryForm(data);
-      }).catch(function (err) {
-        toast((err && err.message) || 'پیش‌نمایش انجام نشد', true);
-        openPackages();
-      });
+      loadPackageProfitTable(data.packageName);
+      fillInquiryForm(data);
     }
 
     function backFromForm() {
@@ -2522,7 +3005,7 @@
       document.getElementById('form-meta').textContent = data.customNew
         ? 'پکیج را انتخاب کنید تا ساختار فرم از کش مرورگر پر شود'
         : (data.preview
-        ? 'حالت دستی فرم محاسبه — همگام با جدول پکیج Data_Offers'
+        ? 'پیش‌نمایش در اپ از جدول پکیج Data_Offers — فرم محاسبهٔ شیت تغییر نمی‌کند'
         : data.salesperson);
       setHeaderDates(cardDate(data));
       document.getElementById('sales-extra-note').value = data.extraNote || '';
@@ -2555,9 +3038,12 @@
       var box = document.getElementById('form-fields');
       box.innerHTML = '';
       b.fields.forEach(function (f) {
-        box.innerHTML += '<div class="calc-row">' +
+        // ردیفی که ستون Have Price فرم محاسبه برایش NO است ذاتاً قیمت نمی‌گیرد: خانهٔ قیمت و برچسب تاریخ ندارد.
+        var noPrice = fieldNeverPriced(f.key);
+        box.innerHTML += '<div class="calc-row' + (noPrice ? ' no-price' : '') + '">' +
+          (noPrice ? '<div class="price-wrap price-none"></div>' :
           '<div class="price-wrap"><input class="price" id="p-' + f.key + '" type="text" readonly>' +
-          '<button type="button" class="age age-none" id="age-' + f.key + '" data-title="بدون تاریخ">—</button></div>' +
+          '<button type="button" class="age age-none" id="age-' + f.key + '" data-title="بدون تاریخ">—</button></div>') +
           '<select id="f-' + f.key + '"></select>' +
           '<div class="part">' + escapeHtml(f.header) + (f.required ? ' *' : '') + '</div>' +
           '</div>';
@@ -2574,13 +3060,15 @@
       setPrices(data.prices || {});
       applySystemLists(document.getElementById('f-system').value, data.values || {});
       bindPriceRecalc();
+      // پیش‌نمایش پکیج همیشه مثل حالت دستی است (قفل فیلدها و جدول شرطی حالت اتومات روی آن اعمال نمی‌شود).
+      var autoLocked = calcModeIsAuto() && !data.preview;
       (b.fields || []).forEach(function (f) {
         var el = document.getElementById('f-' + f.key);
-        if (el) el.disabled = calcModeIsAuto();
+        if (el) el.disabled = autoLocked;
       });
-      if (calcModeIsAuto()) applyConditionTable();
+      if (autoLocked) applyConditionTable();
       setOutSheet(data.suggestedOutSheet || 'Traction');
-      if (state.engine && !data.preview) applyLocalCalc();
+      if (state.engine) applyLocalCalc();
       else { state.priceDates = {}; applyPriceHighlight(data.values || {}); applyAgeBadges(); }
       var ageBox = document.getElementById('form-fields');
       if (ageBox && !ageBox._ageBound) {
@@ -2600,6 +3088,11 @@
         values[f.key] = el ? el.value : '';
       });
       return values;
+    }
+
+    function fieldNeverPriced(key) {
+      var cells = (state.bootstrap && state.bootstrap.priceCells) || {};
+      return !!(cells[key] && cells[key].have === 'no');
     }
 
     function applyPriceHighlight(values) {
@@ -2630,15 +3123,35 @@
         if (!el) return;
         el.onchange = function () {
           if (f.key === 'system') applySystemLists(this.value, {});
+          else if (f.key === 'motorType' || f.key === 'motorBrand') applyModelList({});
           applyConditionTable();
-          if (state.engine && state.formMode !== 'package') applyLocalCalc();
+          if (state.engine) applyLocalCalc();
           else applyPriceHighlight(currentFormValues());
         };
       });
       var pct = document.getElementById('profitPct');
       if (pct) {
-        pct.oninput = function () { if (state.engine) applyLocalCalc(); };
+        pct.oninput = function () {
+          if (state.formMode === 'package') writePackagePreviewPct(this.value);
+          if (state.engine) applyLocalCalc();
+        };
       }
+    }
+
+    // کشوی «مدل» وابسته به نوع موتور و برند (تصمیم مدیر 1405/08/15: بهران AC2 ندارد و فقط AC1 و VVVF دارد).
+    function applyModelList(values) {
+      var b = state.bootstrap || {};
+      var el = document.getElementById('f-model');
+      if (!el) return;
+      var typeEl = document.getElementById('f-motorType');
+      var sysEl = document.getElementById('f-system');
+      var brandEl = document.getElementById('f-motorBrand');
+      var type = String((typeEl && typeEl.value) || (sysEl && sysEl.value) || '').trim();
+      var brand = String((brandEl && brandEl.value) || '').trim();
+      var map = b.motorModelsByBrand || {};
+      var list = map[type + '|' + brand] || (b.options && b.options.model) || [];
+      var cur = String((values && values.model) || el.value || '').trim();
+      fillSelect('f-model', list, list.indexOf(cur) >= 0 ? cur : (list[0] || ''));
     }
 
     function applySystemLists(systemType, values) {
@@ -2664,15 +3177,31 @@
           : (panelBrands[0] || '');
         fillSelect('f-panelBrand', panelBrands, panelPref);
       }
+      applyModelList(values);
+    }
+
+    // صفر در اپ مدیر «-» نمایش داده می‌شود (مثل قالب حسابداری فرم محاسبه)؛ مقدار واقعی در data-raw می‌ماند.
+    function setPriceCell(el, v) {
+      if (!el) return;
+      var raw = v == null ? '' : String(v);
+      var t = raw.trim();
+      var zero = t !== '' && (t === '-' || (/\d/.test(t) && parseNum(t) === 0));
+      el.value = zero ? '-' : raw;
+      el.setAttribute('data-raw', raw);
+    }
+
+    function priceCellRaw(el) {
+      if (!el) return '';
+      var r = el.getAttribute('data-raw');
+      return r == null ? el.value : r;
     }
 
     function setTotals(t) {
-      document.getElementById('total').value = t.total || '';
+      setPriceCell(document.getElementById('total'), t.total);
       if (t.profitPct) document.getElementById('profitPct').value = t.profitPct;
-      var profitEl = document.getElementById('profitAmount');
-      if (profitEl) profitEl.value = t.profitAmount || '';
-      document.getElementById('costToman').value = t.costToman || '';
-      document.getElementById('costRial').value = t.costRial || '';
+      setPriceCell(document.getElementById('profitAmount'), t.profitAmount);
+      setPriceCell(document.getElementById('costToman'), t.costToman);
+      setPriceCell(document.getElementById('costRial'), t.costRial);
     }
 
     function applyAgeBadges() {
@@ -2690,7 +3219,7 @@
     function setPrices(prices) {
       (state.bootstrap.fields || []).forEach(function (f) {
         var el = document.getElementById('p-' + f.key);
-        if (el) el.value = (prices && prices[f.key]) || '';
+        if (el) setPriceCell(el, prices && prices[f.key] != null ? prices[f.key] : '');
       });
     }
 
@@ -2780,6 +3309,15 @@
     }
 
     function refreshTotals() {
+      // پیش‌نمایش پکیج کاملاً محلی است؛ در استعلام هم اول نتیجهٔ موتور مرورگر نشان داده می‌شود و سرور تأیید می‌کند.
+      var hasEngine = !!(state.engine || (state.bootstrap && state.bootstrap.packages));
+      if (hasEngine) {
+        try { applyLocalCalc(); } catch (e) { hasEngine = false; }
+      }
+      if (state.formMode === 'package') {
+        toast(hasEngine ? 'مبالغ به‌روز شد' : 'جداول قیمت هنوز بارگذاری نشده', !hasEngine);
+        return;
+      }
       google.script.run
         .withSuccessHandler(function (res) {
           applyCalcState(res || {});
@@ -3097,7 +3635,7 @@
       var prices = {};
       ((state.bootstrap && state.bootstrap.fields) || []).forEach(function (f) {
         var el = document.getElementById('p-' + f.key);
-        prices[f.key] = el ? el.value : '';
+        prices[f.key] = priceCellRaw(el);
       });
       return prices;
     }
@@ -3116,7 +3654,7 @@
         if (!payload.employer) return toast('نام کارفرما را وارد کنید', true);
       }
       var finalEl = document.getElementById('costToman');
-      payload.appFinal = finalEl ? String(finalEl.value || '').trim() : '';
+      payload.appFinal = String(priceCellRaw(finalEl) || '').trim();
       var check = listAppHavePriceViolations(payload.values, readFormPrices());
       if (!check.known) {
         enqueueIssueJob(payload, isCustom);
@@ -3391,6 +3929,10 @@
       if (!cachedBoot) toast((err && err.message) || 'بارگذاری گزینه‌ها انجام نشد', true);
     });
 
+    var cachedPackageCatalog = readPackageCatalogCache();
+    if (cachedPackageCatalog) applyPackageCatalogData(cachedPackageCatalog);
+    fetchPackageCatalog().catch(function () {});
+
     var cachedEngine = pf() && pf().readEngine ? pf().readEngine() : null;
     if (cachedEngine) state.engine = cachedEngine;
     runGas('getPriceEngineData').then(function (data) {
@@ -3398,7 +3940,7 @@
       if (pf() && pf().writeEngine) pf().writeEngine(data);
       if (document.getElementById('screen-form').classList.contains('active')) {
         fillPackageSelect((document.getElementById('inquiry-package') && document.getElementById('inquiry-package').value) || '');
-        if (state.formMode !== 'package') applyLocalCalc();
+        applyLocalCalc();
       }
     }).catch(function (err) {
       if (!cachedEngine) toast((err && err.message) || 'جداول قیمت لود نشد', true);
@@ -3444,9 +3986,17 @@
     }
 
     setHeaderDates(todayJalali());
-    loadInbox(true);
-    startNoticeWatch();
-    window.__ticketReporter = 'مهندس مزروعی';
+    if (puPricesOnly()) {
+      // لینک ?app=prices: فقط بخش «به روز رسانی قیمت ها»؛ صف استعلام و بقیهٔ بخش‌ها بارگذاری و نمایش داده نمی‌شوند.
+      showScreen('screen-prices');
+      loadPriceUpdate();
+      window.__ticketReporter = 'خانم عزیزی';
+    } else {
+      loadInbox(true);
+      startNoticeWatch();
+      loadPriceUpdate(true);
+      window.__ticketReporter = 'مهندس مزروعی';
+    }
   </script>
   <script>window.__FAST_LAYER__={};</script>
   <script>/* Fast Layer: IndexedDB cache + optimistic UI + optional Supabase REST */
