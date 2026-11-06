@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261106164641">
+  <meta name="x-build" content="20261106171838">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","issueCustomInquiry","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","issueCustomInquiry","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceTables","savePriceTables","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261106164641" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261106171838" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -579,6 +579,39 @@
     .pu-item.pu-w .pu-row { flex-wrap: wrap; }
     .pu-item.pu-w .pu-acts { width: 100%; justify-content: flex-end; padding-inline-start: 32px; }
     .pu-err { font-size: 11.5px; color: var(--red); font-weight: 700; }
+
+    /* ===== جداول قیمت (PriceTables.js؛ 1405/08/16): همهٔ جداول شیت All با ذخیره از مسیر آینه ===== */
+    .home-tables { background: #e0f2f1; color: #134e4a; border-color: #0f766e; }
+    .pt-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+    .pt-tab { flex-shrink: 0; border: 1px solid var(--line); background: #fff; color: var(--navy); border-radius: 999px; padding: 7px 12px; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+    .pt-tab small { font-weight: 700; color: var(--muted); margin-inline-start: 4px; }
+    .pt-tab.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .pt-tab.on small { color: #cbd5e1; }
+    .pt-tab .pt-dot { display: inline-block; min-width: 18px; padding: 0 5px; margin-inline-start: 5px; border-radius: 999px; background: var(--gold); color: #111; font-size: 11px; line-height: 18px; text-align: center; }
+    .pt-search { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; font-family: inherit; font-size: 14px; background: #fff; color: var(--navy); margin-bottom: 10px; }
+    .pt-info { font-size: 12px; color: var(--muted); font-weight: 700; margin-bottom: 10px; line-height: 1.7; }
+    .pt-brand { background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; margin-bottom: 10px; }
+    .pt-bhead { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 11px 14px; background: #f8fafc; border: 0; font-family: inherit; color: var(--navy); cursor: pointer; text-align: right; }
+    .pt-brand.open .pt-bhead { border-bottom: 1px solid var(--line); }
+    .pt-bhead b { font-size: 14px; font-weight: 800; }
+    .pt-bhead span { font-size: 12px; color: var(--muted); font-weight: 700; display: inline-flex; gap: 6px; align-items: center; }
+    .pt-bhead .pt-chev { transition: transform .2s ease; }
+    .pt-brand.open .pt-bhead .pt-chev { transform: rotate(180deg); }
+    .pt-row { display: grid; grid-template-columns: 1fr 132px; gap: 8px; align-items: center; padding: 9px 14px; border-bottom: 1px solid var(--line); }
+    .pt-row:last-child { border-bottom: 0; }
+    .pt-name { font-size: 13px; font-weight: 700; line-height: 1.6; word-break: break-word; }
+    .pt-sub { font-size: 11px; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 2px; direction: rtl; }
+    .pt-key { unicode-bidi: plaintext; font-variant-numeric: tabular-nums; }
+    .pt-name bdi { white-space: nowrap; }
+    .pt-tag { font-size: 10.5px; font-weight: 800; border-radius: 999px; padding: 0 7px; background: #d7e4f2; color: #16324d; }
+    .pt-row input { width: 100%; min-width: 0; border: 1px solid var(--line); background: #f8fafc; color: var(--navy); border-radius: 10px; padding: 8px 8px; font-family: inherit; font-size: 14px; font-weight: 700; direction: ltr; text-align: center; font-variant-numeric: tabular-nums; }
+    .pt-row.dirty input { background: #fff2cc; border-color: #c9a227; }
+    .pt-row.err input { border-color: var(--red); }
+    .pt-row .pt-err { grid-column: 1 / -1; font-size: 11.5px; color: var(--red); font-weight: 700; }
+    .pt-row .pt-warn { grid-column: 1 / -1; font-size: 11.5px; color: #9a3412; font-weight: 700; }
+    .pt-bar { position: sticky; bottom: 0; z-index: 4; display: flex; gap: 8px; padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(to top, var(--bg) 75%, rgba(226,232,240,0)); }
+    .pt-bar .btn { flex: 1; font-size: 14px; padding: 12px 8px; }
+    .pt-more { width: 100%; margin: 4px 0 10px; }
   </style>
 </head>
 <body>
@@ -625,6 +658,10 @@
         <button class="home-btn home-short" type="button" onclick="openShortPath()">
           مسیر کوتاه
           <span class="count">ویرایش قیمت قطعات</span>
+        </button>
+        <button class="home-btn home-tables" type="button" onclick="openPriceTables()">
+          جداول قیمت
+          <span class="count">موتور، تابلو، درب، ریل، کابین و … — ویرایش همهٔ جداول</span>
         </button>
         <button class="home-btn home-prices" type="button" onclick="openPriceUpdate()">
           به روز رسانی قیمت ها
@@ -850,6 +887,29 @@
       <div class="actions">
         <button class="btn btn-main" id="save-short-path" type="button" onclick="saveShortPath()" disabled>ذخیره قیمت‌ها</button>
         <button class="btn btn-ghost" type="button" onclick="loadShortPath()">بازخوانی</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-tables" class="screen">
+    <div class="top">
+      <div class="top-row">
+        <div>
+          <button class="back" type="button" onclick="event.preventDefault(); ptLeave();">بازگشت</button>
+          <h1>جداول قیمت</h1>
+          <div class="meta" id="pt-meta">همهٔ جداول شیت All · ذخیره هم‌زمان در شیت مبدأ، All و تاریخچه</div>
+        </div>
+        <div class="date-badge" data-date-slot></div>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="pt-tabs" id="pt-tabs" role="tablist"></div>
+      <input class="pt-search" id="pt-search" type="search" placeholder="جستجو: برند، مدل، ظرفیت، کلید…" autocomplete="off">
+      <div class="pt-info" id="pt-info"></div>
+      <div id="pt-body"><div class="empty">در حال بارگذاری...</div></div>
+      <div class="pt-bar">
+        <button class="btn btn-main" id="pt-save" type="button" onclick="ptSave()" disabled>ذخیره تغییرات</button>
+        <button class="btn btn-ghost" id="pt-reset" type="button" onclick="ptDiscard()">بازخوانی</button>
       </div>
     </div>
   </section>
@@ -1762,6 +1822,7 @@
       var id = active ? active.id : '';
       if (id === 'screen-form') backFromForm();
       else if (id === 'screen-uploader') closeUploader();
+      else if (id === 'screen-tables') ptLeave();
       else showHome();
     }
 
@@ -2189,6 +2250,240 @@
       }).catch(function (err) {
         box.innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری انجام نشد') + '</div>';
         toast((err && err.message) || 'بارگذاری انجام نشد', true);
+      });
+    }
+
+
+    // ===== جداول قیمت (سرور: PriceTables.js) =====
+    // داده از شیت All (همهٔ جداول قیمت). نمایش فوری از localStorage، تازه‌سازی پس‌زمینه بدون پاک‌کردن ویرایش‌های ذخیره‌نشده.
+    var PT_LS_KEY = 'plPriceTables:v1';
+    var PT_PAGE = 60;
+    var PT_MAX_PRICE = 100000000000; // ۱۰۰ میلیارد تومان؛ بالاتر از آن یعنی رقم‌ها دوبار تایپ شده‌اند
+    var ptState = { data: null, cat: '', q: '', open: {}, edits: {}, errs: {}, warns: {}, saving: false, loading: false, shown: {} };
+    function ptLsRead() { try { var t = localStorage.getItem(PT_LS_KEY); return t ? JSON.parse(t) : null; } catch (e) { return null; } }
+    function ptLsWrite(d) { try { localStorage.setItem(PT_LS_KEY, JSON.stringify(d)); } catch (e) {} }
+    function ptId(r) { return r.r + '|' + r.k; }
+    function ptNorm(s) {
+      return String(s == null ? '' : s).replace(/[۰-۹]/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); })
+        .replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/[‌\s]+/g, ' ').toLowerCase().trim();
+    }
+    function ptDirtyCount() { return Object.keys(ptState.edits).length; }
+    function ptCatTable(cat) { return ((ptState.data && ptState.data.tables) || []).filter(function (t) { return t.cat === cat; })[0] || null; }
+
+    function openPriceTables() {
+      setHeaderDates(todayJalali());
+      showScreen('screen-tables');
+      if (!ptState.data) {
+        var cached = ptLsRead();
+        if (cached && cached.tables) ptState.data = cached;
+      }
+      if (ptState.data) ptRender();
+      ptLoad(false);
+    }
+    function ptLoad(fresh) {
+      if (ptState.loading) return Promise.resolve();
+      ptState.loading = true;
+      if (!ptState.data) document.getElementById('pt-body').innerHTML = '<div class="empty">در حال بارگذاری...</div>';
+      return runGas('getPriceTables', { fresh: !!fresh }).then(function (d) {
+        ptState.loading = false;
+        if (!d || !d.tables) throw new Error('پاسخ نامعتبر');
+        ptState.data = d;
+        ptLsWrite(d);
+        // ویرایشی که ردیفش دیگر نیست کنار می‌رود
+        var live = {};
+        d.tables.forEach(function (t) { t.brands.forEach(function (b) { b.rows.forEach(function (r) { live[ptId(r)] = true; }); }); });
+        Object.keys(ptState.edits).forEach(function (id) { if (!live[id]) delete ptState.edits[id]; });
+        ptRender();
+      }).catch(function (err) {
+        ptState.loading = false;
+        if (!ptState.data) document.getElementById('pt-body').innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری انجام نشد') + '</div>';
+        toast((err && err.message) || 'بارگذاری جداول انجام نشد', true);
+      });
+    }
+    window.addEventListener('beforeunload', function (e) {
+      if (ptState.saving || ptDirtyCount()) { e.preventDefault(); e.returnValue = ''; }
+    });
+    function ptLeave() {
+      if (ptDirtyCount() && !confirm(puFa(ptDirtyCount()) + ' قیمت ذخیره نشده است. بدون ذخیره خارج شوید؟')) return;
+      // ذخیرهٔ در جریان با خروج از صفحه قطع نمی‌شود (اپ باز می‌ماند)؛ نتیجه‌اش با toast می‌آید.
+      ptState.edits = {}; ptState.errs = {};
+      showHome();
+    }
+    function ptDiscard() {
+      if (ptDirtyCount() && !confirm('تغییرات ذخیره‌نشده پاک شود و جدول از شیت بازخوانی شود؟')) return;
+      ptState.edits = {}; ptState.errs = {}; ptState.warns = {};
+      ptLoad(true);
+    }
+
+    function ptRenderTabs() {
+      var tables = (ptState.data && ptState.data.tables) || [];
+      if (!ptState.cat || !ptCatTable(ptState.cat)) ptState.cat = tables.length ? tables[0].cat : '';
+      var dirtyBy = {};
+      tables.forEach(function (t) { t.brands.forEach(function (b) { b.rows.forEach(function (r) { if (ptState.edits[ptId(r)] != null) dirtyBy[t.cat] = (dirtyBy[t.cat] || 0) + 1; }); }); });
+      document.getElementById('pt-tabs').innerHTML = tables.map(function (t) {
+        return '<button class="pt-tab' + (t.cat === ptState.cat ? ' on' : '') + '" type="button" role="tab" data-pt-cat="' + escapeHtml(t.cat) + '">' +
+          escapeHtml(t.cat) + '<small>' + puFa(t.total) + '</small>' + (dirtyBy[t.cat] ? '<span class="pt-dot">' + puFa(dirtyBy[t.cat]) + '</span>' : '') + '</button>';
+      }).join('');
+    }
+    function ptMatch(r, brand, q) {
+      if (!q) return true;
+      return ptNorm(brand + ' ' + r.l + ' ' + r.k).indexOf(q) >= 0;
+    }
+    // هر بخش برچسب جدا ایزوله می‌شود تا «6 نفر» و «1 m/s» در متن راست‌به‌چپ جابه‌جا نشوند
+    function ptLabelHtml(l) {
+      return String(l || '').split(' · ').map(function (x) { return '<bdi>' + escapeHtml(x) + '</bdi>'; }).join(' · ');
+    }
+    function ptRowHtml(r) {
+      var id = ptId(r);
+      var ed = ptState.edits[id];
+      var val = ed != null ? ed : formatShortPathPrice(r.p);
+      var err = ptState.errs[id], warn = ptState.warns[id];
+      return '<div class="pt-row' + (ed != null ? ' dirty' : '') + (err ? ' err' : '') + '" data-pt-id="' + escapeHtml(id) + '">' +
+        '<div><div class="pt-name">' + ptLabelHtml(r.l || r.k) + '</div>' +
+        '<div class="pt-sub"><span class="pt-key">' + escapeHtml(r.k) + '</span>' + puAge(r.d) + (r.s ? '<span class="pt-tag">مسیر کوتاه</span>' : '') + '</div></div>' +
+        '<input type="text" inputmode="numeric" data-pt-in="' + escapeHtml(id) + '" value="' + escapeHtml(val) + '" placeholder="بدون قیمت" aria-label="قیمت ' + escapeHtml(r.l || r.k) + '">' +
+        (err ? '<div class="pt-err">' + escapeHtml(err) + '</div>' : '') + (warn ? '<div class="pt-warn">' + escapeHtml(warn) + '</div>' : '') +
+        '</div>';
+    }
+    function ptBrandBody(b, q) {
+      var rows = b.rows.filter(function (r) { return ptMatch(r, b.brand, q); });
+      var key = ptState.cat + '|' + b.brand;
+      var lim = q ? rows.length : (ptState.shown[key] || PT_PAGE);
+      var html = rows.slice(0, lim).map(ptRowHtml).join('');
+      if (rows.length > lim) html += '<button class="btn btn-ghost pt-more" type="button" data-pt-more="' + escapeHtml(key) + '">نمایش ' + puFa(Math.min(PT_PAGE, rows.length - lim)) + ' ردیف دیگر (' + puFa(rows.length - lim) + ' مانده)</button>';
+      return html;
+    }
+    function ptRender() {
+      ptRenderTabs();
+      var t = ptCatTable(ptState.cat);
+      var body = document.getElementById('pt-body');
+      var info = document.getElementById('pt-info');
+      var q = ptNorm(ptState.q);
+      if (!t) { body.innerHTML = '<div class="empty">جدولی در شیت All پیدا نشد</div>'; info.textContent = ''; ptSyncBar(); return; }
+      var shown = 0;
+      var html = t.brands.map(function (b) {
+        var n = q ? b.rows.filter(function (r) { return ptMatch(r, b.brand, q); }).length : b.rows.length;
+        if (!n) return '';
+        shown += n;
+        var key = ptState.cat + '|' + b.brand;
+        var open = q ? true : !!ptState.open[key];
+        var dirty = b.rows.filter(function (r) { return ptState.edits[ptId(r)] != null; }).length;
+        return '<section class="pt-brand' + (open ? ' open' : '') + '">' +
+          '<button class="pt-bhead" type="button" data-pt-brand="' + escapeHtml(key) + '" aria-expanded="' + open + '"><b>' + escapeHtml(b.brand) + '</b>' +
+          '<span>' + (dirty ? '<span class="pt-dot" style="background:var(--gold);color:#111;border-radius:999px;padding:0 6px">' + puFa(dirty) + ' تغییر</span>' : '') + puFa(n) + ' ردیف <span class="pt-chev">▾</span></span></button>' +
+          (open ? '<div class="pt-rows">' + ptBrandBody(b, q) + '</div>' : '') + '</section>';
+      }).join('');
+      body.innerHTML = html || '<div class="empty">ردیفی با این جستجو پیدا نشد</div>';
+      info.textContent = 'جدول ' + t.cat + ' · ' + puFa(t.brands.length) + ' برند · ' + puFa(shown) + ' ردیف' + (q ? ' (جستجو)' : '') +
+        ' · قیمت تومان؛ ذخیره به شیت مبدأ، All، مسیر کوتاه و تاریخچه می‌رود و تاریخ امروز می‌گیرد.';
+      ptSyncBar();
+    }
+    function ptSyncBar() {
+      var n = ptDirtyCount();
+      var btn = document.getElementById('pt-save');
+      btn.disabled = !n || ptState.saving;
+      btn.textContent = ptState.saving ? 'در حال ذخیره…' : (n ? 'ذخیرهٔ ' + puFa(n) + ' تغییر' : 'ذخیره تغییرات');
+      document.getElementById('pt-reset').textContent = n ? 'لغو و بازخوانی' : 'بازخوانی';
+    }
+    function ptFindRow(id) {
+      var out = null;
+      ((ptState.data && ptState.data.tables) || []).some(function (t) {
+        return t.brands.some(function (b) { return b.rows.some(function (r) { if (ptId(r) === id) { out = r; return true; } return false; }); });
+      });
+      return out;
+    }
+
+    document.addEventListener('click', function (e) {
+      var el = e.target.closest && e.target.closest('[data-pt-cat],[data-pt-brand],[data-pt-more]');
+      if (!el || !document.getElementById('screen-tables').contains(el)) return;
+      if (el.hasAttribute('data-pt-cat')) { ptState.cat = el.getAttribute('data-pt-cat'); ptRender(); window.scrollTo(0, 0); }
+      else if (el.hasAttribute('data-pt-brand')) { var k = el.getAttribute('data-pt-brand'); ptState.open[k] = !ptState.open[k]; ptRender(); }
+      else if (el.hasAttribute('data-pt-more')) { var mk = el.getAttribute('data-pt-more'); ptState.shown[mk] = (ptState.shown[mk] || PT_PAGE) + PT_PAGE; ptRender(); }
+    });
+    document.addEventListener('input', function (e) {
+      var el = e.target;
+      if (el && el.id === 'pt-search') {
+        ptState.q = el.value;
+        clearTimeout(ptState.qTimer);
+        ptState.qTimer = setTimeout(ptRender, 180);
+        return;
+      }
+      var id = el && el.getAttribute && el.getAttribute('data-pt-in');
+      if (!id) return;
+      var r = ptFindRow(id);
+      var orig = r ? formatShortPathPrice(r.p) : '';
+      var now = String(el.value || '').trim();
+      var same = (puParse(now) === puParse(orig)) || (now === '' && orig === '');
+      if (same) delete ptState.edits[id]; else ptState.edits[id] = now;
+      delete ptState.errs[id];
+      var row = el.closest('.pt-row');
+      if (row) { row.classList.toggle('dirty', !same); row.classList.remove('err'); var er = row.querySelector('.pt-err'); if (er) er.remove(); }
+      ptRenderTabs();
+      ptSyncBar();
+    });
+    document.addEventListener('focusin', function (e) {
+      var t = e.target;
+      if (!(t && t.getAttribute && t.getAttribute('data-pt-in'))) return;
+      // ویرگول برداشته و کل عدد انتخاب می‌شود تا تایپ، مبلغ قبلی را جایگزین کند (نه اینکه به ته آن اضافه شود)
+      t.value = String(t.value || '').replace(/[,،٬\s]/g, '');
+      try { t.select(); } catch (eSel) {}
+    });
+    document.addEventListener('focusout', function (e) {
+      var id = e.target && e.target.getAttribute && e.target.getAttribute('data-pt-in');
+      if (!id) return;
+      var v = e.target.value;
+      if (isFinite(puParse(v))) { e.target.value = formatShortPathPrice(puParse(v)); if (ptState.edits[id] != null) ptState.edits[id] = e.target.value; }
+    });
+
+    function ptSave() {
+      if (ptState.saving) return;
+      var ids = Object.keys(ptState.edits);
+      if (!ids.length) return;
+      var rows = [], bad = 0, sent = {};
+      ids.forEach(function (id) {
+        var r = ptFindRow(id);
+        if (!r) return;
+        var n = puParse(ptState.edits[id]);
+        if (!isFinite(n) || n <= 0) { ptState.errs[id] = 'عدد قیمت را به تومان (بزرگ‌تر از صفر) وارد کنید'; bad++; return; }
+        if (n > PT_MAX_PRICE) { ptState.errs[id] = 'عدد بیش از حد بزرگ است؛ دوباره وارد کنید'; bad++; return; }
+        rows.push({ row: r.r, key: r.k, price: n });
+        sent[id] = ptState.edits[id];
+      });
+      if (bad) { ptRender(); toast(puFa(bad) + ' قیمت نامعتبر است', true); return; }
+      if (!rows.length) return;
+      // آینه روی شیت زنده ≈ ۲۰ تا ۳۰ ثانیه طول می‌کشد؛ صفحه قفل نمی‌شود و می‌توان ردیف‌های دیگر را ویرایش کرد.
+      ptState.saving = true;
+      ptSyncBar();
+      toast('ذخیره در پس‌زمینه… (حدود ۳۰ ثانیه؛ می‌توانید ادامه دهید)');
+      runGas('savePriceTables', { rows: rows }).then(function (res) {
+        ptState.saving = false;
+        var today = (res && res.today) || '';
+        var failed = 0;
+        ((res && res.results) || []).forEach(function (x) {
+          var id = x.row + '|' + x.key;
+          var r = ptFindRow(id);
+          if (x.status === 'changed' || x.status === 'equal') {
+            if (r) { if (x.status === 'changed') r.p = x.price; r.d = x.date || today || r.d; }
+            // اگر حین ذخیره دوباره ویرایش شده، ویرایش تازه می‌ماند
+            if (ptState.edits[id] === sent[id]) delete ptState.edits[id];
+            delete ptState.errs[id];
+            if (x.warn) ptState.warns[id] = x.warn; else delete ptState.warns[id];
+          } else {
+            failed++;
+            ptState.errs[id] = x.error || 'ذخیره نشد';
+          }
+        });
+        if (ptState.data) ptLsWrite(ptState.data);
+        ptRender();
+        var msg = puFa((res && res.changed) || 0) + ' قیمت ذخیره شد' + ((res && res.equal) ? ' · ' + puFa(res.equal) + ' بدون تغییر (فقط تاریخ)' : '');
+        if (failed) toast(msg + ' · ' + puFa(failed) + ' ردیف ذخیره نشد', true); else toast(msg);
+        if (res && res.historyError) toast('قیمت‌ها ذخیره شد ولی تاریخچه ثبت نشد: ' + res.historyError, true);
+        // صفحهٔ «به روز رسانی قیمت ها» هم تیک تاریخ امروز را ببیند (کش سرور آن در ذخیره باطل شده است)
+        if (puState.board) loadPriceUpdate(true);
+      }).catch(function (err) {
+        ptState.saving = false;
+        ptSyncBar();
+        toast((err && err.message) || 'ذخیره انجام نشد', true);
       });
     }
 
