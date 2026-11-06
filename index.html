@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261106171838">
+  <meta name="x-build" content="20261106214439">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261106171838" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261106214439" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1710,7 +1710,7 @@
          var dc = lux.doorCovers[values.doorCover] || 0;
          prices.doorCover = fmtPrice(roundToman(dc * doorMul * doorCoverFactor(values, lux)));
       } else if (values.doorCover) prices.doorCover = '0';
-      if (values.cabinHeight && values.cabinHeight !== 'ندارد' && values.cabinHeight !== '230') {
+      if (values.cabinHeight && values.cabinHeight !== 'ندارد' && values.cabinHeight !== '220') {
          var ch = lux.cabinHeights[values.cabinHeight] || 0;
          prices.cabinHeight = fmtPrice(roundToman(ch));
       } else if (values.cabinHeight) prices.cabinHeight = '0';
