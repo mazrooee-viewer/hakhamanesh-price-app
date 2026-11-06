@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261106162109">
+  <meta name="x-build" content="20261106163627">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261106162109" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261106163627" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -360,6 +360,7 @@
     }
     .calc-row input.price[readonly].price-formula { background: #cfe2f3; }
     .calc-row input.price[readonly].price-changed { background: #fff2cc; }
+    .calc-row input.price.price-zero-default { visibility: hidden; }
     .price-wrap { display: flex; align-items: center; gap: 4px; min-width: 0; }
     .price-wrap .price { flex: 1; min-width: 0; width: auto; }
     .age {
@@ -3115,6 +3116,24 @@
         var def = String(defaults[f.key] || '').trim();
         if (cur !== def && (cur || def)) el.classList.add('price-changed');
       });
+      syncZeroDefaultPriceBoxes(values);
+    }
+
+    // ردیفی که روی مقدار پیش‌فرض فرم است و قیمتش صفر است باکس قیمت نشان نمی‌دهد (نشان تاریخ می‌ماند)؛
+    // با انتخاب گزینهٔ دیگر از منوی کشویی، باکس همان لحظه ظاهر می‌شود.
+    function syncZeroDefaultPriceBoxes(values) {
+      var b = state.bootstrap || {};
+      var defaults = b.defaults || {};
+      values = values || currentFormValues();
+      (b.fields || []).forEach(function (f) {
+        var el = document.getElementById('p-' + f.key);
+        if (!el) return;
+        var cur = String((values && values[f.key]) || '').trim();
+        var def = String(defaults[f.key] || '').trim();
+        var hide = cur === def && parseNum(el.value) === 0;
+        if (hide) el.classList.add('price-zero-default');
+        else el.classList.remove('price-zero-default');
+      });
     }
 
     function bindPriceRecalc() {
@@ -3221,6 +3240,7 @@
         var el = document.getElementById('p-' + f.key);
         if (el) setPriceCell(el, prices && prices[f.key] != null ? prices[f.key] : '');
       });
+      syncZeroDefaultPriceBoxes();
     }
 
     function applyCalcState(res) {
