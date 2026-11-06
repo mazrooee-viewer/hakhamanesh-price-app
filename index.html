@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261106122725">
+  <meta name="x-build" content="20261106161428">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","issueCustomInquiry","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","issueCustomInquiry","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261106122725" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261106161428" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -530,7 +530,15 @@
     .home-prices { background: var(--navy); color: #fff; border-color: var(--gold); }
     .home-prices .count { color: #f3e2b8; }
     body[data-prices-only="1"] #back-fab { display: none !important; }
-    body[data-prices-only="1"] .screen:not(#screen-prices) { display: none !important; }
+    body[data-prices-only="1"] .screen:not(#screen-prices):not(#screen-uploader) { display: none !important; }
+    /* ===== آپلود لیست قیمت (Uploader.js؛ صفحهٔ UploaderApp.html در قاب جدا تا CSS/JS دو اپ قاطی نشود) ===== */
+    .home-upload { background: #fff4d6; color: #4a3208; border-color: var(--gold); }
+    #screen-uploader.active { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+    #screen-uploader .up-frame-wrap { flex: 1; min-height: 0; position: relative; background: #f8fafc; }
+    #up-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #f8fafc; }
+    #up-loading { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center; color: var(--muted); font-size: 14px; font-weight: 700; background: #f8fafc; text-align: center; padding: 16px; }
+    body[data-prices-only="1"]:has(#screen-uploader.active) #back-fab { display: block !important; }
+    .pu-upload-all { width: 100%; padding: 11px 12px; font-size: 14px; font-weight: 800; margin-bottom: 12px; }
     .pu-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
     .pu-tab { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; text-align: right; font-family: inherit; color: var(--navy); cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
     .pu-tab.on { border-color: var(--navy); box-shadow: inset 0 0 0 1px var(--navy); }
@@ -620,6 +628,10 @@
         <button class="home-btn home-prices" type="button" onclick="openPriceUpdate()">
           به روز رسانی قیمت ها
           <span class="count" id="count-prices">—</span>
+        </button>
+        <button class="home-btn home-upload" type="button" onclick="openUploader(null)">
+          آپلود لیست قیمت
+          <span class="count">خواندن عکس لیست و ثبت در شیت All</span>
         </button>
         <button class="home-btn home-pkg" type="button" onclick="openPackages()">
           پکیج‌ها
@@ -852,6 +864,7 @@
       </div>
     </div>
     <div class="wrap">
+      <button class="pu-btn pu-up pu-upload-all" type="button" onclick="openUploader(null)">آپلود عکس لیست قیمت</button>
       <div class="pu-tabs">
         <button class="pu-tab on" id="pu-tab-daily" type="button" onclick="puShowTab('daily')">
           <span class="t-row"><span class="t-name">روزانه</span><span class="t-count" id="pu-cnt-daily">—</span></span>
@@ -867,6 +880,22 @@
       <div id="pu-daily"><div class="empty">در حال بارگذاری...</div></div>
       <div id="pu-weekly" style="display:none"></div>
       <button class="btn btn-ghost" type="button" style="width:100%;margin-top:4px" onclick="loadPriceUpdate()">بازخوانی</button>
+    </div>
+  </section>
+
+  <section id="screen-uploader" class="screen">
+    <div class="top">
+      <div class="top-row">
+        <div>
+          <h1>آپلود لیست قیمت</h1>
+          <div class="meta" id="up-meta">عکس یا PDF لیست قیمت را انتخاب کنید</div>
+        </div>
+        <div class="date-badge" data-date-slot></div>
+      </div>
+    </div>
+    <div class="up-frame-wrap">
+      <div id="up-loading">در حال بارگذاری آپلودر...</div>
+      <iframe id="up-frame" title="آپلود لیست قیمت"></iframe>
     </div>
   </section>
 
@@ -1731,6 +1760,7 @@
       var active = document.querySelector('.screen.active');
       var id = active ? active.id : '';
       if (id === 'screen-form') backFromForm();
+      else if (id === 'screen-uploader') closeUploader();
       else showHome();
     }
 
@@ -2287,7 +2317,7 @@
             '<span class="pu-tick">✓</span>' +
             '<div class="pu-main"><div class="pu-name">' + escapeHtml(String(g.brand).replace(/\//g, ' / ')) + '</div><div class="pu-sub">' + sub + '</div></div>' +
             '<div class="pu-acts"><button class="pu-btn pu-same" type="button" onclick="puGroupSame(' + g._i + ')">' + (g.done ? 'بقیه بدون تغییر' : 'بدون تغییر') + '</button>' +
-            (b.uploaderUrl ? '<a class="pu-btn pu-up" href="' + escapeHtml(b.uploaderUrl) + '" target="_blank" rel="noopener" style="text-decoration:none">عکس لیست</a>' : '') +
+            '<button class="pu-btn pu-up" type="button" onclick="puOpenUploader(' + g._i + ')">عکس لیست</button>' +
             '</div></div>' + puMismHtml(g) + '</div>';
         });
         html += '</section>';
@@ -2350,6 +2380,88 @@
         }).then(function () { delete puState.busy['w' + i]; puRender(); });
       });
     }
+    // ===== آپلود لیست قیمت (سرور: Uploader.js؛ صفحه: UploaderApp.html در iframe[srcdoc]) =====
+    // صفحهٔ آپلودر یک بار با getUploaderPage گرفته و در قاب گذاشته می‌شود و تا بسته شدن اپ زنده می‌ماند.
+    // همهٔ google.script.run آپلودر از __uploaderBridge همین صفحه (runGas) رد می‌شود؛ فقط توابع UP_FNS_ مجازند.
+    var UP_CAT_ = { 'موتور': 'motors', 'تابلو فرمان': 'tablo', 'درب': 'doors', 'ریل': 'rails', 'کابین': 'cabin', 'کارسلینگ': 'cabinFrame', 'خرده‌ریز': 'parts' };
+    var UP_FNS_ = { previewImageCatalog: true, listCatalogBrands: true, commitMatchedCatalogPrices: true };
+    var upState = { loaded: false, loading: false, prefill: null, groupKey: '', from: 'screen-home', committed: false };
+    window.__uploaderBridge = {
+      call: function (fn, argsJson, ok, fail) {
+        if (!UP_FNS_[fn]) { fail('تابع مجاز نیست: ' + fn); return; }
+        var args;
+        try { args = JSON.parse(argsJson || '[]'); } catch (e) { fail('درخواست نامعتبر'); return; }
+        runGas.apply(null, [fn].concat(args)).then(function (res) {
+          ok(JSON.stringify(res === undefined ? null : res));
+        }, function (err) {
+          fail((err && err.message) || String(err || 'ارتباط با سرور برقرار نشد'));
+        });
+      },
+      prefill: function () { return JSON.stringify(upState.prefill); },
+      notify: function (type, json) {
+        if (type === 'ready') { upHideLoading(); return; }
+        if (type === 'committed') {
+          upState.committed = true;
+          loadPriceUpdate(true);
+        }
+      }
+    };
+    function upFrameWin() {
+      var f = document.getElementById('up-frame');
+      try { return upState.loaded && f && f.contentWindow ? f.contentWindow : null; } catch (e) { return null; }
+    }
+    function upHideLoading() { var el = document.getElementById('up-loading'); if (el) el.style.display = 'none'; }
+    function upEnsureLoaded() {
+      if (upState.loaded || upState.loading) return;
+      upState.loading = true;
+      var box = document.getElementById('up-loading');
+      box.style.display = 'flex';
+      box.textContent = 'در حال بارگذاری آپلودر...';
+      runGas('getUploaderPage').then(function (html) {
+        var frame = document.getElementById('up-frame');
+        frame.onload = upHideLoading;
+        frame.srcdoc = String(html || '');
+        upState.loaded = true;
+      }).catch(function (err) {
+        box.innerHTML = '<div>' + escapeHtml((err && err.message) || 'آپلودر بارگذاری نشد') + '</div>' +
+          '<button class="btn btn-ghost" type="button" onclick="upEnsureLoaded()">تلاش دوباره</button>';
+      }).then(function () { upState.loading = false; });
+    }
+    // prefill: { category, brand, label } از گروه هفتگی؛ null = بدون پیش‌فرض
+    function openUploader(prefill) {
+      var active = document.querySelector('.screen.active');
+      if (active && active.id !== 'screen-uploader') upState.from = active.id;
+      var key = prefill ? prefill.category + '|' + prefill.brand : '';
+      var win = upFrameWin();
+      if (win && key !== upState.groupKey) {
+        try { if (!(win.__uploaderHasPending && win.__uploaderHasPending()) && win.__uploaderReset) win.__uploaderReset(); } catch (e) {}
+      }
+      upState.prefill = prefill || null;
+      upState.groupKey = key;
+      document.getElementById('up-meta').textContent = prefill
+        ? 'پیش‌فرض: ' + prefill.label + ' (در پنجره‌ها قابل تغییر است)'
+        : 'عکس یا PDF لیست قیمت را انتخاب کنید';
+      setHeaderDates(todayJalali());
+      showScreen('screen-uploader');
+      upEnsureLoaded();
+    }
+    function puOpenUploader(i) {
+      var g = puState.board && puState.board.weekly[i];
+      if (!g) return openUploader(null);
+      openUploader({ category: UP_CAT_[g.cat] || '', brand: g.brand, label: g.cat + ' · ' + String(g.brand).replace(/\//g, ' / ') });
+    }
+    function closeUploader() {
+      var to = upState.from || 'screen-home';
+      if (puPricesOnly() || to === 'screen-prices') {
+        showScreen('screen-prices');
+        if (puState.board) puRender();
+        if (upState.committed) { upState.committed = false; loadPriceUpdate(true); }
+        return;
+      }
+      if (to === 'screen-home' || !document.getElementById(to)) showHome();
+      else showScreen(to);
+    }
+
     // بعد از برگشت از آپلودر، تیک‌ها از شیت تازه می‌شوند
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState !== 'visible') return;
