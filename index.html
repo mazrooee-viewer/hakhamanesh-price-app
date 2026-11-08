@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261106214439">
+  <meta name="x-build" content="20261108205603">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261106214439" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261108205603" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -221,6 +221,10 @@
       font-weight: 500;
     }
     .attach, .pdf-link { display: inline-block; margin-top: 8px; margin-left: 10px; font-size: 13px; font-weight: 700; color: #1d4ed8; }
+    .base-badge {
+      display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 999px;
+      background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; font-size: 12px; font-weight: 800;
+    }
     .empty { text-align: center; color: var(--muted); padding: 48px 12px; }
     .btn {
       border: none; font-family: inherit; border-radius: 14px;
@@ -1431,6 +1435,17 @@
     function eq(a, b) {
       return String(a || '').trim() === String(b || '').trim();
     }
+    // === DOOR_BRAND_ROWS_START ===
+    // برند دربی که ردیف‌های خودش را در «درب و کابین» دارد (سلکوم، فرماتور، یاران …) برای درب تمام اتوماتیک
+    // قیمت را از همان ردیف‌ها می‌گیرد؛ همان قاعدهٔ _Calc!B58/B59 شیت.
+    function doorRowTypeFor(values, eng) {
+      var floor = String(values.floorDoor || '').trim();
+      var brand = String(values.doorBrand || '').trim();
+      if (!brand || (floor !== 'تمام اتوماتیک' && floor !== 'تمام اتوماتیک شیشه ای')) return floor;
+      var own = (eng.doors || []).some(function (d) { return eq(d.floorType, brand); });
+      return own ? brand : floor;
+    }
+    // === DOOR_BRAND_ROWS_END ===
     function panelSheetModel(model) {
       var m = String(model || '').trim();
       if (m === 'AC2' || m === 'AC1') return 'OPEN';
@@ -1622,8 +1637,9 @@
 
       var stops = parseNum(values.stop) || 0;
       var door = null;
+      var doorRowType = doorRowTypeFor(values, eng);
       (eng.doors || []).some(function (d) {
-        if (eq(d.floorType, values.floorDoor) && eq(d.open, values.floorDoorOpen) && eq(d.size, values.doorSize)) {
+        if (eq(d.floorType, doorRowType) && eq(d.open, values.floorDoorOpen) && eq(d.size, values.doorSize)) {
           door = d;
           return true;
         }
@@ -1930,6 +1946,11 @@
       return s;
     }
 
+    // کارت صادرشده با قیمت پایهٔ پکیج؛ متن «بر اساس پکیج فعال» برای کارت‌های قدیمیِ همین مسیر است.
+    function isBasePriceNote(note) {
+      return /صادر با قیمت پایه|بر اساس پکیج فعال/.test(String(note == null ? '' : note));
+    }
+
     var MANAGER_NOTE_PRESETS = [
       'با توجه به ناپایداری قیمت ارز، یک الی دو روز دیگر مجدداً درخواست را ارسال کنید.',
       'این درخواست قیمت، مشمول قیمتهای پایه میشود',
@@ -2124,6 +2145,7 @@
           ? '<a class="pdf-link" href="' + escapeHtml(c.pdf1) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">لیست قیمت ۱</a>'
           : '';
         var isIssued = (c.status === 'صادر شد' || c.status === 'صادر شده');
+        var baseBadge = (isIssued && isBasePriceNote(c.note)) ? '<div class="base-badge">صادر با قیمت پایه</div>' : '';
         var reopenBtnHtml = isIssued
           ? '<div style="margin-top:8px;"><button type="button" class="btn btn-sm" onclick="event.stopPropagation(); reopenCard(\'' + escapeHtml(c.salesperson) + '\', ' + c.row + ', \'' + escapeHtml(c.employer) + '\')" style="background:#f59e0b; color:#fff; border:none; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:700; cursor:pointer;">اصلاح کردن</button></div>'
           : '';
@@ -2132,6 +2154,7 @@
           '<div class="name">' + (c.code ? ('<span style="color:#0f766e;">' + escapeHtml(String(c.code)) + '</span> — ') : '') + escapeHtml(c.employer) + '</div>' +
           '<div class="spec">' + (c.packageName ? (escapeHtml(packageDisplayName(c.packageName)) + ' — ') : '') + escapeHtml(c.system) + ' — ظرفیت ' + escapeHtml(c.caps) + ' — توقف ' + escapeHtml(c.stop) + '</div>' +
           cardDatesHtml(c) +
+          baseBadge +
           attach + pdf + reopenBtnHtml +
           '</div>';
       }).join('');
@@ -2936,8 +2959,10 @@
           return;
         }
         var failed = (res && res.failed) || [];
-        if (failed.length) toast('صادر شد ولی ناقص: ' + failed.join(' و '), true);
-        else toast('لیست قیمت پکیج صادر شد');
+        var baseCards = Number(res && res.baseCards) || 0;
+        var baseNote = baseCards ? (' — ' + baseCards + ' استعلام بازاریاب با قیمت پایه صادر شد') : '';
+        if (failed.length) toast('صادر شد ولی ناقص: ' + failed.join(' و ') + baseNote, true);
+        else toast('لیست قیمت پکیج صادر شد' + baseNote);
         state.packageIssuing = '';
         setBasePriceIssueBtn(false);
       }).catch(function (err) {

@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261106214439">
+  <meta name="x-build" content="20261108205603">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261106214439" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261108205603" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1466,10 +1466,15 @@
       return 'در دست بررسی';
     }
 
+    // کارت صادرشده‌ای که با قیمت پایهٔ پکیج صادر شده؛ متن «بر اساس پکیج فعال» برای کارت‌های قدیمیِ همین مسیر است.
+    function isBasePriceCard(c) {
+      if (normalizeSalesStatus(c) !== 'صادرشده') return false;
+      return /صادر با قیمت پایه|بر اساس پکیج فعال/.test(String((c && c.note) || ''));
+    }
+
     function salesBadgeHtml(c) {
       var norm = normalizeSalesStatus(c);
-      var note = String((c && c.note) || '');
-      if (note.indexOf('صادر با قیمت پایه') >= 0) {
+      if (isBasePriceCard(c)) {
         return '<span class="badge" style="background:#dcfce7; color:#15803d; border:1px solid #bbf7d0; font-weight:800;">صادر با قیمت پایه</span>';
       }
       if (norm === 'صادرشده') {
@@ -1577,7 +1582,7 @@
         return;
       }
       box.innerHTML = bannerHtml + filteredCards.map(function (c) {
-        var isBasePriceNote = (c.note || '').indexOf('صادر با قیمت پایه') >= 0;
+        var isBasePriceNote = isBasePriceCard(c);
         return '<div class="card"><div class="name">' + (c.code ? ('<span style="color:#0f766e;">' + escapeHtml(String(c.code)) + '</span> — ') : '') + escapeHtml(c.employer) + '</div>' +
           '<div class="spec">' + (c.packageName ? (escapeHtml(packageDisplayName(c.packageName)) + ' — ') : '') + escapeHtml(c.system) + ' — ظرفیت ' + escapeHtml(c.caps) + ' — توقف ' + escapeHtml(c.stop) + '</div>' +
           cardDatesHtml(c) +
@@ -2111,11 +2116,11 @@
             applyLocalCardPatch(payload.row, {
               status: 'صادر شد',
               sent: false,
-              note: res.message || '',
+              note: res.note || res.message || '',
               pdf1: res.pdfUrl || '',
               pdfs: res.pdfUrl ? [res.pdfUrl] : []
             });
-            toast(res.message || 'استعلام با پکیج فعال صادر شد');
+            toast(res.message || 'استعلام با قیمت پایه پکیج صادر شد');
             showCardsLocal();
           } else if (res && res.revoked) {
             applyLocalCardPatch(payload.row, {
@@ -2142,7 +2147,7 @@
         delete state.inflight[job.id];
         if (pf()) pf().dequeueSubmit(state.salesperson, job.id);
         if (res && res.autoIssued) {
-          toast(res.message || 'استعلام با پکیج فعال صادر شد');
+          toast(res.message || 'استعلام با قیمت پایه پکیج صادر شد');
         } else if (res && res.revoked) {
           toast(res.message || 'استعلام به‌خاطر پکیج فعال ابطال شد');
         }
