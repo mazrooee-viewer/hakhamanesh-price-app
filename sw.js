@@ -1,6 +1,6 @@
-/* Service Worker — PWA لیست قیمت — build 20261108205603 */
-var CACHE = "price-pwa-20261108205603";
-var SHELL = ["./", "./index.html", "./sales.html", "./all.html", "./manifest.json", "./manifest-sales.json", "./manifest-all.json",
+/* Service Worker — PWA لیست قیمت — build 20261108205933 */
+var CACHE = "price-pwa-20261108205933";
+var SHELL = ["./", "./index.html", "./sales.html", "./manifest.json", "./manifest-sales.json",
   "./assets/app-icon-180.png", "./assets/app-icon-192.png", "./assets/app-icon-512.png"];
 
 self.addEventListener("install", function (e) {
