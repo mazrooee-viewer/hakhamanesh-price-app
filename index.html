@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261108205933">
+  <meta name="x-build" content="20261109175951">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261108205933" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261109175951" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1474,13 +1474,18 @@
       var n = String(parseInt(cap, 10));
       return (n && n !== 'NaN' && row.prices[n]) || 0;
     }
+    // تصمیم مدیر 1405/08/17: AC2 همه‌جا AC1 شد؛ استعلام قدیمی با AC2 همان AC1 است.
+    function canonMotorModel(model) {
+      var m = String(model == null ? '' : model).trim();
+      return m === 'AC2' ? 'AC1' : m;
+    }
     function findMotor(values) {
       var list = (state.engine && state.engine.motors) || [];
       var type = motorKind(values);
       var hyd = isHyd(values);
       for (var i = 0; i < list.length; i++) {
         var m = list[i];
-        if (!eq(m.brand, values.motorBrand) || !eq(m.type, type) || !eq(m.model, values.model)) continue;
+        if (!eq(m.brand, values.motorBrand) || !eq(m.type, type) || !eq(canonMotorModel(m.model), canonMotorModel(values.model))) continue;
         if (!eq(m.cap, values.caps) || !eq(m.speed, values.speed)) continue;
         if (hyd && m.stop && !eq(m.stop, values.stop)) continue;
         return m;
@@ -3377,7 +3382,9 @@
           var pkg = findPackageStruct(data.packageName || '');
           if (pkg && pkg.caps && pkg.caps.length) opts = pkg.caps;
         }
-        fillSelect('f-' + f.key, opts, (data.values && data.values[f.key]) || '');
+        var initial = (data.values && data.values[f.key]) || '';
+        if (f.key === 'model') initial = canonMotorModel(initial);
+        fillSelect('f-' + f.key, opts, initial);
       });
       state.lastPrices = data.prices || {};
       setPrices(data.prices || {});
