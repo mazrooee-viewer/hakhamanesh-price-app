@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261109185844">
+  <meta name="x-build" content="20261109194512">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261109185844" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261109194512" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -2801,6 +2801,20 @@
       loadPackages();
     }
 
+    // پیوند پوشهٔ لیست قیمت آخرین صدور فعال (همان «مشاهده پوشه قیمت» اپ بازاریاب)؛ کلیک روی پیوند پیش‌نمایش کارت را باز نمی‌کند.
+    function packageFolderLinkHtml(last, archived) {
+      if (!last || archived) return '';
+      var id = String(last.folderId || '').trim();
+      var url = String(last.folderUrl || '').trim();
+      var m = (id && /^[a-zA-Z0-9_-]{20,}$/.test(id) ? id : '') ||
+        ((url.match(/\/folders\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/) || [])[1] || '');
+      var href = m ? 'https://drive.google.com/drive/folders/' + m + '?usp=sharing' :
+        (/^https:\/\/(drive|docs)\.google\.com\//i.test(url) ? url : '');
+      if (!href) return '';
+      return '<a class="btn btn-ghost" style="display:block;margin-top:8px;text-decoration:none" href="' + escapeHtml(href) +
+        '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">مشاهده پوشه قیمت</a>';
+    }
+
     function packageBadgesHtml(archived) {
       if (archived) {
         return '<div class="pkg-badges"><span class="pkg-badge invalid">ابطال شد</span></div>';
@@ -2825,6 +2839,7 @@
             (last.version ? ' — ورژن ' + escapeHtml(String(last.version)) : '') +
             (last.expiryDate ? ' — اعتبار تا ' + escapeHtml(last.expiryDate) : '') + '</div>' : '<div class="pkg-meta">هنوز صادر نشده</div>') +
           packageBadgesHtml(isArchived) +
+          packageFolderLinkHtml(last, isArchived) +
           '</div>';
       }).join('');
       box.querySelectorAll('[data-preview]').forEach(function (card) {
