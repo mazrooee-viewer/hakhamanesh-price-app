@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261110093152">
+  <meta name="x-build" content="20261110093410">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261110093152" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261110093410" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -420,6 +420,7 @@
     .home-custom { background: #dbeafe; color: #1e3a8a; border-color: #2563eb; }
     .home-short { background: #d7e4f2; color: #16324d; border-color: #3d6a8a; }
     .home-pkg { background: #efe7f8; color: #3b2060; border-color: #6b4c9a; }
+    .home-reset-hp { background: #fde8e8; color: #6b1d1d; border-color: #b91c1c; }
     .pkg-card { cursor: pointer; text-align: center; }
     .pkg-card .name { margin-bottom: 4px; }
     .pkg-meta { color: var(--muted); font-size: 13px; font-weight: 700; line-height: 1.7; }
@@ -678,6 +679,10 @@
         <button class="home-btn home-pkg" type="button" onclick="openPackages()">
           پکیج‌ها
           <span class="count">صدور و آرشیو لیست قیمت</span>
+        </button>
+        <button class="home-btn home-reset-hp" id="reset-have-price" type="button" onclick="resetHavePrice()">
+          reset have price
+          <span class="count">پاک کردن قیمت ردیف‌های NO در فرم محاسبه شیت</span>
         </button>
       </div>
       <div class="notify-box">
@@ -2794,6 +2799,28 @@
       var active = document.querySelector('.screen.active');
       if (active && active.id === 'screen-prices') loadPriceUpdate(true);
     });
+
+    // دکمهٔ reset have price: روی فرم محاسبهٔ شیت، قیمت دستی ردیف‌های NO پاک می‌شود (فرمول‌ها دست نمی‌خورند).
+    function resetHavePrice() {
+      if (!confirm('قیمت همهٔ ردیف‌های NO در «فرم محاسبه» شیت پاک شود؟')) return;
+      var btn = document.getElementById('reset-have-price');
+      if (btn) btn.disabled = true;
+      google.script.run
+        .withSuccessHandler(function (res) {
+          if (btn) btn.disabled = false;
+          res = res || {};
+          var cleared = res.cleared || [], fx = res.formulaRows || [];
+          var names = function (list) { return list.map(function (r) { return r.label || ('ردیف ' + r.row); }).join('، '); };
+          var msg = cleared.length ? ('قیمت ' + cleared.length + ' ردیف پاک شد: ' + names(cleared)) : 'ردیف NO با قیمت دستی پیدا نشد';
+          if (fx.length) msg += ' | فرمولی و دست‌نخورده: ' + names(fx);
+          toast(msg, !!fx.length && !cleared.length);
+        })
+        .withFailureHandler(function (err) {
+          if (btn) btn.disabled = false;
+          toast((err && err.message) || 'reset have price انجام نشد', true);
+        })
+        .resetHavePriceRows();
+    }
 
     function openPackages() {
       setHeaderDates(todayJalali());
