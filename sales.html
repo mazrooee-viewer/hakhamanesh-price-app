@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261109194512">
+  <meta name="x-build" content="20261110093152">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261109194512" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261110093152" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -387,6 +387,7 @@
           <div class="meta">وضعیت مورد نظر را انتخاب کنید</div>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
+          <button id="change-person" class="back" type="button" onclick="changePerson()" style="margin:0">تغییر نام</button>
           <div class="date-badge" data-date-slot></div>
         </div>
       </div>
@@ -1620,7 +1621,18 @@
 
     // کارت‌ها: اول آینهٔ Supabase (زیر نیم ثانیه)؛ اگر پیکربندی نشده/فیلتر/کند بود → همان مسیر قبلی Apps Script.
     // gasApplied: از overwrite شدن نتیجه GAS توسط نتیجه دیرتر Supabase جلوگیری می‌کند.
+    // یک درخواست هم‌زمان برای هر بازاریاب: انتخاب نام، صفحهٔ اول و پایش اعلان هم‌زمان کارت‌ها را می‌خواهند.
+    var cardsInFlight = {};
     function fetchSalesCards(name) {
+      if (cardsInFlight[name]) return cardsInFlight[name];
+      var p = fetchSalesCardsOnce(name);
+      cardsInFlight[name] = p;
+      var clear = function () { if (cardsInFlight[name] === p) delete cardsInFlight[name]; };
+      p.then(clear, clear);
+      return p;
+    }
+
+    function fetchSalesCardsOnce(name) {
       var fl = window.FastLayer;
       var gasApplied = false;
       if (fl && fl.pullSalesCards && fl.enabled && fl.enabled()) {
@@ -1713,8 +1725,40 @@
       showScreen('screen-people');
     }
 
+    // نام بازاریاب روی همین دستگاه به خاطر سپرده می‌شود تا با بازکردن اپ مستقیم صفحهٔ اول خودش (از کش) بیاید.
+    var LAST_PERSON_KEY = 'plSalesPerson';
+    function readLastPerson() { try { return localStorage.getItem(LAST_PERSON_KEY) || ''; } catch (e) { return ''; } }
+    function saveLastPerson(name) { try { localStorage.setItem(LAST_PERSON_KEY, name || ''); } catch (e) {} }
+
+    function changePerson() {
+      showPeople();
+    }
+
+    function autoPickLastPerson(data) {
+      if (state.salesperson || state.autoPickDone) return;
+      var name = readLastPerson();
+      if (!name || !data || !data.people || data.people.indexOf(name) < 0) return;
+      var active = document.querySelector('.screen.active');
+      if (active && active.id !== 'screen-people') return;
+      state.autoPickDone = true;
+      pickPerson(name);
+    }
+
+    // نامی که از کش انتخاب شده ولی در فهرست تازهٔ سرور نیست → برگشت به انتخاب نام (فقط اگر کاربر هنوز روی صفحهٔ اول است)
+    function dropRemovedPerson(data) {
+      var name = state.salesperson;
+      if (!name || !data || !data.people || data.people.indexOf(name) >= 0) return;
+      saveLastPerson('');
+      var active = document.querySelector('.screen.active');
+      if (active && active.id === 'screen-home') {
+        state.salesperson = '';
+        showPeople();
+      }
+    }
+
     function pickPerson(name) {
       state.salesperson = name;
+      saveLastPerson(name);
       if (window.ticketBoxSetReporter) ticketBoxSetReporter(name);
       var hTitle = document.getElementById('home-title');
       if (hTitle) hTitle.textContent = 'صف استعلام قیمت — ' + name;
@@ -2218,6 +2262,7 @@
     }
     function pollAppNotices() {
       if (!state.salesperson) return;
+      if (document.hidden) return;
       silentRefreshCards();
       runGas('getPendingAppNotices', { role: notifyRole(), name: notifyName() }).then(function (items) {
         (items || []).forEach(showAppNotice);
@@ -2231,14 +2276,25 @@
       }
       pollAppNotices();
       notifyWatch = setInterval(pollAppNotices, 25000);
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) pollAppNotices();
+      });
       runGas('getNotifyStatus', { role: notifyRole(), name: notifyName() }).then(showNotifyHint).catch(function () {});
     }
 
     var cachedBoot = pf() ? pf().readBootstrap() : null;
     if (cachedBoot) applyBootstrap(cachedBoot);
-    runGas('getSalesBootstrap').then(applyBootstrap).catch(function (err) {
+    runGas('getSalesBootstrap').then(function (data) {
+      applyBootstrap(data);
+      dropRemovedPerson(data);
+      autoPickLastPerson(data);
+    }).catch(function (err) {
       if (!cachedBoot) toast((err && err.message) || 'بارگذاری انجام نشد', true);
     });
+    if (cachedBoot) {
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { autoPickLastPerson(cachedBoot); });
+      else autoPickLastPerson(cachedBoot);
+    }
     var cachedEngine = pf() && pf().readEngine ? pf().readEngine() : null;
     if (cachedEngine) state.engine = cachedEngine;
     runGas('getPriceEngineData').then(function (data) {
