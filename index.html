@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261110093410">
+  <meta name="x-build" content="20261110093620">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261110093410" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261110093620" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -2730,7 +2730,7 @@
       },
       prefill: function () { return JSON.stringify(upState.prefill); },
       notify: function (type, json) {
-        if (type === 'ready') { upHideLoading(); return; }
+        if (type === 'ready') { upHideLoading(); upDeliverShared(); return; }
         if (type === 'committed') {
           upState.committed = true;
           loadPriceUpdate(true);
@@ -4266,6 +4266,46 @@
       showScreen('screen-inbox');
       loadInbox();
     }
+
+    // ===== اشتراک‌گذاری اندروید (Web Share Target؛ فقط PWA گیت‌هاب) =====
+    // Service Worker فایل منوی Share را در کش «price-share» می‌گذارد و index.html?share=1 را باز می‌کند (price-pwa/build.js).
+    // فایل تا رسیدن به آپلودر در کش می‌ماند تا بازخوانی صفحه گمش نکند.
+    var SHARE_CACHE_ = 'price-share';
+    function shareKey_() { return new URL('./__shared-file', location.href).href; }
+    function upDeliverShared() {
+      var file = upState.sharedFile;
+      var win = upFrameWin();
+      if (!file || !win || typeof win.__uploaderReceiveFile !== 'function') return false;
+      upState.sharedFile = null;
+      try { win.__uploaderReceiveFile(file); } catch (e) { toast('فایل به آپلودر نرسید', true); return false; }
+      try { caches.open(SHARE_CACHE_).then(function (c) { return c.delete(shareKey_()); }); } catch (e) {}
+      return true;
+    }
+    function takeSharedFile() {
+      var flag = (location.search.match(/[?&]share=([01])/) || [])[1];
+      if (flag) { try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {} }
+      if (flag === '0') toast('فایل اشتراکی دریافت نشد؛ دوباره از منوی Share بفرستید', true);
+      if (!window.caches || !caches.open) return;
+      var opened;
+      try { opened = caches.open(SHARE_CACHE_); } catch (e) { return; }
+      opened.then(function (c) {
+        return c.match(shareKey_()).then(function (res) {
+          if (!res) return;
+          var name = '';
+          try { name = decodeURIComponent(res.headers.get('X-File-Name') || ''); } catch (e) {}
+          return res.blob().then(function (blob) {
+            var type = blob.type || res.headers.get('Content-Type') || '';
+            var file;
+            try { file = new File([blob], name || 'shared', { type: type }); } catch (e) { file = blob; try { file.name = name || 'shared'; } catch (e2) {} }
+            upState.sharedFile = file;
+            openUploader(null);
+            toast('فایل اشتراکی رسید؛ دسته و برند را انتخاب کنید');
+            upDeliverShared();
+          });
+        });
+      }).catch(function () {});
+    }
+    takeSharedFile();
 
     var cachedBoot = pf() ? pf().readBootstrap() : null;
     if (cachedBoot) {

@@ -1,5 +1,7 @@
-/* Service Worker — PWA لیست قیمت — build 20261110093410 */
-var CACHE = "price-pwa-20261110093410";
+/* Service Worker — PWA لیست قیمت — build 20261110093620 */
+var CACHE = "price-pwa-20261110093620";
+var SHARE_CACHE = "price-share";
+var SHARE_KEY = "./__shared-file";
 var SHELL = ["./", "./index.html", "./sales.html", "./manifest.json", "./manifest-sales.json",
   "./assets/app-icon-180.png", "./assets/app-icon-192.png", "./assets/app-icon-512.png"];
 
@@ -9,14 +11,31 @@ self.addEventListener("install", function (e) {
 
 self.addEventListener("activate", function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
-    return Promise.all(keys.filter(function (k) { return k !== CACHE; }).map(function (k) { return caches.delete(k); }));
+    return Promise.all(keys.filter(function (k) { return k !== CACHE && k !== SHARE_CACHE; }).map(function (k) { return caches.delete(k); }));
   }).then(function () { return self.clients.claim(); }));
 });
+
+// فایل منوی Share اندروید (share_target در manifest.json): در کش price-share می‌ماند تا اپ مدیر برش دارد.
+function receiveShare(req) {
+  var to = function (flag) { return Response.redirect(new URL("./index.html?share=" + flag, self.registration.scope).href, 303); };
+  return req.formData().then(function (form) {
+    var file = form.get("file");
+    if (!file || typeof file === "string") return to("0");
+    var headers = { "Content-Type": file.type || "application/octet-stream", "X-File-Name": encodeURIComponent(file.name || "shared") };
+    return caches.open(SHARE_CACHE).then(function (c) {
+      return c.put(new URL(SHARE_KEY, self.registration.scope).href, new Response(file, { headers: headers }));
+    }).then(function () { return to("1"); });
+  }).catch(function () { return to("0"); });
+}
 
 function isFont(url) { return /fonts\.(googleapis|gstatic)\.com$/.test(url.hostname); }
 
 self.addEventListener("fetch", function (e) {
   var req = e.request;
+  if (req.method === "POST" && new URL(req.url).pathname.endsWith("/share-target")) {
+    e.respondWith(receiveShare(req));
+    return;
+  }
   if (req.method !== "GET") return;
   var url = new URL(req.url);
   if (/script\.google\.com$|googleusercontent\.com$/.test(url.hostname)) return;
