@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261111155131">
+  <meta name="x-build" content="20261111200659">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceTables","savePriceTables","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","getPriceTables","savePriceTables","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261111155131" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261111200659" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -365,6 +365,7 @@
     .calc-row input.price[readonly].price-formula { background: #cfe2f3; }
     .calc-row input.price[readonly].price-changed { background: #fff2cc; }
     .calc-row input.price.price-zero-default { visibility: hidden; }
+    .calc-row input.price.price-na, .calc-row input.price[readonly].price-na { background: #fee2e2; color: #b91c1c; font-weight: 800; font-size: 10.5px; direction: rtl; }
     .price-wrap { display: flex; align-items: center; gap: 4px; min-width: 0; }
     .price-wrap .price { flex: 1; min-width: 0; width: auto; }
     .age {
@@ -591,6 +592,21 @@
     .pu-item.pu-w .pu-row { flex-wrap: wrap; }
     .pu-item.pu-w .pu-acts { width: 100%; justify-content: flex-end; padding-inline-start: 32px; }
     .pu-err { font-size: 11.5px; color: var(--red); font-weight: 700; }
+    /* زیرمجموعهٔ گروه هفتگی: قیمت دستی و «قیمت موجود نمی‌باشد» (1405/08/20) */
+    .pu-open { background: #f1f5f9; }
+    .pu-open[aria-expanded="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .pu-subs { border-top: 1px dashed var(--line); margin: 2px -14px -10px; background: #f8fafc; }
+    .pu-sitem { padding: 9px 14px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+    .pu-sitem:last-child { border-bottom: 0; }
+    .pu-sitem .pu-name { font-size: 12.5px; }
+    .pu-sitem.done .pu-tick { background: var(--green); border-color: var(--green); color: #fff; }
+    .pu-sitem.na .pu-tick { background: var(--red); border-color: var(--red); color: #fff; }
+    .pu-sitem.busy { opacity: .6; pointer-events: none; }
+    .pu-skey { font-size: 10.5px; color: var(--muted); direction: ltr; unicode-bidi: isolate; }
+    .pu-sacts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .pu-nabtn { border-color: var(--red); color: var(--red); }
+    .pu-na { background: #fee2e2; color: #b91c1c; border-radius: 999px; padding: 1px 8px; font-size: 11.5px; font-weight: 800; }
+    .pu-old { font-size: 11px; color: var(--muted); }
 
     /* ===== جداول قیمت (PriceTables.js؛ 1405/08/16): همهٔ جداول شیت All با ذخیره از مسیر آینه ===== */
     .home-tables { background: #e0f2f1; color: #134e4a; border-color: #0f766e; }
@@ -1619,9 +1635,23 @@
       var map = (state.engine && state.engine.freshness) || {};
       return map[String(key || '').trim()] || '';
     }
+    // «قیمت موجود نمی‌باشد» (PriceUpdate.js): تا وقتی قیمتی تازه‌تر از تاریخ ثبت آن نیامده، به‌جای قیمت همین عبارت دیده می‌شود.
+    var PU_NA_TEXT = 'قیمت موجود نمی‌باشد';
+    function puNaActive(naDate, priceDate) {
+      var n = String(naDate || '').trim();
+      if (!n) return false;
+      var p = String(priceDate || '').trim();
+      return !p || n >= p;
+    }
+    function naDate_(key) {
+      var map = (state.engine && state.engine.unavailable) || {};
+      return map[String(key || '').trim()] || '';
+    }
     function markFresh_(field, key) {
       var d = freshDate_(key);
       if (d) state.priceDates[field] = d;
+      var n = naDate_(key);
+      if (n && puNaActive(n, d)) state.priceNA[field] = n;
     }
     function computeLocalPrices(values) {
       var eng = state.engine;
@@ -1631,6 +1661,7 @@
         prices[f.key] = fallback[f.key] || '';
       });
       state.priceDates = {};
+      state.priceNA = {};
       if (!eng) return prices;
 
       var motor = findMotor(values);
@@ -2544,7 +2575,8 @@
 
 
     // ===== به روز رسانی قیمت ها (سرور: PriceUpdate.js) =====
-    var puState = { board: null, tab: 'daily', editing: 0, err: {}, busy: {}, mism: {}, queue: Promise.resolve() };
+    var puState = { board: null, tab: 'daily', editing: 0, err: {}, busy: {}, mism: {}, queue: Promise.resolve(),
+      open: {}, rows: {}, rowsLoading: {}, rowEdit: '', rowErr: {}, rowBusy: {}, shown: {} };
     function puPricesOnly() { return document.body.getAttribute('data-prices-only') === '1'; }
     function puFa(v) { return String(v == null ? '' : v).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; }); }
     function puMoney(v) { return (v === '' || v == null) ? 'بدون قیمت' : puFa(formatShortPathPrice(v)); }
@@ -2568,6 +2600,9 @@
     function loadPriceUpdate(quiet) {
       return runGas('getPriceUpdateBoard').then(function (b) {
         puState.board = b;
+        // اقلام گروه‌های بازشده از شیت تازه خوانده می‌شوند (مثلاً بعد از ثبت آپلودر)
+        puState.rows = {};
+        Object.keys(puState.open).forEach(function (id) { if (puState.open[id]) puLoadGroupRows(id, true); });
         puRender();
         puHomeCount();
       }).catch(function (err) {
@@ -2666,14 +2701,135 @@
             : puFa(g.done) + ' از ' + puFa(g.total) + ' قلم · ' + (g.oldest ? 'قدیمی‌ترین: ' + puFa(g.oldest) : 'بدون تاریخ');
           html += '<div class="pu-item pu-w' + (g.complete ? ' done' : '') + (busy ? ' busy' : '') + '"><div class="pu-row">' +
             '<span class="pu-tick">✓</span>' +
-            '<div class="pu-main"><div class="pu-name">' + escapeHtml(String(g.brand).replace(/\//g, ' / ')) + '</div><div class="pu-sub">' + sub + '</div></div>' +
+            '<div class="pu-main"><div class="pu-name">' + escapeHtml(String(g.brand).replace(/\//g, ' / ')) + '</div><div class="pu-sub">' + sub +
+              (g.na ? ' <span class="pu-na">' + puFa(g.na) + ' قلم ناموجود</span>' : '') + '</div></div>' +
+            '<button class="pu-btn pu-open" type="button" aria-expanded="' + !!puState.open[g.id] + '" onclick="puToggleGroup(' + g._i + ')">اقلام ' + (puState.open[g.id] ? '▴' : '▾') + '</button>' +
             '<div class="pu-acts"><button class="pu-btn pu-same" type="button" onclick="puGroupSame(' + g._i + ')">' + (g.done ? 'بقیه بدون تغییر' : 'بدون تغییر') + '</button>' +
             '<button class="pu-btn pu-up" type="button" onclick="puOpenUploader(' + g._i + ')">عکس لیست</button>' +
-            '</div></div>' + puMismHtml(g) + '</div>';
+            '</div></div>' + puMismHtml(g) + puSubsHtml(g) + '</div>';
         });
         html += '</section>';
       });
       box.innerHTML = html;
+      if (puState.rowEdit) { var sin = document.getElementById('pu-sin-' + puState.rowEdit); if (sin && document.activeElement !== sin) sin.focus(); }
+    }
+    // ---- زیرمجموعهٔ گروه هفتگی (سرور: getPriceUpdateGroupRows / savePriceUpdateWeeklyRow) ----
+    var PU_SUB_PAGE = 30;
+    function puSubDone(it, weekStart) {
+      return !!((it.na && it.na >= weekStart) || (!it.na && it.d && it.d >= weekStart));
+    }
+    function puToggleGroup(i) {
+      var g = puState.board.weekly[i];
+      if (!g) return;
+      puState.open[g.id] = !puState.open[g.id];
+      puRenderWeekly();
+      if (puState.open[g.id] && !puState.rows[g.id]) puLoadGroupRows(g.id);
+    }
+    function puLoadGroupRows(id, quiet) {
+      if (puState.rowsLoading[id]) return;
+      puState.rowsLoading[id] = true;
+      runGas('getPriceUpdateGroupRows', { id: id }).then(function (res) {
+        puState.rows[id] = res;
+        puSyncGroupCount(id);
+      }).catch(function (err) {
+        if (!quiet) toast((err && err.message) || 'اقلام گروه بارگذاری نشد', true);
+        if (!puState.rows[id]) puState.open[id] = false;
+      }).then(function () { delete puState.rowsLoading[id]; if (puState.board) puRender(); });
+    }
+    function puGroupById(id) { return (puState.board.weekly || []).filter(function (g) { return g.id === id; })[0]; }
+    // شمارش گروه از روی اقلام بارگذاری‌شده (بعد از هر ثبت تک‌قلم، تیک گروه همان لحظه درست می‌شود)
+    function puSyncGroupCount(id) {
+      var g = puGroupById(id), data = puState.rows[id];
+      if (!g || !data) return;
+      var ws = puState.board.weekStart;
+      g.total = data.items.length;
+      g.done = data.items.filter(function (it) { return puSubDone(it, ws); }).length;
+      g.na = data.items.filter(function (it) { return !!it.na; }).length;
+      g.complete = g.total > 0 && g.done === g.total;
+    }
+    function puSubsHtml(g) {
+      if (!puState.open[g.id]) return '';
+      var data = puState.rows[g.id];
+      if (!data) return '<div class="pu-subs"><div class="pu-sitem"><div class="pu-sub">در حال بارگذاری اقلام…</div></div></div>';
+      var ws = puState.board.weekStart;
+      var lim = puState.shown[g.id] || PU_SUB_PAGE;
+      var html = data.items.slice(0, lim).map(function (it) {
+        var id = g._i + '-' + it.r;
+        var done = puSubDone(it, ws), busy = puState.rowBusy[id];
+        var price = it.na
+          ? '<span class="pu-na">' + escapeHtml(PU_NA_TEXT) + '</span>' + (it.p !== '' ? ' <span class="pu-old">آخرین قیمت: ' + puMoney(it.p) + '</span>' : '')
+          : puMoney(it.p) + ' ' + puAge(it.d);
+        var acts = it.na
+          ? '<button class="pu-btn" type="button" onclick="puSubEdit(\'' + id + '\')">قیمت جدید</button>' +
+            '<button class="pu-btn pu-same" type="button" onclick="puSubAct(' + g._i + ',' + it.r + ',\'available\')">موجود شد</button>'
+          : '<button class="pu-btn pu-same" type="button" onclick="puSubAct(' + g._i + ',' + it.r + ',\'same\')">بدون تغییر</button>' +
+            '<button class="pu-btn" type="button" onclick="puSubEdit(\'' + id + '\')">قیمت جدید</button>' +
+            '<button class="pu-btn pu-nabtn" type="button" onclick="puSubAct(' + g._i + ',' + it.r + ',\'na\')">' + escapeHtml(PU_NA_TEXT) + '</button>';
+        var out = '<div class="pu-sitem' + (done ? ' done' : '') + (it.na ? ' na' : '') + (busy ? ' busy' : '') + '"><div class="pu-row">' +
+          '<span class="pu-tick">' + (it.na ? '✕' : '✓') + '</span>' +
+          '<div class="pu-main"><div class="pu-name">' + ptLabelHtml(it.l || it.k) + '</div>' +
+          '<div class="pu-sub">' + price + '</div><div class="pu-skey">' + escapeHtml(it.k) + '</div></div></div>' +
+          '<div class="pu-sacts">' + acts + '</div>';
+        if (puState.rowEdit === id) {
+          out += '<div class="pu-edit"><input id="pu-sin-' + id + '" type="text" inputmode="numeric" placeholder="مثلاً 310,000,000" aria-label="قیمت جدید ' + escapeHtml(it.l || it.k) + '" onkeydown="if(event.key===\'Enter\')puSubAct(' + g._i + ',' + it.r + ',\'price\')">' +
+            '<span class="unit">تومان</span><button class="pu-btn pu-save" type="button" onclick="puSubAct(' + g._i + ',' + it.r + ',\'price\')">ثبت</button></div>';
+        }
+        if (puState.rowErr[id]) out += '<div class="pu-err">' + escapeHtml(puState.rowErr[id]) + '</div>';
+        return out + '</div>';
+      }).join('');
+      if (data.items.length > lim) {
+        html += '<div class="pu-sitem"><button class="pu-btn" type="button" onclick="puSubMore(\'' + escapeHtml(g.id).replace(/'/g, '&#39;') + '\')">نمایش ' + puFa(Math.min(PU_SUB_PAGE, data.items.length - lim)) + ' قلم دیگر (' + puFa(data.items.length - lim) + ' مانده)</button></div>';
+      }
+      if (!data.items.length) html = '<div class="pu-sitem"><div class="pu-sub">قلمی در این گروه نیست</div></div>';
+      return '<div class="pu-subs">' + html + '</div>';
+    }
+    function puSubMore(id) { puState.shown[id] = (puState.shown[id] || PU_SUB_PAGE) + PU_SUB_PAGE; puRenderWeekly(); }
+    function puSubEdit(id) { puState.rowEdit = puState.rowEdit === id ? '' : id; puState.rowErr[id] = ''; puRenderWeekly(); }
+    function puSubAct(gi, row, action) {
+      var g = puState.board.weekly[gi], data = g && puState.rows[g.id];
+      var it = data && data.items.filter(function (x) { return x.r === row; })[0];
+      if (!it) return;
+      var id = gi + '-' + row;
+      if (puState.rowBusy[id]) return;
+      var payload = { row: row, key: it.k, action: action, name: it.l || it.k };
+      if (action === 'price') {
+        var el = document.getElementById('pu-sin-' + id);
+        var v = puParse(el ? el.value : '');
+        if (!isFinite(v) || v <= 0) { puState.rowErr[id] = 'قیمت را به عدد تومان وارد کنید'; puRenderWeekly(); return; }
+        if (it.p !== '' && Number(it.p) === v && !it.na) { payload.action = action = 'same'; }
+        else payload.price = v;
+      }
+      var prev = { p: it.p, d: it.d, na: it.na };
+      var today = puState.board.today;
+      if (action === 'price') { it.p = payload.price; it.d = today; it.na = ''; }
+      else if (action === 'same') { it.d = today; it.na = ''; }
+      else if (action === 'na') { it.na = today; }
+      else if (action === 'available') { it.na = ''; }
+      puState.rowEdit = ''; puState.rowErr[id] = ''; puState.rowBusy[id] = true;
+      puSyncGroupCount(g.id);
+      puRender();
+      puEnqueue(function () {
+        return runGas('savePriceUpdateWeeklyRow', payload).then(function (res) {
+          if (res && res.date && (action === 'price' || action === 'same')) it.d = res.date;
+          puEngineMark(it.k, action, (res && res.today) || today);
+          toast(action === 'na' ? 'ثبت شد: ' + PU_NA_TEXT : action === 'available' ? 'علامت ناموجود برداشته شد' : action === 'price' ? 'قیمت جدید ثبت شد' : 'ثبت شد: بدون تغییر');
+          if (res && res.warn) toast(res.warn, true);
+        }).catch(function (err) {
+          it.p = prev.p; it.d = prev.d; it.na = prev.na;
+          puState.rowErr[id] = (err && err.message) || 'ثبت انجام نشد';
+          toast(puState.rowErr[id], true);
+        }).then(function () { delete puState.rowBusy[id]; puSyncGroupCount(g.id); puRender(); });
+      });
+    }
+    // فرم محاسبه بدون بارگذاری دوبارهٔ جداول قیمت همان لحظه وضعیت تازه را ببیند
+    function puEngineMark(key, action, today) {
+      var eng = state.engine;
+      if (!eng) return;
+      eng.unavailable = eng.unavailable || {};
+      eng.freshness = eng.freshness || {};
+      if (action === 'na') eng.unavailable[key] = today;
+      else { delete eng.unavailable[key]; if (action === 'price' || action === 'same') eng.freshness[key] = today; }
+      try { if (pf() && pf().writeEngine) pf().writeEngine(eng); } catch (e) {}
     }
     function puMismHtml(g) {
       var bad = !g.complete && puState.mism[g.id];
@@ -2719,7 +2875,12 @@
         return runGas('confirmPriceUpdateGroup', { id: g.id }).then(function (res) {
           var bad = (res && res.mismatches) || [];
           puState.mism[g.id] = bad;
-          if (!bad.length) {
+          if (puState.rows[g.id]) { delete puState.rows[g.id]; if (puState.open[g.id]) puLoadGroupRows(g.id, true); }
+          var naOpen = (res && res.naOpen) || 0;
+          if (!bad.length && naOpen) {
+            g.done = Math.max(0, g.total - naOpen); g.complete = false;
+            toast(puFa(naOpen) + ' قلم «' + PU_NA_TEXT + '» از هفتهٔ قبل مانده؛ «اقلام» را باز کنید و تعیین تکلیف کنید', true);
+          } else if (!bad.length) {
             g.done = g.total; g.complete = true;
             toast('گروه «' + g.brand + '» بسته شد');
           } else {
@@ -3463,7 +3624,7 @@
       if (autoLocked) applyConditionTable();
       setOutSheet(data.suggestedOutSheet || 'Traction');
       if (state.engine) applyLocalCalc();
-      else { state.priceDates = {}; applyPriceHighlight(data.values || {}); applyAgeBadges(); }
+      else { state.priceDates = {}; state.priceNA = {}; applyPriceHighlight(data.values || {}); applyAgeBadges(); }
       var ageBox = document.getElementById('form-fields');
       if (ageBox && !ageBox._ageBound) {
         ageBox._ageBound = true;
@@ -3523,7 +3684,7 @@
         if (!el) return;
         var cur = String((values && values[f.key]) || '').trim();
         var def = String(defaults[f.key] || '').trim();
-        var hide = cur === def && parseNum(el.value) === 0;
+        var hide = cur === def && parseNum(el.value) === 0 && !(el.classList && el.classList.contains && el.classList.contains('price-na'));
         if (hide) el.classList.add('price-zero-default');
         else el.classList.remove('price-zero-default');
       });
@@ -3638,6 +3799,8 @@
         var el = document.getElementById('age-' + f.key);
         if (!el) return;
         var info = priceAgeInfo(dates[f.key]);
+        var na = state.priceNA && state.priceNA[f.key];
+        if (na) info = { cls: 'age-old', text: 'ناموجود', title: PU_NA_TEXT + ' · ثبت ' + na + ' — برند دیگری انتخاب کنید' };
         el.className = 'age ' + info.cls;
         el.textContent = info.text;
         el.setAttribute('data-title', info.title);
@@ -3647,7 +3810,13 @@
     function setPrices(prices) {
       (state.bootstrap.fields || []).forEach(function (f) {
         var el = document.getElementById('p-' + f.key);
-        if (el) setPriceCell(el, prices && prices[f.key] != null ? prices[f.key] : '');
+        if (!el) return;
+        setPriceCell(el, prices && prices[f.key] != null ? prices[f.key] : '');
+        // قلم ناموجود: مبلغ واقعی در data-raw می‌ماند (جمع دست نمی‌خورد) ولی مدیر به‌جای قیمت همین عبارت را می‌بیند
+        var na = state.priceNA && state.priceNA[f.key];
+        if (el.classList) el.classList.toggle('price-na', !!na);
+        if (na) { el.value = PU_NA_TEXT; el.title = PU_NA_TEXT + ' (ثبت ' + na + ')'; }
+        else if (el.title) el.title = '';
       });
       syncZeroDefaultPriceBoxes();
     }
