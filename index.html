@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261110093620">
+  <meta name="x-build" content="20261111155131">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","issueCustomInquiry","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceTables","savePriceTables","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceTables","savePriceTables","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261110093620" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261111155131" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -416,6 +416,7 @@
     .home-queue { background: #f3e2b8; color: #4a3208; border-color: #b8892a; }
     .home-issued { background: #cfe8d4; color: #0d3a22; border-color: #3d7a52; }
     .home-bad { background: #f0d4d4; color: #5c1212; border-color: #a34a4a; }
+    .home-fail { background: #fbe3d0; color: #6b2a06; border-color: #c2410c; }
     .home-hold { background: #e2e8f0; color: #1e293b; border-color: #64748b; }
     .home-custom { background: #dbeafe; color: #1e3a8a; border-color: #2563eb; }
     .home-short { background: #d7e4f2; color: #16324d; border-color: #3d6a8a; }
@@ -505,6 +506,12 @@
       background: #fee2e2; color: #991b1b; border: 1px solid #f87171;
     }
     .mismatch-detail { margin-top: 4px; font-size: 11px; color: #991b1b; }
+    .issue-error-badge {
+      display: inline-block; margin-top: 8px; padding: 4px 12px; border-radius: 999px;
+      font-size: 12px; font-weight: 800; font-family: Vazirmatn, Tahoma, sans-serif;
+      background: #ffedd5; color: #9a3412; border: 1px solid #fb923c;
+    }
+    .issue-error-detail { margin-top: 4px; font-size: 12px; font-weight: 700; color: #b91c1c; line-height: 1.7; word-break: break-word; }
     .mismatch-banner {
       margin: 10px 0; padding: 10px 12px; border-radius: 12px; text-align: center;
       background: #fee2e2; color: #991b1b; border: 1px solid #f87171; font-weight: 800; font-size: 13px;
@@ -650,6 +657,10 @@
         <button class="home-btn home-bad" type="button" onclick="openFilter('مغایرت')">
           در انتظار رفع مغایرت
           <span class="count" id="count-bad">—</span>
+        </button>
+        <button class="home-btn home-fail" type="button" onclick="openFilter('صادر نشده (خطای فنی)')">
+          صادر نشده (خطای فنی)
+          <span class="count" id="count-fail">—</span>
         </button>
         <button class="home-btn home-hold" type="button" onclick="openFilter('تعلیق شده')">
           تعلیق شده
@@ -858,6 +869,7 @@
         <button class="btn btn-ghost" type="button" onclick="cancelIncomplete()" style="margin-top:5px; background: #fff; color: #333; border: 1px solid #ddd;">انصراف</button>
       </div>
       <div id="sheet-mismatch" class="mismatch-banner" style="display:none"></div>
+      <div id="issue-error" class="mismatch-banner" style="display:none"></div>
       <div id="pdfs" class="pdfs"></div>
     </div>
   </section>
@@ -2117,7 +2129,13 @@
       return 'در صف بررسی';
     }
 
+    var ISSUE_FAIL_FILTER = 'صادر نشده (خطای فنی)';
+    function cardIssueError(c) { return String((c && c.issueError) || '').trim(); }
+
     function cardsByFilter(filter) {
+      if (filter === ISSUE_FAIL_FILTER) {
+        return (state.allCards || []).filter(function (c) { return !!cardIssueError(c); });
+      }
       var list = (state.allCards || []).filter(function (c) {
         return normalizeStatus(c) === filter;
       });
@@ -2131,6 +2149,8 @@
       var i = cardsByFilter('صادر شده').length;
       var b = cardsByFilter('مغایرت').length;
       var h = cardsByFilter('تعلیق شده').length;
+      var failEl = document.getElementById('count-fail');
+      if (failEl) failEl.textContent = cardsByFilter(ISSUE_FAIL_FILTER).length + ' مورد';
       var custom = cardsByFilter('استعلام دلخواه').length;
       document.getElementById('count-queue').textContent = q + ' مورد';
       document.getElementById('count-issued').textContent = i + ' مورد';
@@ -2162,7 +2182,7 @@
           ? '<div style="margin-top:8px;"><button type="button" class="btn btn-sm" onclick="event.stopPropagation(); reopenCard(\'' + escapeHtml(c.salesperson) + '\', ' + c.row + ', \'' + escapeHtml(c.employer) + '\')" style="background:#f59e0b; color:#fff; border:none; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:700; cursor:pointer;">اصلاح کردن</button></div>'
           : '';
         return '<div class="card">' +
-          '<div class="who">' + escapeHtml(c.salespersonLabel || c.salesperson) + '</div>' + issueBadgeHtml(c) + sheetMismatchBadgeHtml(c) +
+          '<div class="who">' + escapeHtml(c.salespersonLabel || c.salesperson) + '</div>' + issueBadgeHtml(c) + sheetMismatchBadgeHtml(c) + issueErrorBadgeHtml(c) +
           '<div class="name">' + (c.code ? ('<span style="color:#0f766e;">' + escapeHtml(String(c.code)) + '</span> — ') : '') + escapeHtml(c.employer) + '</div>' +
           '<div class="spec">' + (c.packageName ? (escapeHtml(packageDisplayName(c.packageName)) + ' — ') : '') + escapeHtml(c.system) + ' — ظرفیت ' + escapeHtml(c.caps) + ' — توقف ' + escapeHtml(c.stop) + '</div>' +
           cardDatesHtml(c) +
@@ -3233,6 +3253,7 @@
         packageName: card.packageName || (card.inquiry && card.inquiry.packageName) || '',
         date: card.date || '',
         sheetMismatch: card.sheetMismatch || '',
+        issueError: card.issueError || '',
         values: card.inquiry.values,
         totals: {},
         prices: {},
@@ -3242,7 +3263,7 @@
     }
 
     function inquiryFingerprint(d) {
-      return JSON.stringify([d.employer, d.values, d.note, d.extraNote, d.pdfs, d.attachment, d.status, d.packageName, d.sheetMismatch || '']);
+      return JSON.stringify([d.employer, d.values, d.note, d.extraNote, d.pdfs, d.attachment, d.status, d.packageName, d.sheetMismatch || '', d.issueError || '']);
     }
 
     // درصد سود پیش‌نمایش پکیج فقط در همین مرورگر می‌ماند (پیش‌نمایش دیگر به فرم محاسبهٔ شیت دست نمی‌زند).
@@ -3384,6 +3405,7 @@
       setTotals(data.totals || {});
       renderPdfs(data.pdfs || []);
       renderSheetMismatchBanner(data.preview ? '' : data.sheetMismatch);
+      renderIssueErrorBanner(data.preview ? '' : data.issueError);
       var reopenBtn = document.getElementById('reopen-inquiry');
       if (reopenBtn) {
         var isIssued = (data.status === 'صادر شد' || data.status === 'صادر شده');
@@ -3800,6 +3822,49 @@
       return hit;
     }
 
+    function issueErrorBadgeHtml(c) {
+      var t = cardIssueError(c);
+      if (!t) return '';
+      return '<div class="issue-error-badge">صادر نشد — خطای فنی</div>' +
+        '<div class="issue-error-detail">' + escapeHtml(t) + '</div>';
+    }
+
+    function renderIssueErrorBanner(text) {
+      var el = document.getElementById('issue-error');
+      if (!el) return;
+      var t = String(text || '').trim();
+      el.style.display = t ? 'block' : 'none';
+      el.textContent = t ? ('⛔ صدور قبلی انجام نشد: ' + t) : '';
+    }
+
+    function setCardIssueError(salesperson, row, text) {
+      var hit = false;
+      (state.allCards || []).forEach(function (c) {
+        if (c && c.salesperson === salesperson && Number(c.row) === Number(row)) { c.issueError = text || ''; hit = true; }
+      });
+      if (hit && pf()) { try { pf().writeInbox(state.allCards); } catch (e) {} }
+      return hit;
+    }
+
+    // خطای صدور کنار همان ردیف استعلام ثبت می‌شود (سرور خطای خودش را ثبت کرده؛ این برای پایان مهلت/قطع شبکه است).
+    function recordIssueFailureFor(job, err) {
+      var p = job.payload || {};
+      var msg = (err && err.message) || 'صدور لیست قیمت انجام نشد';
+      var sp = p.salesperson;
+      var row = Number(p.row);
+      if (job.custom) { sp = (p.destination && p.destination !== 'custom') ? p.destination : 'استعلام دلخواه'; row = 0; }
+      if (!sp || !(row >= 2)) { loadInbox(true); return; }
+      var stamp = msg + ' — ' + todayJalali();
+      setCardIssueError(sp, row, stamp);
+      if (issueFormIsOpen(job.key)) renderIssueErrorBanner(stamp);
+      try {
+        google.script.run
+          .withSuccessHandler(function (r) { if (r && r.text) setCardIssueError(sp, row, r.text); loadInbox(true); })
+          .withFailureHandler(function () {})
+          .recordIssueFailure({ salesperson: sp, row: row, message: msg });
+      } catch (e) {}
+    }
+
     function haltIssueQueueOnMismatch(job, res) {
       var dropped = state.issueJobs.filter(function (j) { return j !== job; });
       state.issueJobs = [];
@@ -3901,7 +3966,12 @@
     function completeIssueJob(job, res, err) {
       var same = issueFormIsOpen(job.key);
       removeIssueJob(job);
-      if (!err) setCardSheetMismatch(job.payload.salesperson, job.payload.row, '');
+      if (!err) {
+        setCardSheetMismatch(job.payload.salesperson, job.payload.row, '');
+        setCardIssueError(job.payload.salesperson, job.payload.row, '');
+      } else {
+        recordIssueFailureFor(job, err);
+      }
       if (same && job.finishAfter) state.finishQueued = true;
       if (err) {
         if (same) onIssuePdfFailure(err);
@@ -3912,6 +3982,7 @@
         }
       } else if (same) {
         renderSheetMismatchBanner('');
+        renderIssueErrorBanner('');
         onIssuePdfSuccess(res);
         if (job.custom) {
           state.customNew = false;
