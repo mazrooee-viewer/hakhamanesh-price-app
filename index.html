@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261111200659">
+  <meta name="x-build" content="20261111202652">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","getPriceTables","savePriceTables","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261111200659" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261111202652" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -2705,6 +2705,7 @@
               (g.na ? ' <span class="pu-na">' + puFa(g.na) + ' قلم ناموجود</span>' : '') + '</div></div>' +
             '<button class="pu-btn pu-open" type="button" aria-expanded="' + !!puState.open[g.id] + '" onclick="puToggleGroup(' + g._i + ')">اقلام ' + (puState.open[g.id] ? '▴' : '▾') + '</button>' +
             '<div class="pu-acts"><button class="pu-btn pu-same" type="button" onclick="puGroupSame(' + g._i + ')">' + (g.done ? 'بقیه بدون تغییر' : 'بدون تغییر') + '</button>' +
+            '<button class="pu-btn pu-nabtn" type="button" onclick="puGroupNa(' + g._i + ')">' + (g.done ? 'بقیه ناموجود' : 'همه ناموجود') + '</button>' +
             '<button class="pu-btn pu-up" type="button" onclick="puOpenUploader(' + g._i + ')">عکس لیست</button>' +
             '</div></div>' + puMismHtml(g) + puSubsHtml(g) + '</div>';
         });
@@ -2887,6 +2888,34 @@
             g.done = Math.max(0, g.total - bad.length);
             toast(puFa(bad.length) + ' قلم تأیید نشد؛ زیر همین گروه را ببینید', true);
           }
+        }).catch(function (err) {
+          toast((err && err.message) || 'ثبت انجام نشد', true);
+        }).then(function () { delete puState.busy['w' + i]; puRender(); });
+      });
+    }
+    // «بقیه ناموجود»: اقلامی از گروه که این هفته بسته نشده‌اند «قیمت موجود نمی‌باشد» می‌شوند (مبلغ‌ها دست نمی‌خورند)
+    function puGroupNa(i) {
+      var g = puState.board.weekly[i];
+      if (!g || puState.busy['w' + i]) return;
+      var left = Math.max(0, g.total - g.done);
+      if (!left) return;
+      if (!confirm(puFa(left) + ' قلم باقی‌ماندهٔ «' + g.brand + '» «' + PU_NA_TEXT + '» ثبت شود؟\nدر فرم محاسبه به‌جای قیمت این اقلام همین عبارت دیده می‌شود.')) return;
+      puState.busy['w' + i] = true;
+      puRender();
+      puEnqueue(function () {
+        return runGas('markPriceUpdateGroupNa', { id: g.id }).then(function (res) {
+          var today = (res && res.today) || puState.board.today;
+          ((res && res.keys) || []).forEach(function (k) { puEngineMark(k, 'na', today); });
+          var data = puState.rows[g.id];
+          if (data) {
+            data.items.forEach(function (it) { if (!puSubDone(it, puState.board.weekStart)) { it.na = today; delete puState.rowErr[i + '-' + it.r]; } });
+            puSyncGroupCount(g.id);
+          } else {
+            g.done = g.total; g.complete = true;
+            loadPriceUpdate(true); // شمار «قلم ناموجود» از شیت تازه خوانده شود
+          }
+          delete puState.mism[g.id];
+          toast(puFa((res && res.marked) || 0) + ' قلم «' + PU_NA_TEXT + '» ثبت شد');
         }).catch(function (err) {
           toast((err && err.message) || 'ثبت انجام نشد', true);
         }).then(function () { delete puState.busy['w' + i]; puRender(); });
