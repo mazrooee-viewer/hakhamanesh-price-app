@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261111204446">
+  <meta name="x-build" content="20261113144338">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261111204446" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261113144338" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1823,20 +1823,10 @@
 
       return applyCubePrices(values, prices);
     }
-    // سود لگاریتمی (همان autoProfitPercent_ سرور): درصد خالی = K × بها^(P−1) × ۱۰۰ با بها به میلیون تومان
-    function autoProfitPct(sum) {
-      var c = (state.engine && state.engine.profitCurve) || {};
-      var k = Number(c.k) > 0 ? Number(c.k) : 1.85, p = Number(c.p) > 0 ? Number(c.p) : 0.6927;
-      var m = sum / 1e6;
-      return m > 0 ? Math.round(k * Math.pow(m, p - 1) * 1000) / 10 : 0;
-    }
     function computeLocalTotals(prices, profitPct) {
       var sum = 0;
       Object.keys(prices || {}).forEach(function (k) { sum += parseNum(prices[k]); });
-      var isAuto = String(profitPct == null ? '' : profitPct).trim() === '';
-      var pct = isAuto ? autoProfitPct(sum) : parseNum(profitPct);
-      var pctEl = document.getElementById('profitPct');
-      if (pctEl) pctEl.placeholder = 'خودکار ' + autoProfitPct(sum) + '٪';
+      var pct = parseNum(profitPct);
       var profit = sum * pct / 100;
       var costToman = Math.round((sum + profit) / 10000) * 10000;
       return {
