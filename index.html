@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261113145001">
+  <meta name="x-build" content="20261113145803">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261113145001" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261113145803" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -310,6 +310,11 @@
       resize: vertical;
     }
     label { display: block; font-weight: 700; margin: 14px 0 6px; }
+    details.desc-edit { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-top: 14px; background: #fff; }
+    details.desc-edit > summary { font-weight: 700; cursor: pointer; padding: 4px 0; }
+    details.desc-edit textarea { width: 100%; min-height: 76px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; font-family: inherit; font-size: 14px; resize: vertical; direction: rtl; }
+    details.desc-edit textarea.edited { border-color: #f59e0b; background: #fffbeb; }
+    details.desc-edit .desc-title { font-weight: 700; font-size: 13px; margin: 10px 0 4px; }
     .req { color: var(--red); }
     .hint { font-size: 12px; color: var(--muted); margin-top: 6px; font-weight: 700; }
     input, select {
@@ -840,6 +845,12 @@
       </div>
 
       <div class="inquiry-only">
+      <details id="desc-edit" class="desc-edit">
+        <summary>شرح دستی</summary>
+        <div class="hint">متن هر ردیف همان شرح خودکار فرم همین کارت است. هر ردیف را که عوض کنید در PDF همین صدور می‌آید.</div>
+        <div id="desc-edit-body"></div>
+        <button class="btn btn-ghost" id="desc-edit-reset" type="button" onclick="loadDescEdit(true)">ریست شرح کالا</button>
+      </details>
       <label>توضیحات بازاریاب</label>
       <textarea id="sales-extra-note" class="note" readonly></textarea>
 
@@ -3599,6 +3610,7 @@
         ? 'پیش‌نمایش در اپ از جدول پکیج Data_Offers — فرم محاسبهٔ شیت تغییر نمی‌کند'
         : data.salesperson);
       setHeaderDates(cardDate(data));
+      clearDescEdit(true);
       document.getElementById('sales-extra-note').value = data.extraNote || '';
       setManagerNoteValue(data.note);
       document.getElementById('profitPct').value = (data.totals && data.totals.profitPct) || '';
@@ -3917,6 +3929,7 @@
     }
 
     function setOutSheet(name) {
+      if (state.outSheet !== name) clearDescEdit(true);
       state.outSheet = name;
       document.querySelectorAll('#out-sheets button').forEach(function (btn) {
         btn.classList.toggle('active', btn.getAttribute('data-sheet') === name);
@@ -3927,7 +3940,87 @@
       btn.onclick = function () { setOutSheet(btn.getAttribute('data-sheet')); };
     });
 
+    // ===== شرح دستی کارت (DescEdit.js): شرح خودکار همان فرم از شیت خوانده می‌شود؛ ردیف‌های ویرایش‌شده با صدور روی PDF می‌نشینند =====
+    function descEditSig(p) {
+      return JSON.stringify([p.salesperson, p.row, p.outSheet, p.packageName, p.values]);
+    }
+    function descEditEdits(sig) {
+      var d = state.descEdit;
+      if (!d || d.sig !== sig) return [];
+      var out = [];
+      document.querySelectorAll('#desc-edit-body textarea').forEach(function (ta) {
+        if (ta.value !== ta.getAttribute('data-base')) out.push({ row: Number(ta.getAttribute('data-row')), text: ta.value });
+      });
+      return out;
+    }
+    function clearDescEdit(closeIt) {
+      state.descEdit = null;
+      var body = document.getElementById('desc-edit-body');
+      if (body) body.innerHTML = '';
+      var box = document.getElementById('desc-edit');
+      if (box && closeIt) box.open = false;
+    }
+    function renderDescEdit(rows) {
+      var body = document.getElementById('desc-edit-body');
+      body.innerHTML = '';
+      (rows || []).forEach(function (r) {
+        var t = document.createElement('div');
+        t.className = 'desc-title';
+        t.textContent = r.title || ('ردیف ' + r.row);
+        var ta = document.createElement('textarea');
+        ta.value = r.text || '';
+        ta.setAttribute('data-row', r.row);
+        ta.setAttribute('data-base', r.text || '');
+        ta.oninput = function () { ta.classList.toggle('edited', ta.value !== ta.getAttribute('data-base')); };
+        body.appendChild(t);
+        body.appendChild(ta);
+      });
+    }
+    function loadDescEdit(force) {
+      var body = document.getElementById('desc-edit-body');
+      if (!body || state.descEditLoading) return;
+      if (!state.outSheet) { toast('شیت لیست قیمت را انتخاب کنید', true); return; }
+      var payload = collectPayloadCore();
+      var sig = descEditSig(payload);
+      if (!force && state.descEdit && state.descEdit.sig === sig) return;
+      state.descEdit = null;
+      state.descEditLoading = true;
+      body.textContent = 'در حال خواندن شرح از فرم محاسبه…';
+      runGas('getInquiryDescRows', payload).then(function (res) {
+        state.descEditLoading = false;
+        if (descEditSig(collectPayloadCore()) !== sig) { body.textContent = ''; return loadDescEdit(false); }
+        state.descEdit = { sig: sig };
+        renderDescEdit((res && res.rows) || []);
+      }).catch(function (err) {
+        state.descEditLoading = false;
+        body.textContent = '';
+        toast((err && err.message) || 'شرح خوانده نشد', true);
+      });
+    }
+    (function () {
+      var box = document.getElementById('desc-edit');
+      if (box) box.addEventListener('toggle', function () { if (box.open) loadDescEdit(false); });
+      // تغییر هر مشخصهٔ فرم = شرح همهٔ ردیف‌ها از نو (متن دستی دور ریخته می‌شود)
+      document.addEventListener('change', function (ev) {
+        if (!state.descEdit || (ev.target && ev.target.closest && ev.target.closest('#desc-edit'))) return;
+        setTimeout(function () {
+          if (!state.descEdit || state.descEdit.sig === descEditSig(collectPayloadCore())) return;
+          var hadEdits = descEditEdits(state.descEdit.sig).length > 0;
+          var open = box && box.open;
+          clearDescEdit(false);
+          if (hadEdits) toast('مشخصات فرم عوض شد؛ شرح دستی به متن خودکار برگشت', true);
+          if (open) loadDescEdit(false);
+        }, 0);
+      });
+    })();
+
     function collectPayload() {
+      var p = collectPayloadCore();
+      var edits = descEditEdits(descEditSig(p));
+      if (edits.length) p.customDesc = edits;
+      return p;
+    }
+    function collectPayloadCore() {
       var values = {};
       (state.bootstrap.fields || []).forEach(function (f) {
         var el = document.getElementById('f-' + f.key);
