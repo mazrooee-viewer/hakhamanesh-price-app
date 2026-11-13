@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261113145803">
+  <meta name="x-build" content="20261113150519">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261113145803" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261113150519" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -577,7 +577,7 @@
     .pu-group.complete .pu-ghead { background: #dcfce7; }
     .pu-group.complete .pu-gcount { color: #15803d; }
     .pu-tick { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; border: 2px solid var(--line); color: transparent; font-size: 13px; font-weight: 800; line-height: 1; transition: all .2s ease; }
-    .pu-tick.on, .pu-item.done .pu-tick { background: var(--green); border-color: var(--green); color: #fff; }
+    .pu-tick.on, .pu-item.done > .pu-row .pu-tick { background: var(--green); border-color: var(--green); color: #fff; }
     .pu-item { padding: 10px 14px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
     .pu-item:last-child { border-bottom: 0; }
     .pu-item.busy { opacity: .6; pointer-events: none; }
@@ -612,6 +612,7 @@
     .pu-nabtn { border-color: var(--red); color: var(--red); }
     .pu-na { background: #fee2e2; color: #b91c1c; border-radius: 999px; padding: 1px 8px; font-size: 11.5px; font-weight: 800; }
     .pu-old { font-size: 11px; color: var(--muted); }
+    .pu-dtag { background: #e0e7ff; color: #3730a3; border-radius: 999px; padding: 0 7px; font-size: 10.5px; font-weight: 800; vertical-align: middle; }
 
     /* ===== جداول قیمت (PriceTables.js؛ 1405/08/16): همهٔ جداول شیت All با ذخیره از مسیر آینه ===== */
     .home-tables { background: #e0f2f1; color: #134e4a; border-color: #0f766e; }
@@ -2685,7 +2686,8 @@
           var busy = puState.busy['d' + it.row];
           html += '<div class="pu-item' + (it.done ? ' done' : '') + (busy ? ' busy' : '') + '"><div class="pu-row">' +
             '<span class="pu-tick">✓</span>' +
-            '<div class="pu-main"><div class="pu-name">' + escapeHtml(it.name) + '</div><div class="pu-sub">' + puMoney(it.price) + ' ' + puAge(it.date) + '</div></div>' +
+            '<div class="pu-main"><div class="pu-name">' + escapeHtml(it.name) + '</div><div class="pu-sub">' +
+              (it.na ? '<span class="pu-na">' + escapeHtml(PU_NA_TEXT) + '</span> <span class="pu-old">آخرین قیمت: ' + puMoney(it.price) + '</span>' : puMoney(it.price) + ' ' + puAge(it.date)) + '</div></div>' +
             '<div class="pu-acts"><button class="pu-btn pu-same" type="button" onclick="puDailySame(' + it.row + ')">بدون تغییر</button>' +
             '<button class="pu-btn" type="button" onclick="puDailyEdit(' + it.row + ')">قیمت جدید</button></div></div>';
           if (puState.editing === it.row && !it.done) {
@@ -2738,6 +2740,8 @@
     // ---- زیرمجموعهٔ گروه هفتگی (سرور: getPriceUpdateGroupRows / savePriceUpdateWeeklyRow) ----
     var PU_SUB_PAGE = 30;
     function puSubDone(it, weekStart) {
+      // قلم روزانه با قاعدهٔ روزانه: فقط اگر امروز تعیین تکلیف شده باشد
+      if (it.s) { var t = puState.board && puState.board.today; return !!t && ((it.na && it.na >= t) || (!it.na && it.d === t)); }
       return !!((it.na && it.na >= weekStart) || (!it.na && it.d && it.d >= weekStart));
     }
     function puToggleGroup(i) {
@@ -2764,9 +2768,11 @@
       var g = puGroupById(id), data = puState.rows[id];
       if (!g || !data) return;
       var ws = puState.board.weekStart;
-      g.total = data.items.length;
-      g.done = data.items.filter(function (it) { return puSubDone(it, ws); }).length;
-      g.na = data.items.filter(function (it) { return !!it.na; }).length;
+      // اقلام روزانه (it.s) فقط نمایش و ثبت تک‌قلم دارند؛ در شمارش و تیک گروه هفتگی نیستند
+      var own = data.items.filter(function (it) { return !it.s; });
+      g.total = own.length;
+      g.done = own.filter(function (it) { return puSubDone(it, ws); }).length;
+      g.na = own.filter(function (it) { return !!it.na; }).length;
       g.complete = g.total > 0 && g.done === g.total;
     }
     function puSubsHtml(g) {
@@ -2789,7 +2795,7 @@
             '<button class="pu-btn pu-nabtn" type="button" onclick="puSubAct(' + g._i + ',' + it.r + ',\'na\')">' + escapeHtml(PU_NA_TEXT) + '</button>';
         var out = '<div class="pu-sitem' + (done ? ' done' : '') + (it.na ? ' na' : '') + (busy ? ' busy' : '') + '"><div class="pu-row">' +
           '<span class="pu-tick">' + (it.na ? '✕' : '✓') + '</span>' +
-          '<div class="pu-main"><div class="pu-name">' + ptLabelHtml(it.l || it.k) + '</div>' +
+          '<div class="pu-main"><div class="pu-name">' + ptLabelHtml(it.l || it.k) + (it.s ? ' <span class="pu-dtag" title="این قلم در زبانهٔ «روزانه» هم هست؛ در شمارش این گروه نیست">روزانه</span>' : '') + '</div>' +
           '<div class="pu-sub">' + price + '</div><div class="pu-skey">' + escapeHtml(it.k) + '</div></div></div>' +
           '<div class="pu-sacts">' + acts + '</div>';
         if (puState.rowEdit === id) {
@@ -2834,6 +2840,7 @@
         return runGas('savePriceUpdateWeeklyRow', payload).then(function (res) {
           if (res && res.date && (action === 'price' || action === 'same')) it.d = res.date;
           puEngineMark(it.k, action, (res && res.today) || today);
+          if (it.s) setTimeout(function () { loadPriceUpdate(true); }, 0); // قلم روزانه: زبانهٔ «روزانه» هم تازه شود
           toast(action === 'na' ? 'ثبت شد: ' + PU_NA_TEXT : action === 'available' ? 'علامت ناموجود برداشته شد' : action === 'price' ? 'قیمت جدید ثبت شد' : 'ثبت شد: بدون تغییر');
           if (res && res.warn) toast(res.warn, true);
         }).catch(function (err) {
@@ -2874,8 +2881,8 @@
     function puDailySubmit(row, payload, okMsg) {
       var it = puItem(row);
       if (!it) return;
-      var prev = { done: it.done, date: it.date, price: it.price };
-      it.done = true; it.date = puState.board.today;
+      var prev = { done: it.done, date: it.date, price: it.price, na: it.na };
+      it.done = true; it.date = puState.board.today; it.na = ''; // قیمت یا «بدون تغییر» = کالا موجود است
       if (payload.price) it.price = payload.price;
       puState.editing = 0; puState.busy['d' + row] = true;
       puRender();
@@ -2883,7 +2890,7 @@
         return runGas('savePriceUpdateDaily', payload).then(function () {
           toast(okMsg);
         }).catch(function (err) {
-          it.done = prev.done; it.date = prev.date; it.price = prev.price;
+          it.done = prev.done; it.date = prev.date; it.price = prev.price; it.na = prev.na;
           toast((err && err.message) || 'ثبت انجام نشد', true);
         }).then(function () { delete puState.busy['d' + row]; puRender(); });
       });
@@ -2929,7 +2936,7 @@
           ((res && res.keys) || []).forEach(function (k) { puEngineMark(k, 'na', today); });
           var data = puState.rows[g.id];
           if (data) {
-            data.items.forEach(function (it) { if (!puSubDone(it, puState.board.weekStart)) { it.na = today; delete puState.rowErr[i + '-' + it.r]; } });
+            data.items.forEach(function (it) { if (!it.s && !puSubDone(it, puState.board.weekStart)) { it.na = today; delete puState.rowErr[i + '-' + it.r]; } });
             puSyncGroupCount(g.id);
           } else {
             g.done = g.total; g.complete = true;
