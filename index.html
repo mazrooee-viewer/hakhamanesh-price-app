@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261113190000">
+  <meta name="x-build" content="20261114090000">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","undoPriceUpdateRows","getPriceTables","savePriceTables","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","undoPriceUpdateRows","getPriceTables","savePriceTables","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveInquiryManualPrice","clearInquiryManualPrices"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261113190000" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261114090000" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -386,6 +386,25 @@
     .calc-row input[type="number"] {
       text-align: center; font-size: 13px;
     }
+    /* قیمت دستی هر قلم در فرم محاسبه */
+    .calc-row .mp-line { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 11px; line-height: 1.6; padding: 0 2px; }
+    .calc-row .mp-line:empty { display: none; }
+    .mp-btn { border: 1px dashed #fb923c; background: #fff7ed; color: #9a3412; border-radius: 999px; padding: 1px 8px; font-family: inherit; font-size: 10.5px; font-weight: 700; cursor: pointer; }
+    .mp-btn:disabled { opacity: .5; cursor: default; }
+    .mp-x { border: 0; background: #fed7aa; color: #9a3412; border-radius: 999px; width: 20px; height: 20px; font-size: 14px; line-height: 1; font-weight: 800; cursor: pointer; padding: 0; }
+    .mp-tag { background: #ea580c; color: #fff; border-radius: 999px; padding: 0 7px; font-size: 10px; font-weight: 800; }
+    .mp-vals { color: #7c2d12; font-weight: 700; }
+    .calc-row.mp-set, .calc-row.mp-set:nth-child(odd) { background: #ffedd5; box-shadow: inset -3px 0 0 #ea580c; }
+    .calc-row input.price[readonly].price-manual { background: #fdba74; color: #7c2d12; font-weight: 800; }
+    .mp-edit { flex: 1 1 100%; display: flex; flex-direction: column; gap: 4px; background: #fff7ed; border: 1px solid #fdba74; border-radius: 10px; padding: 6px 8px; }
+    .mp-edit .mp-ttl { font-weight: 800; color: #9a3412; }
+    .mp-edit .pu-edit input { background: #fff; }
+    .mp-edit label.mp-chk { display: flex; gap: 6px; align-items: center; font-size: 11px; font-weight: 700; color: #475569; margin: 0; }
+    .mp-edit label.mp-chk input { width: auto; flex: none; }
+    .mp-edit .mp-err { color: #b91c1c; font-weight: 700; }
+    .mp-edit .mp-acts { display: flex; gap: 6px; }
+    .mp-edit .mp-acts button { border: 0; border-radius: 8px; padding: 5px 12px; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer; background: #ea580c; color: #fff; }
+    .mp-edit .mp-acts button.mp-cancel { background: #e2e8f0; color: #334155; }
     .calc-row.calc-actions { display: block; padding: 8px 4px; }
     .calc-row.calc-actions .btn { width: 100%; }
     .seg { display: flex; gap: 8px; }
@@ -818,6 +837,7 @@
         </div>
         <div class="calc-row calc-actions">
           <button class="btn btn-ghost" type="button" onclick="refreshTotals()">به‌روز کردن مبالغ</button>
+          <button class="btn btn-ghost" type="button" id="mp-clear-all" style="display:none;margin-top:6px" onclick="mpClearAll()">پاک کردن همهٔ قیمت‌های دستی</button>
         </div>
       </div>
       <div class="calc-legend">
@@ -1674,6 +1694,7 @@
       return map[String(key || '').trim()] || '';
     }
     function markFresh_(field, key) {
+      if (state.priceKeys) state.priceKeys[field] = String(key || '');
       var d = freshDate_(key);
       if (d) state.priceDates[field] = d;
       var n = naDate_(key);
@@ -1688,6 +1709,7 @@
       });
       state.priceDates = {};
       state.priceNA = {};
+      state.priceKeys = {};
       if (!eng) return prices;
 
       var motor = findMotor(values);
@@ -1884,7 +1906,8 @@
       var payload = collectPayload();
       var prices = dropNeverPriced(computeLocalPrices(payload.values));
       state.lastPrices = prices;
-      applyCalcState({ prices: prices, totals: computeLocalTotals(prices, payload.profitPct) });
+      // جمع از قیمت نهایی (دستی اگر هست، وگرنه جدول) حساب می‌شود
+      applyCalcState({ prices: prices, totals: computeLocalTotals(mpOverlay(prices), payload.profitPct) });
       applyPriceHighlight(payload.values);
       applyAgeBadges();
     }
@@ -3771,13 +3794,14 @@
         values: card.inquiry.values,
         totals: {},
         prices: {},
+        manualPrices: card.inquiry.manualPrices || {},
         pdfs: card.inquiry.pdfs || [],
         suggestedOutSheet: card.inquiry.suggestedOutSheet || ''
       };
     }
 
     function inquiryFingerprint(d) {
-      return JSON.stringify([d.employer, d.values, d.note, d.extraNote, d.pdfs, d.attachment, d.status, d.packageName, d.sheetMismatch || '', d.issueError || '']);
+      return JSON.stringify([d.employer, d.values, d.note, d.extraNote, d.pdfs, d.attachment, d.status, d.packageName, d.sheetMismatch || '', d.issueError || '', d.manualPrices || {}]);
     }
 
     // درصد سود پیش‌نمایش پکیج فقط در همین مرورگر می‌ماند (پیش‌نمایش دیگر به فرم محاسبهٔ شیت دست نمی‌زند).
@@ -3947,12 +3971,13 @@
       b.fields.forEach(function (f) {
         // ردیفی که ستون Have Price فرم محاسبه برایش NO است ذاتاً قیمت نمی‌گیرد: خانهٔ قیمت و برچسب تاریخ ندارد.
         var noPrice = fieldNeverPriced(f.key);
-        box.innerHTML += '<div class="calc-row' + (noPrice ? ' no-price' : '') + '">' +
+        box.innerHTML += '<div class="calc-row' + (noPrice ? ' no-price' : '') + '" data-key="' + escapeHtml(f.key) + '">' +
           (noPrice ? '<div class="price-wrap price-none"></div>' :
           '<div class="price-wrap"><input class="price" id="p-' + f.key + '" type="text" readonly>' +
           '<button type="button" class="age age-none" id="age-' + f.key + '" data-title="بدون تاریخ">—</button></div>') +
           '<select id="f-' + f.key + '"></select>' +
           '<div class="part">' + escapeHtml(f.header) + (f.required ? ' *' : '') + '</div>' +
+          (noPrice ? '' : '<div class="mp-line" id="mp-' + escapeHtml(f.key) + '"></div>') +
           '</div>';
       });
       b.fields.forEach(function (f) {
@@ -3966,6 +3991,9 @@
         fillSelect('f-' + f.key, opts, initial);
       });
       state.lastPrices = data.prices || {};
+      // قیمت دستی ثبت‌شده در شیت (اگر سرور بفرستد)؛ پیش‌نمایش پکیج و استعلام دلخواه ردیف شیت ندارند
+      state.manual = (!data.preview && !data.customNew) ? mpNormalize(data.manualPrices) : {};
+      state.mpEditing = '';
       setPrices(data.prices || {});
       applySystemLists(document.getElementById('f-system').value, data.values || {});
       bindPriceRecalc();
@@ -4162,17 +4190,23 @@
     }
 
     function setPrices(prices) {
+      // prices = قیمت جدول/فرمول؛ قیمت دستی روی آن می‌نشیند (نمایش و جمع) ولی جایگزین قیمت جدول در حافظه نمی‌شود
+      state.formulaPrices = prices || {};
+      var man = state.manual || {};
       (state.bootstrap.fields || []).forEach(function (f) {
         var el = document.getElementById('p-' + f.key);
         if (!el) return;
-        setPriceCell(el, prices && prices[f.key] != null ? prices[f.key] : '');
+        var hasMan = man[f.key] > 0;
+        setPriceCell(el, hasMan ? fmtPrice(man[f.key]) : (prices && prices[f.key] != null ? prices[f.key] : ''));
+        if (el.classList) el.classList.toggle('price-manual', hasMan);
         // قلم ناموجود: مبلغ واقعی در data-raw می‌ماند (جمع دست نمی‌خورد) ولی مدیر به‌جای قیمت همین عبارت را می‌بیند
-        var na = state.priceNA && state.priceNA[f.key];
+        var na = !hasMan && state.priceNA && state.priceNA[f.key];
         if (el.classList) el.classList.toggle('price-na', !!na);
         if (na) { el.value = PU_NA_TEXT; el.title = PU_NA_TEXT + ' (ثبت ' + na + ')'; }
         else if (el.title) el.title = '';
       });
       syncZeroDefaultPriceBoxes();
+      mpRenderAll();
     }
 
     function applyCalcState(res) {
@@ -4329,7 +4363,7 @@
         var el = document.getElementById('f-' + f.key);
         values[f.key] = el ? el.value : '';
       });
-      return {
+      var p = {
         salesperson: state.salesperson,
         row: state.row,
         employer: document.getElementById('employer').value.trim(),
@@ -4339,6 +4373,211 @@
         note: document.getElementById('manager-note').value,
         values: values
       };
+      // قیمت‌های دستی فقط وقتی هست فرستاده می‌شود تا محاسبهٔ سرور هم همان جمع را بدهد
+      if (state.manual && Object.keys(state.manual).length && !state.customNew && state.formMode !== 'package') p.manualPrices = state.manual;
+      return p;
+    }
+
+    // ===== قیمت دستی هر قلم در فرم محاسبه =====
+    // فرمول/جدول شیت هیچ‌وقت بازنویسی نمی‌شود: قیمت دستی در ستون جداگانه‌ای کنار همان ردیف می‌نشیند (سرور).
+    // قیمت نهایی = دستی اگر ثبت شده، وگرنه قیمت جدول. state.manual = { کلیدِ قلم: عدد } و state.formulaPrices قیمت جدول است.
+    function mpNormalize(m) {
+      var out = {};
+      Object.keys(m || {}).forEach(function (k) {
+        var n = typeof m[k] === 'number' ? m[k] : puParse(m[k]);
+        if (isFinite(n) && n > 0) out[k] = n;
+      });
+      return out;
+    }
+    function mpOverlay(prices) {
+      var out = {}, man = state.manual || {};
+      Object.keys(prices || {}).forEach(function (k) { out[k] = prices[k]; });
+      Object.keys(man).forEach(function (k) {
+        if (man[k] > 0 && !fieldNeverPriced(k)) out[k] = fmtPrice(man[k]);
+      });
+      return out;
+    }
+    // «۳۱۰م» = ۳۱۰ میلیون تومان
+    function mpShort(n) {
+      n = Number(n) || 0;
+      if (n >= 1e6) return puFa(String(Math.round(n / 1e5) / 10).replace(/\.0$/, '')) + 'م';
+      return puFa(formatShortPathPrice(n));
+    }
+    function mpCanEdit() { return state.formMode === 'inquiry' && !state.customNew && !!state.row; }
+    function mpPartName(key) {
+      var name = key;
+      ((state.bootstrap && state.bootstrap.fields) || []).forEach(function (f) { if (f.key === key) name = f.header || key; });
+      return name;
+    }
+    // ردیف جدول قیمتی که با این قلم یکی است (فقط وقتی مبلغ قلم همان قیمت واحد جدول است: موتور و تابلو) و در کلاینت شناخته شده باشد
+    function mpTableTarget(key) {
+      if (key !== 'motorBrand' && key !== 'panelBrand') return null;
+      var pk = state.priceKeys && state.priceKeys[key];
+      if (!pk) return null;
+      var data = ptState.data || ptLsRead();
+      var hit = null;
+      ((data && data.tables) || []).some(function (t) {
+        return (t.brands || []).some(function (b) {
+          return (b.rows || []).some(function (r) { if (String(r.k) === pk) { hit = { row: r.r, key: r.k }; return true; } return false; });
+        });
+      });
+      return hit;
+    }
+    function mpRenderLine(key) {
+      var line = document.getElementById('mp-' + key);
+      var rowEl = document.querySelector('.calc-row[data-key="' + key + '"]');
+      if (!line) return;
+      var editing = state.mpEditing === key;
+      if (editing && line.querySelector('input')) return;   // تایپ مدیر با محاسبهٔ مجدد پاک نشود
+      var man = (state.manual || {})[key];
+      var formula = parseNum((state.formulaPrices || {})[key]);
+      var show = mpCanEdit() && (man > 0 || formula > 0 || editing);
+      if (rowEl) rowEl.classList.toggle('mp-set', !!(mpCanEdit() && man > 0));
+      if (!show) { line.innerHTML = ''; return; }
+      var k = escapeHtml(key), name = escapeHtml(mpPartName(key));
+      var busy = state.mpBusy && state.mpBusy[key];
+      if (editing) {
+        var tgt = mpTableTarget(key);
+        line.innerHTML = '<div class="mp-edit">' +
+          '<div class="mp-ttl">قیمت دستی برای «' + name + '»' + (formula > 0 ? ' — جدول: ' + mpShort(formula) : '') + '</div>' +
+          '<div class="pu-edit"><input id="mp-in-' + k + '" type="text" inputmode="numeric" placeholder="مثلاً 345,000,000" aria-label="قیمت دستی ' + name + '" ' +
+          'value="' + escapeHtml(man > 0 ? formatShortPathPrice(man) : '') + '" onkeydown="if(event.key===\'Enter\')mpSave(\'' + k + '\');else if(event.key===\'Escape\')mpCancel()">' +
+          '<span class="unit">تومان</span></div>' +
+          (tgt ? '<label class="mp-chk"><input type="checkbox" id="mp-tbl-' + k + '">در جداول قیمت هم ثبت شود</label>' : '') +
+          '<div class="mp-err" id="mp-err-' + k + '"></div>' +
+          '<div class="mp-acts"><button type="button" onclick="mpSave(\'' + k + '\')">ثبت</button>' +
+          '<button type="button" class="mp-cancel" onclick="mpCancel()">انصراف</button></div></div>';
+        return;
+      }
+      if (man > 0) {
+        line.innerHTML = '<span class="mp-tag">دستی</span>' +
+          '<span class="mp-vals">جدول: ' + (formula > 0 ? mpShort(formula) : '—') + ' · دستی: ' + mpShort(man) + '</span>' +
+          '<button type="button" class="mp-btn"' + (busy ? ' disabled' : '') + ' onclick="mpEdit(\'' + k + '\')" aria-label="ویرایش قیمت دستی ' + name + '">✎ ویرایش</button>' +
+          '<button type="button" class="mp-x"' + (busy ? ' disabled' : '') + ' onclick="mpClear(\'' + k + '\')" title="حذف قیمت دستی و برگشت به قیمت جدول" aria-label="حذف قیمت دستی ' + name + '">×</button>';
+      } else {
+        line.innerHTML = '<button type="button" class="mp-btn"' + (busy ? ' disabled' : '') + ' onclick="mpEdit(\'' + k + '\')" aria-label="قیمت دستی ' + name + '">✎ قیمت دستی</button>';
+      }
+    }
+    function mpRenderAll() {
+      ((state.bootstrap && state.bootstrap.fields) || []).forEach(function (f) { mpRenderLine(f.key); });
+      var any = !!(state.manual && Object.keys(state.manual).length) && mpCanEdit();
+      var b = document.getElementById('mp-clear-all');
+      if (b) b.style.display = any ? '' : 'none';
+    }
+    // پس از تغییر state.manual: نمایش و جمع‌ها دوباره حساب می‌شوند
+    function mpRecalc() {
+      if (state.engine) { applyLocalCalc(); return; }
+      var fp = state.formulaPrices || {};
+      var pct = document.getElementById('profitPct').value;
+      applyCalcState({ prices: fp, totals: computeLocalTotals(dropNeverPriced(mpOverlay(fp)), pct) });
+    }
+    function mpEdit(key) {
+      var prev = state.mpEditing;
+      state.mpEditing = key;
+      if (prev && prev !== key) mpRenderLine(prev);
+      var line = document.getElementById('mp-' + key);
+      if (line) line.innerHTML = '';
+      mpRenderLine(key);
+      var inp = document.getElementById('mp-in-' + key);
+      if (inp) { try { inp.focus(); inp.select(); } catch (e) {} }
+    }
+    function mpCancel() {
+      var k = state.mpEditing;
+      state.mpEditing = '';
+      if (k) { var line = document.getElementById('mp-' + k); if (line) line.innerHTML = ''; mpRenderLine(k); }
+    }
+    function mpIdentity(key) {
+      var p = { salesperson: state.salesperson, row: state.row, key: key, label: mpPartName(key) };
+      ((state.bootstrap && state.bootstrap.fields) || []).forEach(function (f) { if (f.key === key && f.row) p.partRow = f.row; });
+      return p;
+    }
+    function mpFail(err, what) {
+      var msg = (err && err.message) || '';
+      var missing = !msg || /unknown|not\s*(found|allowed|exist)|forbidden|invalid\s*fn|is not a function|ناشناخته|تابع|یافت نشد|مجاز/i.test(msg);
+      toast(missing
+        ? what + ' انجام نشد: سرور (Apps Script) باید تابع ' + (what === 'پاک کردن قیمت‌های دستی' ? 'clearInquiryManualPrices' : 'saveInquiryManualPrice') + ' را داشته باشد'
+        : what + ' انجام نشد: ' + msg, true);
+    }
+    // بعد از ثبت موفق: جمع‌ها از سرور تأیید می‌شود (اگر خود پاسخ جمع نداشت)؛ خطای این مرحله مانع کار نیست
+    function mpServerTotals(res) {
+      if (res && res.totals) { setTotals(res.totals); return; }
+      if (state.formMode !== 'inquiry') return;
+      runGas('previewMazroueiTotals', collectPayload()).then(function (r) {
+        if (r && r.totals) setTotals(r.totals);
+      }).catch(function () {});
+    }
+    function mpSave(key) {
+      var inp = document.getElementById('mp-in-' + key);
+      var errEl = document.getElementById('mp-err-' + key);
+      if (!inp) return;
+      var n = puParse(inp.value);
+      var bad = '';
+      if (!isFinite(n) || n <= 0) bad = 'عدد قیمت را به تومان (بزرگ‌تر از صفر) وارد کنید';
+      else if (n > PT_MAX_PRICE) bad = 'عدد بیش از حد بزرگ است؛ دوباره وارد کنید';
+      if (bad) { if (errEl) errEl.textContent = bad; return; }
+      var chk = document.getElementById('mp-tbl-' + key);
+      var toTable = !!(chk && chk.checked) ? mpTableTarget(key) : null;
+      var had = Object.prototype.hasOwnProperty.call(state.manual || {}, key), old = had ? state.manual[key] : null;
+      state.manual = state.manual || {};
+      state.manual[key] = n;            // نمایش خوشبینانه؛ در شکست برمی‌گردد
+      state.mpEditing = '';
+      state.mpBusy = state.mpBusy || {}; state.mpBusy[key] = true;
+      mpRecalc();
+      var args = mpIdentity(key); args.price = n;
+      runGas('saveInquiryManualPrice', args).then(function (res) {
+        state.mpBusy[key] = false;
+        mpRenderLine(key);
+        mpServerTotals(res);
+        toast('قیمت دستی «' + mpPartName(key) + '» ثبت شد');
+        if (toTable) {
+          runGas('savePriceTables', { rows: [{ row: toTable.row, key: toTable.key, price: n }] }).then(function () {
+            toast('در جداول قیمت هم ثبت شد');
+          }).catch(function (err) {
+            toast('قیمت دستی ثبت شد ولی ثبت در جداول قیمت انجام نشد: ' + ((err && err.message) || ''), true);
+          });
+        }
+      }).catch(function (err) {
+        state.mpBusy[key] = false;
+        if (had) state.manual[key] = old; else delete state.manual[key];
+        mpRecalc();
+        mpFail(err, 'ثبت قیمت دستی');
+      });
+    }
+    function mpClear(key) {
+      if (!state.manual || !(state.manual[key] > 0)) return;
+      var old = state.manual[key];
+      delete state.manual[key];
+      state.mpBusy = state.mpBusy || {}; state.mpBusy[key] = true;
+      mpRecalc();
+      var args = mpIdentity(key); args.price = '';
+      runGas('saveInquiryManualPrice', args).then(function (res) {
+        state.mpBusy[key] = false;
+        mpRenderLine(key);
+        mpServerTotals(res);
+        toast('قیمت دستی «' + mpPartName(key) + '» حذف شد؛ قیمت جدول برگشت');
+      }).catch(function (err) {
+        state.mpBusy[key] = false;
+        state.manual[key] = old;
+        mpRecalc();
+        mpFail(err, 'حذف قیمت دستی');
+      });
+    }
+    // پاک کردن همهٔ قیمت‌های دستی این استعلام (برخلاف resetHavePrice که ردیف‌های NO همهٔ شیت را پاک می‌کند)
+    function mpClearAll() {
+      var old = state.manual || {};
+      if (!Object.keys(old).length) return;
+      if (!confirm('همهٔ قیمت‌های دستی این استعلام پاک شود و قیمت جدول برگردد؟')) return;
+      state.manual = {};
+      state.mpEditing = '';
+      mpRecalc();
+      runGas('clearInquiryManualPrices', { salesperson: state.salesperson, row: state.row }).then(function (res) {
+        mpServerTotals(res);
+        toast('همهٔ قیمت‌های دستی پاک شد');
+      }).catch(function (err) {
+        state.manual = old;
+        mpRecalc();
+        mpFail(err, 'پاک کردن قیمت‌های دستی');
+      });
     }
 
     function refreshTotals() {
@@ -4353,6 +4592,7 @@
       }
       google.script.run
         .withSuccessHandler(function (res) {
+          if (res && res.manualPrices) state.manual = mpNormalize(res.manualPrices);
           applyCalcState(res || {});
           if (res && res.prices) state.lastPrices = res.prices;
           toast('مبالغ به‌روز شد');
