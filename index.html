@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261113184846">
+  <meta name="x-build" content="20261113212308">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261113184846" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261113212308" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -598,6 +598,13 @@
     .pu-item.pu-w .pu-acts { width: 100%; justify-content: flex-end; padding-inline-start: 32px; }
     .pu-err { font-size: 11.5px; color: var(--red); font-weight: 700; }
     /* زیرمجموعهٔ گروه هفتگی: قیمت دستی و «قیمت موجود نمی‌باشد» (1405/08/20) */
+    .pu-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+    .pu-chip { border: 1px solid var(--line); background: #fff; color: var(--navy); border-radius: 999px; padding: 6px 11px; font-family: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+    .pu-chip-n { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .pu-chip.done { border-color: var(--green); background: #f0fdf4; color: #15803d; }
+    .pu-chip.done .pu-chip-n { color: #15803d; }
+    .pu-chip.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .pu-chip.on .pu-chip-n { color: #e2e8f0; }
     .pu-open { background: #f1f5f9; }
     .pu-open[aria-expanded="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
     .pu-subs { border-top: 1px dashed var(--line); margin: 2px -14px -10px; background: #f8fafc; }
@@ -2687,7 +2694,7 @@
 
     // ===== به روز رسانی قیمت ها (سرور: PriceUpdate.js) =====
     var puState = { board: null, tab: 'daily', editing: 0, err: {}, busy: {}, mism: {}, queue: Promise.resolve(),
-      open: {}, rows: {}, rowsLoading: {}, rowEdit: '', rowErr: {}, rowBusy: {}, shown: {} };
+      open: {}, rows: {}, rowsLoading: {}, rowEdit: '', rowErr: {}, rowBusy: {}, shown: {}, pick: {} };
     function puPricesOnly() { return document.body.getAttribute('data-prices-only') === '1'; }
     function puFa(v) { return String(v == null ? '' : v).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; }); }
     function puMoney(v) { return (v === '' || v == null) ? 'بدون قیمت' : puFa(formatShortPathPrice(v)); }
@@ -2799,6 +2806,28 @@
       if (b.weeklyLate) txt += ' · عقب افتاده';
       return txt + '. هر گروه را با «عکس لیست» (آپلودر) یا «بدون تغییر» ببندید؛ قیمت‌هایی که آپلودر ثبت کند خودکار تیک می‌خورند.';
     }
+    // دسته‌هایی که اول فهرست برندها را نشان می‌دهند (درخواست مدیر 1405/08/22)
+    var PU_BRAND_PICK_CATS = { 'موتور': 1 };
+    function puPickBrand(i) {
+      var g = puState.board.weekly[i];
+      if (!g) return;
+      puState.pick[g.cat] = puState.pick[g.cat] === g.id ? '' : g.id;
+      puRenderWeekly();
+    }
+    function puWeeklyCardHtml(g) {
+      var busy = puState.busy['w' + g._i];
+      var sub = g.complete ? 'همهٔ ' + puFa(g.total) + ' قلم این هفته به‌روز شد'
+        : puFa(g.done) + ' از ' + puFa(g.total) + ' قلم · ' + (g.oldest ? 'قدیمی‌ترین: ' + puFa(g.oldest) : 'بدون تاریخ');
+      return '<div class="pu-item pu-w' + (g.complete ? ' done' : '') + (busy ? ' busy' : '') + '"><div class="pu-row">' +
+        '<span class="pu-tick">✓</span>' +
+        '<div class="pu-main"><div class="pu-name">' + escapeHtml(String(g.brand).replace(/\//g, ' / ')) + '</div><div class="pu-sub">' + sub +
+          (g.na ? ' <span class="pu-na">' + puFa(g.na) + ' قلم ناموجود</span>' : '') + '</div></div>' +
+        '<button class="pu-btn pu-open" type="button" aria-expanded="' + !!puState.open[g.id] + '" onclick="puToggleGroup(' + g._i + ')">اقلام ' + (puState.open[g.id] ? '▴' : '▾') + '</button>' +
+        '<div class="pu-acts"><button class="pu-btn pu-same" type="button" onclick="puGroupSame(' + g._i + ')">' + (g.done ? 'بقیه بدون تغییر' : 'بدون تغییر') + '</button>' +
+        '<button class="pu-btn pu-nabtn" type="button" onclick="puGroupNa(' + g._i + ')">' + (g.done ? 'بقیه ناموجود' : 'همه ناموجود') + '</button>' +
+        '<button class="pu-btn pu-up" type="button" onclick="puOpenUploader(' + g._i + ')">عکس لیست</button>' +
+        '</div></div>' + puMismHtml(g) + puSubsHtml(g) + '</div>';
+    }
     function puRenderWeekly() {
       var b = puState.board, box = document.getElementById('pu-weekly');
       var html = '<div class="pu-notice' + (!b.weeklyLeft ? ' ok' : '') + '">' + (!b.weeklyLeft ? 'همهٔ گروه‌های این هفته بسته شد ✓' : escapeHtml(puWeekLabel(b))) + '</div>';
@@ -2807,20 +2836,18 @@
       cats.forEach(function (cat) {
         var gs = byCat[cat], done = gs.filter(function (g) { return g.complete; }).length;
         html += '<section class="pu-group' + (done === gs.length ? ' complete' : '') + '">' + puGroupHead(cat, done, gs.length);
-        gs.forEach(function (g) {
-          var busy = puState.busy['w' + g._i];
-          var sub = g.complete ? 'همهٔ ' + puFa(g.total) + ' قلم این هفته به‌روز شد'
-            : puFa(g.done) + ' از ' + puFa(g.total) + ' قلم · ' + (g.oldest ? 'قدیمی‌ترین: ' + puFa(g.oldest) : 'بدون تاریخ');
-          html += '<div class="pu-item pu-w' + (g.complete ? ' done' : '') + (busy ? ' busy' : '') + '"><div class="pu-row">' +
-            '<span class="pu-tick">✓</span>' +
-            '<div class="pu-main"><div class="pu-name">' + escapeHtml(String(g.brand).replace(/\//g, ' / ')) + '</div><div class="pu-sub">' + sub +
-              (g.na ? ' <span class="pu-na">' + puFa(g.na) + ' قلم ناموجود</span>' : '') + '</div></div>' +
-            '<button class="pu-btn pu-open" type="button" aria-expanded="' + !!puState.open[g.id] + '" onclick="puToggleGroup(' + g._i + ')">اقلام ' + (puState.open[g.id] ? '▴' : '▾') + '</button>' +
-            '<div class="pu-acts"><button class="pu-btn pu-same" type="button" onclick="puGroupSame(' + g._i + ')">' + (g.done ? 'بقیه بدون تغییر' : 'بدون تغییر') + '</button>' +
-            '<button class="pu-btn pu-nabtn" type="button" onclick="puGroupNa(' + g._i + ')">' + (g.done ? 'بقیه ناموجود' : 'همه ناموجود') + '</button>' +
-            '<button class="pu-btn pu-up" type="button" onclick="puOpenUploader(' + g._i + ')">عکس لیست</button>' +
-            '</div></div>' + puMismHtml(g) + puSubsHtml(g) + '</div>';
-        });
+        if (PU_BRAND_PICK_CATS[cat]) {
+          // دسته‌های پربرند (موتور): اول همهٔ برندها پشت سر هم؛ با زدن هر برند فقط کارت همان برند باز می‌شود
+          var picked = gs.filter(function (g) { return g.id === puState.pick[cat]; })[0];
+          html += '<div class="pu-chips">' + gs.map(function (g) {
+            var on = picked && picked.id === g.id;
+            return '<button type="button" class="pu-chip' + (g.complete ? ' done' : '') + (on ? ' on' : '') + '" aria-pressed="' + !!on + '" onclick="puPickBrand(' + g._i + ')">' +
+              escapeHtml(String(g.brand).replace(/\//g, ' / ')) + ' <span class="pu-chip-n">' + (g.complete ? '✓' : puFa(g.done) + '/' + puFa(g.total)) + '</span></button>';
+          }).join('') + '</div>';
+          html += picked ? puWeeklyCardHtml(picked) : '<div class="pu-item"><div class="pu-sub">یک برند را بزنید تا باز شود.</div></div>';
+        } else {
+          gs.forEach(function (g) { html += puWeeklyCardHtml(g); });
+        }
         html += '</section>';
       });
       box.innerHTML = html;
