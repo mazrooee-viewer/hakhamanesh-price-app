@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261113150519">
+  <meta name="x-build" content="20261113190000">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","undoPriceUpdateRows","getPriceTables","savePriceTables","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261113150519" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261113190000" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -612,6 +612,20 @@
     .pu-nabtn { border-color: var(--red); color: var(--red); }
     .pu-na { background: #fee2e2; color: #b91c1c; border-radius: 999px; padding: 1px 8px; font-size: 11.5px; font-weight: 800; }
     .pu-old { font-size: 11px; color: var(--muted); }
+    /* دستهٔ موتور: اول فهرست فشردهٔ برندها، با لمس هر برند کارت کامل آن باز می‌شود */
+    .pu-crow { width: 100%; background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: start; cursor: pointer; }
+    .pu-crow .pu-name, .pu-crow .pu-sub { display: flex; }
+    .pu-chev { color: var(--muted); font-size: 13px; flex-shrink: 0; }
+    .pu-item.pu-compact { padding-top: 9px; padding-bottom: 9px; }
+    .pu-btoggle { cursor: pointer; }
+    /* برگشت (undo) آخرین ثبتِ هر برند؛ روی کارت بسته‌شده هم دیده می‌شود */
+    .pu-undo { border-color: #c2410c; color: #c2410c; background: #fff7ed; }
+    /* منابع قیمت هر برند: گروه روبیکا، تلفن بازرگانی، وب‌سایت */
+    .pu-srcs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding-inline-start: 32px; }
+    .pu-srcs > b { font-size: 11.5px; color: var(--muted); }
+    .pu-src { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); background: #f8fafc; color: var(--navy); border-radius: 999px; padding: 3px 4px 3px 10px; font-size: 11.5px; font-weight: 700; text-decoration: none; }
+    .pu-src .x { border: 0; background: none; color: var(--muted); cursor: pointer; font: inherit; padding: 0 4px; }
+    .pu-src-add { border-style: dashed; padding: 3px 10px; cursor: pointer; font-family: inherit; }
     .pu-dtag { background: #e0e7ff; color: #3730a3; border-radius: 999px; padding: 0 7px; font-size: 10.5px; font-weight: 800; vertical-align: middle; }
 
     /* ===== جداول قیمت (PriceTables.js؛ 1405/08/16): همهٔ جداول شیت All با ذخیره از مسیر آینه ===== */
@@ -2598,7 +2612,8 @@
 
     // ===== به روز رسانی قیمت ها (سرور: PriceUpdate.js) =====
     var puState = { board: null, tab: 'daily', editing: 0, err: {}, busy: {}, mism: {}, queue: Promise.resolve(),
-      open: {}, rows: {}, rowsLoading: {}, rowEdit: '', rowErr: {}, rowBusy: {}, shown: {} };
+      open: {}, rows: {}, rowsLoading: {}, rowEdit: '', rowErr: {}, rowBusy: {}, shown: {},
+      rowsAt: {}, bopen: {}, undo: null, undoBusy: {} };
     function puPricesOnly() { return document.body.getAttribute('data-prices-only') === '1'; }
     function puFa(v) { return String(v == null ? '' : v).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; }); }
     function puMoney(v) { return (v === '' || v == null) ? 'بدون قیمت' : puFa(formatShortPathPrice(v)); }
@@ -2613,20 +2628,85 @@
         .replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }).replace(/[,،٬\s]/g, '');
       return /^\d+$/.test(s) ? Number(s) : NaN;
     }
+    // ---- سرعت: کش محلی تابلو و «اقلام» هر گروه (stale-while-revalidate) ----
+    // صفحه و اقلام همان لحظه از localStorage نمایش داده می‌شوند و نسخهٔ تازه در پس‌زمینه از سرور می‌آید.
+    var PU_BOARD_LS = 'plPuBoard:v1', PU_ROWS_LS = 'plPuRows:v1', PU_UNDO_LS = 'plPuUndo:v1';
+    var PU_ROWS_STALE_MS = 5 * 60 * 1000;   // اقلامی که از این قدیمی‌تر باشند در پس‌زمینه تازه می‌شوند
+    var PU_SNAP_FRESH_MS = 2 * 60 * 1000;   // پیش از «بقیه …» عکس وضعیت باید این‌قدر تازه باشد
+    var PU_UNDO_MAX = 10, PU_UNDO_TTL = 7 * 86400000;
+    function puLsGet(k) { try { var t = localStorage.getItem(k); return t ? JSON.parse(t) : null; } catch (e) { return null; } }
+    function puLsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+    function puRowsCache() { var c = puLsGet(PU_ROWS_LS); return (c && typeof c === 'object') ? c : {}; }
+    function puRowsCacheGet(id) { var c = puRowsCache()[id]; return c && c.data && c.data.items ? c : null; }
+    function puRowsCachePut(id, keepTime) {
+      var data = puState.rows[id];
+      if (!data) return;
+      var all = puRowsCache();
+      var t = keepTime && all[id] ? all[id].t : (puState.rowsAt[id] || Date.now());
+      all[id] = { t: t, data: data };
+      if (!puLsSet(PU_ROWS_LS, all)) {
+        // جا تمام شد: قدیمی‌ترین گروه‌ها کنار می‌روند
+        var ids = Object.keys(all).sort(function (a, b) { return all[a].t - all[b].t; });
+        while (ids.length > 1) { delete all[ids.shift()]; if (puLsSet(PU_ROWS_LS, all)) break; }
+      }
+    }
+    function puRowsFromCache(id) {
+      if (puState.rows[id]) return true;
+      var c = puRowsCacheGet(id);
+      if (!c) return false;
+      puState.rows[id] = c.data;
+      return true;
+    }
+    function puBoardCacheRead() {
+      var b = puLsGet(PU_BOARD_LS);
+      // تابلوی روز دیگر نمایش داده نمی‌شود (تیک‌های روزانه‌اش غلط است)
+      return b && b.daily && b.weekly && b.today === puTodayIso() ? b : null;
+    }
+    // پشتهٔ برگشت هر گروه (با شناسهٔ گروه) — در همین دستگاه می‌ماند
+    function puUndoAll() {
+      if (puState.undo) return puState.undo;
+      var u = puLsGet(PU_UNDO_LS) || {}, now = Date.now();
+      Object.keys(u).forEach(function (id) {
+        u[id] = (u[id] || []).filter(function (e) { return e && e.rows && now - e.t < PU_UNDO_TTL; });
+        if (!u[id].length) delete u[id];
+      });
+      puState.undo = u;
+      return u;
+    }
+    function puUndoList(id) { return puUndoAll()[id] || []; }
+    function puUndoPush(id, label, rows) {
+      if (!rows || !rows.length) return;
+      var u = puUndoAll();
+      var list = (u[id] = u[id] || []);
+      list.push({ t: Date.now(), label: label, rows: rows });
+      while (list.length > PU_UNDO_MAX) list.shift();
+      puLsSet(PU_UNDO_LS, u);
+    }
+    function puUndoPop(id) {
+      var u = puUndoAll(), list = u[id] || [];
+      list.pop();
+      if (!list.length) delete u[id];
+      puLsSet(PU_UNDO_LS, u);
+    }
+    function puSnap(it) { return { r: it.r, k: it.k, p: it.p, d: it.d, na: it.na, l: it.l || it.k }; }
+
     function openPriceUpdate() {
       setHeaderDates(todayJalali());
       showScreen('screen-prices');
+      if (!puState.board) { var cb = puBoardCacheRead(); if (cb) puState.board = cb; }
       if (puState.board) puRender();
       loadPriceUpdate();
     }
     function loadPriceUpdate(quiet) {
       return runGas('getPriceUpdateBoard').then(function (b) {
         puState.board = b;
-        // اقلام گروه‌های بازشده از شیت تازه خوانده می‌شوند (مثلاً بعد از ثبت آپلودر)
-        puState.rows = {};
+        puLsSet(PU_BOARD_LS, b);
+        // اقلام از کش نمایش داده می‌مانند و از شیت تازه خوانده می‌شوند (مثلاً بعد از ثبت آپلودر)
+        puState.rowsAt = {};
         Object.keys(puState.open).forEach(function (id) { if (puState.open[id]) puLoadGroupRows(id, true); });
         puRender();
         puHomeCount();
+        puPrefetchRows();
       }).catch(function (err) {
         if (!quiet) {
           if (!puState.board) document.getElementById('pu-daily').innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری انجام نشد') + '</div>';
@@ -2718,19 +2798,31 @@
       cats.forEach(function (cat) {
         var gs = byCat[cat], done = gs.filter(function (g) { return g.complete; }).length;
         html += '<section class="pu-group' + (done === gs.length ? ' complete' : '') + '">' + puGroupHead(cat, done, gs.length);
+        var compact = !!PU_COMPACT_CATS[cat];
         gs.forEach(function (g) {
-          var busy = puState.busy['w' + g._i];
+          var busy = puState.busy['w' + g._i] || puState.undoBusy[g.id];
           var sub = g.complete ? 'همهٔ ' + puFa(g.total) + ' قلم این هفته به‌روز شد'
             : puFa(g.done) + ' از ' + puFa(g.total) + ' قلم · ' + (g.oldest ? 'قدیمی‌ترین: ' + puFa(g.oldest) : 'بدون تاریخ');
+          var naTag = g.na ? ' <span class="pu-na">' + puFa(g.na) + ' قلم ناموجود</span>' : '';
+          var bname = escapeHtml(String(g.brand).replace(/\//g, ' / '));
+          if (compact && !puState.bopen[g.id]) {
+            html += '<div class="pu-item pu-w pu-compact' + (g.complete ? ' done' : '') + (busy ? ' busy' : '') + '">' +
+              '<button class="pu-row pu-crow" type="button" aria-expanded="false" onclick="puBrandToggle(' + g._i + ')">' +
+              '<span class="pu-tick">✓</span><span class="pu-main"><span class="pu-name">' + bname + '</span><span class="pu-sub">' + sub + naTag + '</span></span>' +
+              '<span class="pu-chev">▾</span></button></div>';
+            return;
+          }
+          var ul = puUndoList(g.id), last = ul[ul.length - 1];
           html += '<div class="pu-item pu-w' + (g.complete ? ' done' : '') + (busy ? ' busy' : '') + '"><div class="pu-row">' +
             '<span class="pu-tick">✓</span>' +
-            '<div class="pu-main"><div class="pu-name">' + escapeHtml(String(g.brand).replace(/\//g, ' / ')) + '</div><div class="pu-sub">' + sub +
-              (g.na ? ' <span class="pu-na">' + puFa(g.na) + ' قلم ناموجود</span>' : '') + '</div></div>' +
+            '<div class="pu-main' + (compact ? ' pu-btoggle" onclick="puBrandToggle(' + g._i + ')' : '') + '"><div class="pu-name">' + bname + (compact ? ' <span class="pu-chev">▴</span>' : '') + '</div><div class="pu-sub">' + sub +
+              naTag + '</div></div>' +
+            (last ? '<button class="pu-btn pu-undo" type="button" title="برگشت: ' + escapeHtml(last.label) + '" onclick="puUndo(' + g._i + ')">↶ برگشت</button>' : '') +
             '<button class="pu-btn pu-open" type="button" aria-expanded="' + !!puState.open[g.id] + '" onclick="puToggleGroup(' + g._i + ')">اقلام ' + (puState.open[g.id] ? '▴' : '▾') + '</button>' +
             '<div class="pu-acts"><button class="pu-btn pu-same" type="button" onclick="puGroupSame(' + g._i + ')">' + (g.done ? 'بقیه بدون تغییر' : 'بدون تغییر') + '</button>' +
             '<button class="pu-btn pu-nabtn" type="button" onclick="puGroupNa(' + g._i + ')">' + (g.done ? 'بقیه ناموجود' : 'همه ناموجود') + '</button>' +
             '<button class="pu-btn pu-up" type="button" onclick="puOpenUploader(' + g._i + ')">عکس لیست</button>' +
-            '</div></div>' + puMismHtml(g) + puSubsHtml(g) + '</div>';
+            '</div></div>' + puSrcHtml(g) + puMismHtml(g) + puSubsHtml(g) + '</div>';
         });
         html += '</section>';
       });
@@ -2739,6 +2831,7 @@
     }
     // ---- زیرمجموعهٔ گروه هفتگی (سرور: getPriceUpdateGroupRows / savePriceUpdateWeeklyRow) ----
     var PU_SUB_PAGE = 30;
+    var PU_COMPACT_CATS = { 'موتور': true };
     function puSubDone(it, weekStart) {
       // قلم روزانه با قاعدهٔ روزانه: فقط اگر امروز تعیین تکلیف شده باشد
       if (it.s) { var t = puState.board && puState.board.today; return !!t && ((it.na && it.na >= t) || (!it.na && it.d === t)); }
@@ -2748,19 +2841,121 @@
       var g = puState.board.weekly[i];
       if (!g) return;
       puState.open[g.id] = !puState.open[g.id];
+      // اقلام همان لحظه از کش محلی؛ اگر کهنه باشد بی‌صدا از سرور تازه می‌شود
+      var had = puState.open[g.id] && puRowsFromCache(g.id);
       puRenderWeekly();
-      if (puState.open[g.id] && !puState.rows[g.id]) puLoadGroupRows(g.id);
+      if (puState.open[g.id] && !puState.rowsAt[g.id]) puLoadGroupRows(g.id, had);
+    }
+    function puGroupIdx(id) { var w = puState.board.weekly || []; for (var i = 0; i < w.length; i++) if (w[i].id === id) return i; return -1; }
+    function puGroupBusy(id) {
+      var i = puGroupIdx(id);
+      if (i < 0) return false;
+      if (puState.busy['w' + i] || puState.undoBusy[id]) return true;
+      return Object.keys(puState.rowBusy).some(function (k) { return k.indexOf(i + '-') === 0; });
+    }
+    function puFetchRows(id, force) {
+      return runGas('getPriceUpdateGroupRows', { id: id }).then(function (res) {
+        if (!res || !res.items) throw new Error('پاسخ نامعتبر');
+        // اگر حین بارگذاری ثبتی روی همین گروه در جریان است، دادهٔ خوش‌بینانهٔ محلی دست نمی‌خورد
+        if (!force && puGroupBusy(id) && puState.rows[id]) return puState.rows[id];
+        puState.rows[id] = res;
+        puState.rowsAt[id] = Date.now();
+        puRowsCachePut(id);
+        puSyncGroupCount(id);
+        return res;
+      });
     }
     function puLoadGroupRows(id, quiet) {
       if (puState.rowsLoading[id]) return;
       puState.rowsLoading[id] = true;
-      runGas('getPriceUpdateGroupRows', { id: id }).then(function (res) {
-        puState.rows[id] = res;
-        puSyncGroupCount(id);
-      }).catch(function (err) {
+      puFetchRows(id).catch(function (err) {
         if (!quiet) toast((err && err.message) || 'اقلام گروه بارگذاری نشد', true);
         if (!puState.rows[id]) puState.open[id] = false;
       }).then(function () { delete puState.rowsLoading[id]; if (puState.board) puRender(); });
+    }
+    // پیش‌بارگذاری اقلام همهٔ گروه‌های هفتگی در پس‌زمینه (یکی‌یکی) تا «اقلام» هر برند فوری باز شود
+    var puPrefetching = false;
+    function puPrefetchRows() {
+      if (puPrefetching || !puState.board) return;
+      var cache = puRowsCache(), now = Date.now();
+      var ids = (puState.board.weekly || []).map(function (g) { return g.id; }).filter(function (id) {
+        if (puState.rowsAt[id] || puState.rowsLoading[id]) return false;
+        var c = cache[id];
+        return !c || now - c.t > PU_ROWS_STALE_MS;
+      });
+      if (!ids.length) return;
+      puPrefetching = true;
+      (function next() {
+        var id = ids.shift();
+        if (!id || !puState.board) { puPrefetching = false; return; }
+        if (puState.rowsAt[id] || puState.rowsLoading[id]) return next();
+        puState.rowsLoading[id] = true;
+        puFetchRows(id).catch(function () {}).then(function () {
+          delete puState.rowsLoading[id];
+          // بازسازی صفحه فقط وقتی گروه باز است و کاربر در حال تایپ قیمت نیست
+          if (puState.open[id] && !puState.rowEdit && !puState.editing) puRender();
+          setTimeout(next, 250);
+        });
+      })();
+    }
+    // اقلام تازه برای عکس وضعیت پیش از «بقیه …» (برای برگشت دقیق)
+    function puFreshRows(id) {
+      var at = puState.rowsAt[id];
+      if (puState.rows[id] && at && Date.now() - at < PU_SNAP_FRESH_MS) return Promise.resolve(puState.rows[id]);
+      return puFetchRows(id, true);
+    }
+    // ---- منابع قیمت هر برند (لینک گروه روبیکا، تلفن بازرگانی، وب‌سایت) ----
+    // PU_SOURCES: منابع ثابت برای همه؛ کلید «دسته|برند» یا فقط «دسته». منابعی که در اپ اضافه شوند در همین دستگاه می‌مانند.
+    // نمونه: 'موتور|مونتاناری': [{ n: 'گروه روبیکا پارسیان', v: 'https://rubika.ir/...' }, { n: 'ملکوتی ATM', v: '0912...' }]
+    var PU_SOURCES = {};
+    var PU_SRC_LS = 'plPuSources:v1';
+    function puSrcKey(g) { return g.cat + '|' + g.brand; }
+    function puSrcLocal() { var o = puLsGet(PU_SRC_LS); return (o && typeof o === 'object') ? o : {}; }
+    function puSrcHref(v) {
+      var d = String(v || '').replace(/[۰-۹]/g, function (c) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(c); }).replace(/[\s\-()]/g, '');
+      if (/^\+?\d{5,15}$/.test(d)) return { href: 'tel:' + d, icon: '☎' };
+      var u = /^https?:\/\//i.test(v) ? v : 'https://' + String(v).replace(/^\/+/, '');
+      return { href: u, icon: /rubika|rubino/i.test(u) ? '💬' : '🌐' };
+    }
+    function puSrcHtml(g) {
+      var k = puSrcKey(g), fixed = (PU_SOURCES[k] || []).concat(PU_SOURCES[g.cat] || []), mine = puSrcLocal()[k] || [];
+      var chip = function (s, idx) {
+        var h = puSrcHref(s.v);
+        return '<a class="pu-src" href="' + escapeHtml(h.href) + '" target="_blank" rel="noopener" title="' + escapeHtml(s.v) + '">' + h.icon + ' ' + escapeHtml(s.n || s.v) +
+          (idx != null ? '<button class="x" type="button" aria-label="حذف ' + escapeHtml(s.n || s.v) + '" onclick="event.preventDefault();event.stopPropagation();puSrcDel(' + g._i + ',' + idx + ')">×</button>' : '') + '</a>';
+      };
+      return '<div class="pu-srcs"><b>منابع قیمت:</b>' + fixed.map(function (s) { return chip(s, null); }).join('') +
+        mine.map(function (s, idx) { return chip(s, idx); }).join('') +
+        '<button class="pu-src pu-src-add" type="button" onclick="puSrcAdd(' + g._i + ')">+ منبع</button></div>';
+    }
+    function puSrcAdd(i) {
+      var g = puState.board.weekly[i];
+      if (!g) return;
+      var v = prompt('لینک گروه روبیکا / وب‌سایت، یا شماره تلفن بازرگانی برای «' + g.brand + '»:');
+      v = String(v || '').trim();
+      if (!v) return;
+      var n = String(prompt('نام منبع (مثلاً «گروه روبیکا پارسیان» یا «ملکوتی ATM»):') || '').trim();
+      var all = puSrcLocal(), k = puSrcKey(g);
+      (all[k] = all[k] || []).push({ n: n || v, v: v });
+      puLsSet(PU_SRC_LS, all);
+      puRenderWeekly();
+    }
+    function puSrcDel(i, idx) {
+      var g = puState.board.weekly[i];
+      if (!g) return;
+      var all = puSrcLocal(), k = puSrcKey(g), list = all[k] || [];
+      if (!list[idx] || !confirm('منبع «' + (list[idx].n || list[idx].v) + '» حذف شود؟')) return;
+      list.splice(idx, 1);
+      if (!list.length) delete all[k];
+      puLsSet(PU_SRC_LS, all);
+      puRenderWeekly();
+    }
+    function puBrandToggle(i) {
+      var g = puState.board.weekly[i];
+      if (!g) return;
+      puState.bopen[g.id] = !puState.bopen[g.id];
+      if (!puState.bopen[g.id]) puState.open[g.id] = false;
+      puRenderWeekly();
     }
     function puGroupById(id) { return (puState.board.weekly || []).filter(function (g) { return g.id === id; })[0]; }
     // شمارش گروه از روی اقلام بارگذاری‌شده (بعد از هر ثبت تک‌قلم، تیک گروه همان لحظه درست می‌شود)
@@ -2828,6 +3023,7 @@
         else payload.price = v;
       }
       var prev = { p: it.p, d: it.d, na: it.na };
+      var snap = puSnap(it);
       var today = puState.board.today;
       if (action === 'price') { it.p = payload.price; it.d = today; it.na = ''; }
       else if (action === 'same') { it.d = today; it.na = ''; }
@@ -2840,6 +3036,8 @@
         return runGas('savePriceUpdateWeeklyRow', payload).then(function (res) {
           if (res && res.date && (action === 'price' || action === 'same')) it.d = res.date;
           puEngineMark(it.k, action, (res && res.today) || today);
+          puUndoPush(g.id, (action === 'na' ? PU_NA_TEXT : action === 'available' ? 'موجود شد' : action === 'price' ? 'قیمت ' + puMoney(payload.price) : 'بدون تغییر') + ' · ' + (it.l || it.k), [snap]);
+          puRowsCachePut(g.id, true);
           if (it.s) setTimeout(function () { loadPriceUpdate(true); }, 0); // قلم روزانه: زبانهٔ «روزانه» هم تازه شود
           toast(action === 'na' ? 'ثبت شد: ' + PU_NA_TEXT : action === 'available' ? 'علامت ناموجود برداشته شد' : action === 'price' ? 'قیمت جدید ثبت شد' : 'ثبت شد: بدون تغییر');
           if (res && res.warn) toast(res.warn, true);
@@ -2895,16 +3093,34 @@
         }).then(function () { delete puState.busy['d' + row]; puRender(); });
       });
     }
+    // اقلامی که «بقیه …» رویشان اثر می‌گذارد (بسته‌نشده‌های همین هفته) — برای برگشت
+    function puOpenSnaps(data) {
+      var ws = puState.board.weekStart;
+      return ((data && data.items) || []).filter(function (it) { return !it.s && !puSubDone(it, ws); }).map(puSnap);
+    }
     function puGroupSame(i) {
       var g = puState.board.weekly[i];
       if (!g || puState.busy['w' + i]) return;
       puState.busy['w' + i] = true;
       puRender();
+      var snaps = null;
       puEnqueue(function () {
-        return runGas('confirmPriceUpdateGroup', { id: g.id }).then(function (res) {
+        return puFreshRows(g.id).then(function (data) { snaps = puOpenSnaps(data); }, function () { snaps = null; }).then(function () {
+          return runGas('confirmPriceUpdateGroup', { id: g.id });
+        }).then(function (res) {
           var bad = (res && res.mismatches) || [];
           puState.mism[g.id] = bad;
-          if (puState.rows[g.id]) { delete puState.rows[g.id]; if (puState.open[g.id]) puLoadGroupRows(g.id, true); }
+          if (snaps && snaps.length) {
+            var badKey = {};
+            bad.forEach(function (m) { badKey[m.row + '|' + m.key] = 1; badKey['|' + m.key] = 1; badKey[m.row + '|'] = 1; });
+            var closed = snaps.filter(function (sn) { return !badKey[sn.r + '|' + sn.k]; });
+            puUndoPush(g.id, 'بقیه بدون تغییر (' + puFa(closed.length) + ' قلم)', closed);
+            var data = puState.rows[g.id], today = (res && res.today) || puState.board.today;
+            if (data) closed.forEach(function (sn) { data.items.forEach(function (it) { if (it.r === sn.r && !it.na) it.d = today; }); });
+            puRowsCachePut(g.id, true);
+          }
+          puState.rowsAt[g.id] = 0;
+          if (puState.open[g.id]) puLoadGroupRows(g.id, true);
           var naOpen = (res && res.naOpen) || 0;
           if (!bad.length && naOpen) {
             g.done = Math.max(0, g.total - naOpen); g.complete = false;
@@ -2930,14 +3146,23 @@
       if (!confirm(puFa(left) + ' قلم باقی‌ماندهٔ «' + g.brand + '» «' + PU_NA_TEXT + '» ثبت شود؟\nدر فرم محاسبه به‌جای قیمت این اقلام همین عبارت دیده می‌شود.')) return;
       puState.busy['w' + i] = true;
       puRender();
+      var snaps = null;
       puEnqueue(function () {
-        return runGas('markPriceUpdateGroupNa', { id: g.id }).then(function (res) {
+        return puFreshRows(g.id).then(function (data) { snaps = puOpenSnaps(data); }, function () { snaps = null; }).then(function () {
+          return runGas('markPriceUpdateGroupNa', { id: g.id });
+        }).then(function (res) {
           var today = (res && res.today) || puState.board.today;
-          ((res && res.keys) || []).forEach(function (k) { puEngineMark(k, 'na', today); });
+          var keys = (res && res.keys) || [];
+          keys.forEach(function (k) { puEngineMark(k, 'na', today); });
+          if (snaps) {
+            var kset = {}; keys.forEach(function (k) { kset[k] = 1; });
+            puUndoPush(g.id, 'بقیه ناموجود (' + puFa(keys.length || snaps.length) + ' قلم)', keys.length ? snaps.filter(function (sn) { return kset[sn.k]; }) : snaps);
+          }
           var data = puState.rows[g.id];
           if (data) {
             data.items.forEach(function (it) { if (!it.s && !puSubDone(it, puState.board.weekStart)) { it.na = today; delete puState.rowErr[i + '-' + it.r]; } });
             puSyncGroupCount(g.id);
+            puRowsCachePut(g.id, true);
           } else {
             g.done = g.total; g.complete = true;
             loadPriceUpdate(true); // شمار «قلم ناموجود» از شیت تازه خوانده شود
@@ -2949,6 +3174,77 @@
         }).then(function () { delete puState.busy['w' + i]; puRender(); });
       });
     }
+    // ===== برگشت (undo) آخرین ثبتِ هر برند =====
+    // سرور: undoPriceUpdateRows({ id, rows: [{ row, key, price, date, na }] }) مبلغ، تاریخ و علامت ناموجود
+    // هر ردیف را دقیقاً به عکس وضعیت پیش از ثبت برمی‌گرداند (شیت مبدأ، All، مسیر کوتاه، کش تابلو).
+    // اگر سرور هنوز این تابع را ندارد، فقط تغییرهای «ناموجود / موجود شد» با توابع فعلی برمی‌گردند.
+    function puApplySnap(it, sn) {
+      it.p = sn.p; it.d = sn.d; it.na = sn.na;
+      var eng = state.engine;
+      if (!eng) return;
+      eng.unavailable = eng.unavailable || {}; eng.freshness = eng.freshness || {};
+      if (sn.na) eng.unavailable[sn.k] = sn.na; else delete eng.unavailable[sn.k];
+      if (sn.d) eng.freshness[sn.k] = sn.d; else delete eng.freshness[sn.k];
+      try { if (pf() && pf().writeEngine) pf().writeEngine(eng); } catch (e) {}
+    }
+    function puUndoFallback(id, rows) {
+      // فقط برگشت علامت ناموجود دقیق است (تاریخ و مبلغ دست نمی‌خورند)
+      var data = puState.rows[id], byR = {};
+      ((data && data.items) || []).forEach(function (it) { byR[it.r] = it; });
+      var done = 0, left = 0, chain = Promise.resolve();
+      rows.forEach(function (sn) {
+        var it = byR[sn.r], cur = it ? puSnap(it) : null;
+        var naOnly = cur && cur.p === sn.p && cur.d === sn.d && !!cur.na !== !!sn.na;
+        if (!naOnly) { left++; return; }
+        chain = chain.then(function () {
+          return runGas('savePriceUpdateWeeklyRow', { row: sn.r, key: sn.k, action: sn.na ? 'na' : 'available', name: sn.l }).then(function (res) {
+            puApplySnap(it, { k: sn.k, p: sn.p, d: sn.d, na: sn.na ? ((res && res.today) || puState.board.today) : '' });
+            done++;
+          });
+        });
+      });
+      return chain.then(function () { return { done: done, left: left }; });
+    }
+    function puUndo(i) {
+      var g = puState.board && puState.board.weekly[i];
+      if (!g || puState.undoBusy[g.id] || puState.busy['w' + i]) return;
+      var list = puUndoList(g.id), e = list[list.length - 1];
+      if (!e) return;
+      if (!confirm('برگشت آخرین ثبتِ «' + g.brand + '»؟\n' + e.label + '\n' + puFa(e.rows.length) + ' قلم به وضعیت قبل (مبلغ، تاریخ و ناموجود) برمی‌گردد.')) return;
+      puState.undoBusy[g.id] = true;
+      puRender();
+      puEnqueue(function () {
+        var rows = e.rows.map(function (sn) { return { row: sn.r, key: sn.k, price: sn.p, date: sn.d, na: sn.na }; });
+        return runGas('undoPriceUpdateRows', { id: g.id, rows: rows }).then(function (res) {
+          var data = puState.rows[g.id];
+          if (data) e.rows.forEach(function (sn) { data.items.forEach(function (it) { if (it.r === sn.r) puApplySnap(it, sn); }); });
+          puUndoPop(g.id);
+          delete puState.mism[g.id];
+          toast('برگشت انجام شد: ' + puFa((res && res.restored) != null ? res.restored : e.rows.length) + ' قلم');
+          if (res && res.warn) toast(res.warn, true);
+        }, function (err) {
+          // سرور قدیمی: برگشت جزئی با توابع فعلی
+          return puUndoFallback(g.id, e.rows).then(function (r) {
+            if (r.done && !r.left) { puUndoPop(g.id); toast('برگشت انجام شد: ' + puFa(r.done) + ' قلم'); return; }
+            if (r.done) {
+              e.rows = e.rows.filter(function (sn) { var it = (puState.rows[g.id].items || []).filter(function (x) { return x.r === sn.r; })[0]; return !(it && !!it.na === !!sn.na); });
+              puLsSet(PU_UNDO_LS, puUndoAll());
+            }
+            toast((r.done ? puFa(r.done) + ' قلم برگشت؛ ' : '') + 'برگشت مبلغ/تاریخ به به‌روزرسانی سرور (undoPriceUpdateRows) نیاز دارد' +
+              ((err && err.message) ? ' — ' + err.message : ''), true);
+          });
+        }).catch(function (err2) {
+          toast((err2 && err2.message) || 'برگشت انجام نشد', true);
+        }).then(function () {
+          delete puState.undoBusy[g.id];
+          puSyncGroupCount(g.id);
+          puRowsCachePut(g.id, true);
+          puRender();
+          setTimeout(function () { loadPriceUpdate(true); }, 0); // شمارش و تیک‌ها از شیت تازه شوند
+        });
+      });
+    }
+
     // ===== آپلود لیست قیمت (سرور: Uploader.js؛ صفحه: UploaderApp.html در iframe[srcdoc]) =====
     // صفحهٔ آپلودر یک بار با getUploaderPage گرفته و در قاب گذاشته می‌شود و تا بسته شدن اپ زنده می‌ماند.
     // همهٔ google.script.run آپلودر از __uploaderBridge همین صفحه (runGas) رد می‌شود؛ فقط توابع UP_FNS_ مجازند.
