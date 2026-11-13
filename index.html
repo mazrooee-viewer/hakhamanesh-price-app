@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261113150519">
+  <meta name="x-build" content="20261113184846">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261113150519" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261113184846" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1585,6 +1585,84 @@
       return (1 + wx) * (1 + hx);
     }
     // === DOOR_COVER_FACTOR_END ===
+    // === SPEC_PRICE_SHARED_START ===
+    // این بلوک عیناً در MazroueiInbox.html هم هست (test_spec_price_tables.js یکی بودنشان را می‌سنجد).
+    function specNorm(s) {
+      return String(s == null ? "" : s).replace(/[\s‌]/g, "");
+    }
+    function specFindRow(table, option) {
+      var want = specNorm(option);
+      if (!table || !table.rows || !want) return null;
+      for (var name in table.rows) {
+        if (specNorm(name) === want) return table.rows[name];
+      }
+      return null;
+    }
+    function specIsDefault(table, option) {
+      var want = specNorm(option);
+      if (!want) return true;
+      if (!table) return false;
+      if (specNorm(table.base) === want) return true;
+      return (table.alsoDefault || []).some(function (d) { return specNorm(d) === want; });
+    }
+    // اختلاف هر واحد نسبت به کالای پیش‌فرض؛ گزینه یا پیش‌فرض ناشناخته → null (مثل IFNA شیت = ۰)
+    function specUnitDiff(table, option) {
+      var row = specFindRow(table, option);
+      var base = specFindRow(table, table && table.base);
+      if (!row || !base) return null;
+      var baseFull = Number(base.full) || 0;
+      if (Number(row.model) === 2) {
+        var pct = Number(row.pct) || 0;
+        if (pct > 1) pct = pct / 100;
+        return pct * baseFull + (Number(row.fixed) || 0);
+      }
+      return (Number(row.full) || 0) - baseFull;
+    }
+    function specSystemKind(values) {
+      var sys = String((values && (values.system || values.motorType)) || "").trim();
+      if (sys === "هیدرولیک") return "هیدرولیک";
+      return (sys === "MRL" || sys === "MR") ? "گیرلس" : "گیربکس";
+    }
+    function specQty(key, values, lux) {
+      values = values || {};
+      lux = lux || {};
+      var stop = String(parseFloat(values.stop) || "").trim();
+      var kind = specSystemKind(values);
+      if (key === "wireRope") {
+        var w = (lux.wireRopeLength || {})[stop];
+        return w ? (Number(w[kind === "گیرلس" ? "گیرلس" : "گیربکس"]) || null) : null;
+      }
+      if (key === "travelCable") {
+        var t = (lux.travelCableLength2D || {})[stop];
+        return t ? (Number(t[kind]) || null) : null;
+      }
+      if (key === "weight") {
+        return Number((lux.weightBase || {})[String(values.caps == null ? "" : values.caps).trim()]) || null;
+      }
+      if (key === "doorHeight") {
+        var stops = parseFloat(values.stop) || 0;
+        return String(values.input || "").trim() === "ساده" ? stops + 1 : stops + 2;
+      }
+      return 1;
+    }
+    function specRound(mode, n) {
+      if (!n) return 0;
+      if (mode === "i") return Math.floor(n / 1000000 + 0.5) * 1000000;
+      var a = Math.round(Math.abs(n) / 1000000) * 1000000;
+      return n < 0 ? -a : a;
+    }
+    // همان خانهٔ D فرم: پیش‌فرض → "" (بی‌قیمت)، وگرنه عدد گردشده (گزینه/مقدار ناشناخته → ۰)
+    function specFormPrice(key, option, values, lux) {
+      var table = ((lux && lux.specTables) || {})[key];
+      if (!table) return "";
+      if (specIsDefault(table, option)) return "";
+      if (key === "weight" && specSystemKind(values) === "هیدرولیک") return 0;
+      var unit = specUnitDiff(table, option);
+      var qty = specQty(key, values, lux);
+      if (unit === null || qty === null) return 0;
+      return specRound(table.round, unit * qty);
+    }
+    // === SPEC_PRICE_SHARED_END ===
     function applyCubePrices(values, prices) {
       var cube = state.engine && state.engine.priceCube;
       if (!cube || !cube.fields) return prices;
@@ -1785,14 +1863,25 @@
       var doorMul = values.input === 'ساده' ? (stops + 1) : (stops + 2);
 
       // «ندارد» / پیش‌فرض باید مبلغ را صفر کند؛ وگرنه مبلغ قبلی (state.lastPrices) می‌ماند.
-      if (values.doorHeight && values.doorHeight !== 'ندارد' && values.doorHeight !== '200') {
-         var dh = lux.doorHeights[values.doorHeight] || 0;
-         prices.doorHeight = fmtPrice(roundToman(dh * doorMul));
-      } else if (values.doorHeight) prices.doorHeight = '0';
       if (values.doorCover && values.doorCover !== 'ندارد') {
          var dc = lux.doorCovers[values.doorCover] || 0;
          prices.doorCover = fmtPrice(roundToman(dc * doorMul * doorCoverFactor(values, lux)));
       } else if (values.doorCover) prices.doorCover = '0';
+
+      // مشخصه‌های تکمیلی (سیم بکسل، وزنه، فلکه، تراول، ارتفاع کابین/درب): جدول قیمت با ستون «مدل» (همان فرمول ستون D فرم)
+      if (lux.specTables) {
+        ['wireRope', 'weight', 'pulley', 'travelCable', 'cabinHeight', 'doorHeight'].forEach(function (key) {
+          if (!lux.specTables[key]) return;
+          var amount = specFormPrice(key, values[key], values, lux);
+          prices[key] = amount === '' ? '' : (amount ? fmtPrice(amount) : '0');
+        });
+        return applyCubePrices(values, prices);
+      }
+      // دادهٔ موتور قیمت قدیمی (بدون specTables): همان محاسبهٔ قبلی
+      if (values.doorHeight && values.doorHeight !== 'ندارد' && values.doorHeight !== '200') {
+         var dh = lux.doorHeights[values.doorHeight] || 0;
+         prices.doorHeight = fmtPrice(roundToman(dh * doorMul));
+      } else if (values.doorHeight) prices.doorHeight = '0';
       if (values.cabinHeight && values.cabinHeight !== 'ندارد' && values.cabinHeight !== '220') {
          var ch = lux.cabinHeights[values.cabinHeight] || 0;
          prices.cabinHeight = fmtPrice(roundToman(ch));
