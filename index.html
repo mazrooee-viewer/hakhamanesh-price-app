@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261114075449">
+  <meta name="x-build" content="20261114080023">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261114075449" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261114080023" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -369,6 +369,8 @@
     }
     .calc-row input.price[readonly].price-formula { background: #cfe2f3; }
     .calc-row input.price[readonly].price-changed { background: #fff2cc; }
+    .calc-row select.spec-changed { background: #fff2cc; }
+    .calc-row .age.age-hidden { visibility: hidden; }
     .calc-row input.price.price-zero-default { visibility: hidden; }
     .calc-row input.price.price-na, .calc-row input.price[readonly].price-na { background: #fee2e2; color: #b91c1c; font-weight: 800; font-size: 10.5px; direction: rtl; }
     .price-wrap { display: flex; align-items: center; gap: 4px; min-width: 0; }
@@ -887,6 +889,7 @@
         <button class="btn" id="reopen-inquiry" type="button" onclick="reopenCurrentCard()" style="background:#f59e0b; color:#fff; display:none;">اصلاح کردن</button>
         <button class="btn btn-bad" id="incomplete" type="button" onclick="showIncompleteOptions()">مغایرت</button>
         <button class="btn btn-bad" id="revoke-inquiry" type="button" onclick="markRevoked()">ابطال</button>
+        <button class="btn btn-bad" id="already-issued" type="button" onclick="markAlreadyIssued()">قبلا صادر شده است</button>
         <button class="btn btn-ghost" type="button" onclick="cancelMoreActions()" style="background:#fff; color:#333; border:1px solid #ddd;">انصراف</button>
       </div>
       <div id="suspend-panel" class="inquiry-only more-panel" style="display:none;">
@@ -3840,6 +3843,11 @@
       var cells = b.priceCells || {};
       values = values || currentFormValues();
       (b.fields || []).forEach(function (f) {
+        // زرد = تغییر بازاریاب نسبت به پیش‌فرض؛ روی خانهٔ «ویژگی» (کشو) می‌نشیند نه خانهٔ قیمت (درخواست مدیر 1405/08/23)
+        var sel = document.getElementById('f-' + f.key);
+        var cur = String((values && values[f.key]) || '').trim();
+        var def = String(defaults[f.key] || '').trim();
+        if (sel && sel.classList) sel.classList.toggle('spec-changed', cur !== def && !!(cur || def));
         var el = document.getElementById('p-' + f.key);
         if (!el) return;
         var meta = cells[f.key] || {};
@@ -3848,16 +3856,12 @@
         if (meta.blue) {
           el.classList.add('price-formula');
           if (meta.bg && meta.bg !== '#ffffff' && meta.bg !== 'white') el.style.backgroundColor = meta.bg;
-          return;
         }
-        var cur = String((values && values[f.key]) || '').trim();
-        var def = String(defaults[f.key] || '').trim();
-        if (cur !== def && (cur || def)) el.classList.add('price-changed');
       });
       syncZeroDefaultPriceBoxes(values);
     }
 
-    // ردیفی که روی مقدار پیش‌فرض فرم است و قیمتش صفر است باکس قیمت نشان نمی‌دهد (نشان تاریخ می‌ماند)؛
+    // ردیفی که روی مقدار پیش‌فرض فرم است و قیمتش صفر است باکس قیمت نشان نمی‌دهد (نشان تاریخ فقط برای ردیف‌های Have Price ثابت می‌ماند)؛
     // با انتخاب گزینهٔ دیگر از منوی کشویی، باکس همان لحظه ظاهر می‌شود.
     function syncZeroDefaultPriceBoxes(values) {
       var b = state.bootstrap || {};
@@ -3871,6 +3875,10 @@
         var hide = cur === def && parseNum(el.value) === 0 && !(el.classList && el.classList.contains && el.classList.contains('price-na'));
         if (hide) el.classList.add('price-zero-default');
         else el.classList.remove('price-zero-default');
+        // ردیفی که Have Price آن روی پیش‌فرض NO است (فرمولی، «auto») روی پیش‌فرض کپسول تاریخ «—» هم نشان نمی‌دهد (درخواست مدیر 1405/08/23)
+        var age = document.getElementById('age-' + f.key);
+        var have = ((b.priceCells || {})[f.key] || {}).have;
+        if (age && age.classList) age.classList.toggle('age-hidden', hide && (have === 'auto' || have === 'no'));
       });
     }
 
@@ -3985,7 +3993,7 @@
         var info = priceAgeInfo(dates[f.key]);
         var na = state.priceNA && state.priceNA[f.key];
         if (na) info = { cls: 'age-old', text: 'ناموجود', title: PU_NA_TEXT + ' · ثبت ' + na + ' — برند دیگری انتخاب کنید' };
-        el.className = 'age ' + info.cls;
+        el.className = 'age ' + info.cls + (el.classList && el.classList.contains('age-hidden') ? ' age-hidden' : '');
         el.textContent = info.text;
         el.setAttribute('data-title', info.title);
       });
@@ -4750,6 +4758,17 @@
       sendStatusJob(job, 'markInquiryIncomplete');
     }
 
+    // «قبلا صادر شده است» (زیر «سایر»؛ درخواست مدیر 1405/08/23): همان مسیر «ابطال» با این علت در نظر مدیریت
+    var ALREADY_ISSUED_NOTE = 'قبلا صادر شده است';
+    function markAlreadyIssued() {
+      if (state.issuing) return toast('صبر کنید تا صدور لیست قیمت تمام شود', true);
+      if (state.finishing) return;
+      var noteEl = document.getElementById('manager-note');
+      var oldVal = String((noteEl && noteEl.value) || '').trim();
+      if (oldVal.indexOf(ALREADY_ISSUED_NOTE) < 0) setManagerNoteValue((oldVal ? oldVal + '\n' : '') + ALREADY_ISSUED_NOTE);
+      cancelMoreActions();
+      markRevoked();
+    }
     function markRevoked() {
       if (state.issuing) return toast('صبر کنید تا صدور لیست قیمت تمام شود', true);
       if (state.finishing) return;
