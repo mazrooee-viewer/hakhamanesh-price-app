@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261114080023">
+  <meta name="x-build" content="20261115212622">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261114080023" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261115212622" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -689,8 +689,8 @@
           در انتظار رفع مغایرت
           <span class="count" id="count-bad">—</span>
         </button>
-        <button class="home-btn home-fail" type="button" onclick="openFilter('صادر نشده (خطای فنی)')">
-          صادر نشده (خطای فنی)
+        <button class="home-btn home-fail" type="button" onclick="openFilter('صادر نشد')">
+          صادر نشد
           <span class="count" id="count-fail">—</span>
         </button>
         <button class="home-btn home-hold" type="button" onclick="openFilter('تعلیق شده')">
@@ -2291,12 +2291,14 @@
       return 'در صف بررسی';
     }
 
-    var ISSUE_FAIL_FILTER = 'صادر نشده (خطای فنی)';
+    var ISSUE_FAIL_FILTER = 'صادر نشد';
     function cardIssueError(c) { return String((c && c.issueError) || '').trim(); }
+    function cardSheetMismatch(c) { return String((c && c.sheetMismatch) || '').trim(); }
+    function cardNotIssued(c) { return !!cardIssueError(c) || !!cardSheetMismatch(c); }
 
     function cardsByFilter(filter) {
       if (filter === ISSUE_FAIL_FILTER) {
-        return (state.allCards || []).filter(function (c) { return !!cardIssueError(c); });
+        return (state.allCards || []).filter(cardNotIssued);
       }
       var list = (state.allCards || []).filter(function (c) {
         return normalizeStatus(c) === filter;
@@ -4267,8 +4269,28 @@
     function issueErrorBadgeHtml(c) {
       var t = cardIssueError(c);
       if (!t) return '';
-      return '<div class="issue-error-badge">صادر نشد — خطای فنی</div>' +
-        '<div class="issue-error-detail">' + escapeHtml(t) + '</div>';
+      var detail = issueErrorDetail(c);
+      return '<div class="issue-error-badge">' + escapeHtml(issueErrorBadgeText(c)) + '</div>' +
+        (detail ? '<div class="issue-error-detail">' + escapeHtml(detail) + '</div>' : '');
+    }
+
+    // دلیلِ صدور نشدن در ابتدای متن ستون «خطای صدور» می‌آید: «دلیل — جزئیات — تاریخ». متن بی‌پیشوند = خطای فنی.
+    var ISSUE_REASONS = ['مغایرت قیمت', 'هشدار قیمت تأیید نشد', 'لغو از صف'];
+    function issueErrorReason(c) {
+      var t = cardIssueError(c);
+      for (var i = 0; i < ISSUE_REASONS.length; i++) {
+        if (t.indexOf(ISSUE_REASONS[i] + ' —') === 0) return ISSUE_REASONS[i];
+      }
+      return '';
+    }
+    function issueErrorBadgeText(c) {
+      var r = issueErrorReason(c);
+      return r ? ('صادر نشد — ' + r) : 'صادر نشد — خطای فنی';
+    }
+    function issueErrorDetail(c) {
+      var t = cardIssueError(c), r = issueErrorReason(c);
+      if (r) t = t.slice(r.length).replace(/^\s*—\s*/, '');
+      return t;
     }
 
     function renderIssueErrorBanner(text) {
@@ -4288,23 +4310,32 @@
       return hit;
     }
 
-    // خطای صدور کنار همان ردیف استعلام ثبت می‌شود (سرور خطای خودش را ثبت کرده؛ این برای پایان مهلت/قطع شبکه است).
-    function recordIssueFailureFor(job, err) {
+    // هر درخواست صدوری که لیست قیمت صادر نشد در دستهٔ «صادر نشد» ثبت می‌شود: خطای فنی، مغایرت قیمت با شیت،
+    // تأیید نشدن هشدار قیمت و لغو از صف. دلیل در ابتدای متن می‌آید تا روی کارت هم مشخص باشد.
+    function recordIssueFailureFor(job, message, reason) {
       var p = job.payload || {};
-      var msg = (err && err.message) || 'صدور لیست قیمت انجام نشد';
+      reason = ISSUE_REASONS.indexOf(String(reason || '')) >= 0 ? String(reason) : '';
+      var msg = String(message == null ? '' : message).replace(/\s+/g, ' ').trim() || 'صدور لیست قیمت انجام نشد';
       var sp = p.salesperson;
       var row = Number(p.row);
       if (job.custom) { sp = (p.destination && p.destination !== 'custom') ? p.destination : 'استعلام دلخواه'; row = 0; }
       if (!sp || !(row >= 2)) { loadInbox(true); return; }
-      var stamp = msg + ' — ' + todayJalali();
+      var stamp = (reason ? reason + ' — ' : '') + msg + ' — ' + todayJalali();
       setCardIssueError(sp, row, stamp);
       if (issueFormIsOpen(job.key)) renderIssueErrorBanner(stamp);
       try {
         google.script.run
           .withSuccessHandler(function (r) { if (r && r.text) setCardIssueError(sp, row, r.text); loadInbox(true); })
           .withFailureHandler(function () {})
-          .recordIssueFailure({ salesperson: sp, row: row, message: msg });
+          .recordIssueFailure({ salesperson: sp, row: row, message: msg, reason: reason });
       } catch (e) {}
+    }
+
+    // کارت‌هایی که با توقف صف هرگز صدور نشدند هم در «صادر نشد» می‌مانند تا علتش معلوم باشد.
+    function recordDroppedJobs(dropped, haltedLabel) {
+      (dropped || []).forEach(function (j) {
+        recordIssueFailureFor(j, 'صف صدور به‌دلیل مغایرت قیمت کارت «' + (haltedLabel || '') + '» متوقف شد و این کارت صدور نشد', 'لغو از صف');
+      });
     }
 
     function haltIssueQueueOnMismatch(job, res) {
@@ -4313,14 +4344,24 @@
       state.issueRunning = false;
       state.finishQueued = false;
       var same = issueFormIsOpen(job.key);
-      setCardSheetMismatch(res.salesperson || job.payload.salesperson, res.row || job.payload.row, res.label || 'مغایرت با شیت');
-      if (same) renderSheetMismatchBanner(res.label || 'مغایرت با شیت');
+      var sp = res.salesperson || job.payload.salesperson;
+      var row = res.row || job.payload.row;
+      var label = res.label || 'مغایرت با شیت';
+      setCardSheetMismatch(sp, row, label);
+      // ستون «خطای صدور» را سرور همین حالا با فهرست قطعه‌های مغایر نوشته؛ همان متن روی کارت هم می‌نشیند
+      var errText = String(res.issueErrorText || '').trim() || ('مغایرت قیمت — ' + label + ' — ' + todayJalali());
+      setCardIssueError(sp, row, errText);
+      if (same) {
+        renderSheetMismatchBanner(label);
+        renderIssueErrorBanner(errText);
+      }
       syncIssueState();
       var finish = document.getElementById('finish');
       if (finish && same) finish.disabled = false;
       toast('مغایرت با شیت: قیمت اپ ' + (res.appFinal || '') + ' با شیت ' + (res.sheetFinal || '') + ' یکسان نیست؛ صدور متوقف شد' +
         (dropped.length ? (' و ' + dropped.length + ' مورد داخل صف لغو شد') : '') +
         (job.custom ? ' — کارت ذخیره شد؛ بعد از اصلاح شیت از لیست بازش کنید' : ''), true);
+      recordDroppedJobs(dropped, job.label || '');
       loadInbox(true);
     }
 
@@ -4377,7 +4418,7 @@
       state.issueRunning = false;
     }
 
-    function cancelIssueJob(job) {
+    function cancelIssueJob(job, reason, message) {
       var same = issueFormIsOpen(job.key);
       removeIssueJob(job);
       if (same) {
@@ -4389,6 +4430,7 @@
         }
       }
       syncIssueState();
+      recordIssueFailureFor(job, message || 'صدور از صف لغو شد', reason || 'لغو از صف');
       toast('صدور متوقف شد');
       processIssueQueue();
     }
@@ -4412,7 +4454,7 @@
         setCardSheetMismatch(job.payload.salesperson, job.payload.row, '');
         setCardIssueError(job.payload.salesperson, job.payload.row, '');
       } else {
-        recordIssueFailureFor(job, err);
+        recordIssueFailureFor(job, (err && err.message) || 'صدور لیست قیمت انجام نشد');
       }
       if (same && job.finishAfter) state.finishQueued = true;
       if (err) {
@@ -4450,7 +4492,8 @@
           }
           if (res && res.needPriceConfirm) {
             askPriceRuleConfirm(['کارفرما: ' + (job.label || '')].concat(res.messages || [])).then(function (ok) {
-              if (!ok) return cancelIssueJob(job);
+              if (!ok) return cancelIssueJob(job, 'هشدار قیمت تأیید نشد',
+                'مدیر ادامهٔ صدور را تأیید نکرد — ' + (res.messages || []).join('؛ '));
               runIssueJob(job, true);
             });
             return;
@@ -4521,6 +4564,22 @@
       document.querySelectorAll('#out-sheets button').forEach(function (b) { b.classList.remove('on'); });
     }
 
+    // قیمت تک‌تک ردیف‌هایش که اپ نشان می‌دهد؛ سرور آن را با فرم زندهٔ شیت مقایسه می‌کند تا در «صادر نشد» معلوم شود کدام قطعه مغایر است.
+    function collectAppPrices() {
+      var out = {};
+      ((state.bootstrap && state.bootstrap.fields) || []).forEach(function (f) {
+        var el = document.getElementById('p-' + f.key);
+        if (!el) return;
+        out[f.key] = priceCellRaw(el);
+      });
+      // ردیف‌هایی که خانهٔ قیمت در اپ ندارند (مثل کارسلینگ) از آخرین محاسبهٔ اپ خوانده می‌شوند
+      var last = state.lastPrices || {};
+      Object.keys(last).forEach(function (k) {
+        if (out[k] === undefined && last[k] != null) out[k] = last[k];
+      });
+      return out;
+    }
+
     function issuePdf() {
       if (!state.outSheet) return toast('شیت لیست قیمت را انتخاب کنید', true);
       var pkgEl = document.getElementById('inquiry-package');
@@ -4536,6 +4595,7 @@
       }
       var finalEl = document.getElementById('costToman');
       payload.appFinal = String(priceCellRaw(finalEl) || '').trim();
+      payload.appPrices = collectAppPrices();
       // Have Price روی سرور و بعد از نشستن مقادیر اپ روی فرم شیت بررسی می‌شود (ستون E با گزینهٔ انتخابی فرمولی عوض می‌شود)؛
       // مشکل → پاسخ needPriceConfirm و پرسش «ادامه بده» در runIssueJob، سپس ارسال دوباره با allowPriceMismatch.
       enqueueIssueJob(payload, isCustom);
