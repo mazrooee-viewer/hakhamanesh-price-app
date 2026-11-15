@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261115212622">
+  <meta name="x-build" content="20261115213016">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261115212622" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261115213016" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1760,6 +1760,16 @@
       var n = Math.round(parseNum(railPrice) * RAIL_BRACKET_PCT);
       return n ? fmtPrice(n) : '';
     }
+    // درصد «براکت و لقمه و پیچ و مهره» روی خودِ قیمت ریل می‌نشیند، نه ردیف جداگانه (درخواست مدیر 1405/08/26).
+    // مبلغ اضافه همان ROUND(ریل × ۷٪) شیت D12 است، پس جمع اپ و شیت یکی می‌ماند؛ فقط جای نمایش عوض شده.
+    // ردیف railBracket فقط انتخاب «دارد/ندارد» است و خودش قیمت نمی‌گیرد.
+    function applyRailBracketOntoRail(values, prices) {
+      prices.railBracket = '';
+      var extra = parseNum(railBracketPrice(values, prices.rail));
+      var base = parseNum(prices.rail);
+      if (extra > 0 && base > 0) prices.rail = fmtPrice(base + extra);
+      return prices;
+    }
     function computeLocalPrices(values) {
       var eng = state.engine;
       var prices = {};
@@ -1940,8 +1950,8 @@
       }
 
       prices = applyCubePrices(values, prices);
-      // براکت و لقمه و پیچ و مهره: همیشه ۷٪ مبلغ ردیف ریل (بعد از مکعب، چون قیمت ریل ممکن است از مکعب بیاید)
-      prices.railBracket = railBracketPrice(values, prices.rail);
+      // براکت و لقمه و پیچ و مهره: ۷٪ روی خودِ قیمت ریل (بعد از مکعب، چون قیمت ریل ممکن است از مکعب بیاید)
+      applyRailBracketOntoRail(values, prices);
       return prices;
     }
     // سود لگاریتمی (همان autoProfitPercent_ سرور): درصد خالی = K × بها^(P−1) × ۱۰۰ با بها به میلیون تومان
