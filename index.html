@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261120111919">
+  <meta name="x-build" content="20261120112552">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261120111919" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261120112552" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1753,15 +1753,15 @@
       var n = naDate_(key);
       if (n && puNaActive(n, d)) state.priceNA[field] = n;
     }
-    // همان فرمول D فرم: «ندارد» → خالی؛ وگرنه ROUND(ریل × ۷٪).
+    // فقط «دارد» هفت درصد را به پایهٔ ریل اضافه می‌کند. «ندارد» و مقدار خالی اضافه نمی‌کنند.
     var RAIL_BRACKET_PCT = 0.07;
     function railBracketPrice(values, railPrice) {
-      if (String(values.railBracket || '').trim() === 'ندارد') return '';
+      if (String(values.railBracket || '').trim() !== 'دارد') return '';
       var n = Math.round(parseNum(railPrice) * RAIL_BRACKET_PCT);
       return n ? fmtPrice(n) : '';
     }
     // درصد «براکت و لقمه و پیچ و مهره» روی خودِ قیمت ریل می‌نشیند، نه ردیف جداگانه (درخواست مدیر 1405/08/26).
-    // مبلغ همان فرمول شیت است: پایهٔ ریل + ROUND(پایه × ۷٪). «ندارد» فقط پایه را نگه می‌دارد.
+    // فقط وقتی براکت «دارد» است: پایهٔ ریل + ROUND(پایه × ۷٪). «ندارد» همان پایه را بدون درصد نشان می‌دهد.
     // پایه را اپ از جدول ریل حساب می‌کند و ۷٪ را همین‌جا اضافه می‌کند، حتی اگر مکعب ورودی railBracket داشته باشد؛
     // عدد مکعب ممکن است درصد را نداشته باشد و اتکا به آن قیمت ریل را بدون ۷٪ نشان می‌داد.
     // ردیف railBracket فقط انتخاب «دارد/ندارد» است و خودش قیمت نمی‌گیرد.
@@ -1776,11 +1776,11 @@
       prices.railBracket = '';
       var base = local > 0 ? local : parseNum(prices.rail);
       if (!(base > 0)) return prices;
-      if (!(local > 0) && railBracketInCube()) return prices;
-      if (String(values.railBracket || '').trim() === 'ندارد') {
-        prices.rail = fmtPrice(base);
+      if (String(values.railBracket || '').trim() !== 'دارد') {
+        if (local > 0) prices.rail = fmtPrice(base);
         return prices;
       }
+      if (!(local > 0) && railBracketInCube()) return prices;
       var extra = Math.round(base * RAIL_BRACKET_PCT);
       if (extra > 0) prices.rail = fmtPrice(base + extra);
       return prices;

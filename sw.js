@@ -1,5 +1,5 @@
-/* Service Worker — PWA لیست قیمت — build 20261120111919 */
-var CACHE = "price-pwa-20261120111919";
+/* Service Worker — PWA لیست قیمت — build 20261120112552 */
+var CACHE = "price-pwa-20261120112552";
 var SHARE_CACHE = "price-share";
 var SHARE_KEY = "./__shared-file";
 var SHELL = ["./", "./index.html", "./sales.html", "./manifest.json", "./manifest-sales.json",
