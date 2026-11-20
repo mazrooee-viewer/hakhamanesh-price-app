@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261115213016">
+  <meta name="x-build" content="20261120095738">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261115213016" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261120095738" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1761,10 +1761,18 @@
       return n ? fmtPrice(n) : '';
     }
     // درصد «براکت و لقمه و پیچ و مهره» روی خودِ قیمت ریل می‌نشیند، نه ردیف جداگانه (درخواست مدیر 1405/08/26).
-    // مبلغ اضافه همان ROUND(ریل × ۷٪) شیت D12 است، پس جمع اپ و شیت یکی می‌ماند؛ فقط جای نمایش عوض شده.
+    // مبلغ اضافه همان ROUND(ریل × ۷٪) شیت است؛ فرمول D10 شیت هم از همین تاریخ درصد را داخل خودش دارد،
+    // پس اگر مکعب قیمت با فرمول تازه ساخته شده باشد (ورودی railBracket داخل ردیف ریل) قیمت مکعب شامل درصد است
+    // و نباید دوباره اضافه شود؛ وگرنه (مکعب قدیمی) درصد همین‌جا اضافه می‌شود.
     // ردیف railBracket فقط انتخاب «دارد/ندارد» است و خودش قیمت نمی‌گیرد.
+    function railBracketInCube() {
+      var cube = state.engine && state.engine.priceCube;
+      var spec = cube && cube.fields && cube.fields.rail;
+      return !!(spec && spec.inputs && spec.inputs.indexOf('railBracket') >= 0);
+    }
     function applyRailBracketOntoRail(values, prices) {
       prices.railBracket = '';
+      if (railBracketInCube()) return prices;
       var extra = parseNum(railBracketPrice(values, prices.rail));
       var base = parseNum(prices.rail);
       if (extra > 0 && base > 0) prices.rail = fmtPrice(base + extra);
@@ -3068,7 +3076,7 @@
       if (!g || puState.busy['w' + i]) return;
       var left = Math.max(0, g.total - g.done);
       if (!left) return;
-      if (!confirm(puFa(left) + ' قلم باقی‌ماندهٔ «' + g.brand + '» «' + PU_NA_TEXT + '» ثبت شود؟\nدر فرم محاسبه به‌جای قیمت این اقلام همین عبارت دیده می‌شود.')) return;
+      if (!confirm(puFa(left) + ' قلم باقی‌ماندهٔ «' + g.brand + '» «' + PU_NA_TEXT + '» ثبت شود؟\r\nدر فرم محاسبه به‌جای قیمت این اقلام همین عبارت دیده می‌شود.')) return;
       puState.busy['w' + i] = true;
       puRender();
       puEnqueue(function () {
@@ -3845,6 +3853,7 @@
     }
 
     function fieldNeverPriced(key) {
+      if (key === 'motorDesign') return true;
       var cells = (state.bootstrap && state.bootstrap.priceCells) || {};
       return !!(cells[key] && cells[key].have === 'no');
     }
@@ -3858,7 +3867,7 @@
         // زرد = تغییر بازاریاب نسبت به پیش‌فرض؛ روی خانهٔ «ویژگی» (کشو) می‌نشیند نه خانهٔ قیمت (درخواست مدیر 1405/08/23)
         var sel = document.getElementById('f-' + f.key);
         var cur = String((values && values[f.key]) || '').trim();
-        var def = String(defaults[f.key] || '').trim();
+        var def = specDefault(f.key, values);
         if (sel && sel.classList) sel.classList.toggle('spec-changed', cur !== def && !!(cur || def));
         var el = document.getElementById('p-' + f.key);
         if (!el) return;
@@ -3883,7 +3892,7 @@
         var el = document.getElementById('p-' + f.key);
         if (!el) return;
         var cur = String((values && values[f.key]) || '').trim();
-        var def = String(defaults[f.key] || '').trim();
+        var def = specDefault(f.key, values);
         var hide = cur === def && parseNum(el.value) === 0 && !(el.classList && el.classList.contains && el.classList.contains('price-na'));
         if (hide) el.classList.add('price-zero-default');
         else el.classList.remove('price-zero-default');
@@ -3900,7 +3909,7 @@
         if (!el) return;
         el.onchange = function () {
           if (f.key === 'system') applySystemLists(this.value, {});
-          else if (f.key === 'motorType' || f.key === 'motorBrand') applyModelList({});
+          else if (f.key === 'motorType' || f.key === 'motorBrand') { applyModelList({}); applyMotorDesign({}); }
           applyConditionTable();
           if (state.engine) applyLocalCalc();
           else applyPriceHighlight(currentFormValues());
@@ -3955,6 +3964,44 @@
         fillSelect('f-panelBrand', panelBrands, panelPref);
       }
       applyModelList(values);
+      applyMotorDesign(values);
+    }
+
+    // پیش‌فرض طراحی موتور: گیربکس و هیدرولیک بشکه‌ای؛ گیرلس چین/ایران/اسپانیا دیسکی؛ ایتالیا/آلمان بشکه‌ای.
+    function motorDesignDefault(type, brand) {
+      var t = String(type || '').replace(/\u200c/g, '').trim();
+      if (t.indexOf('گیربکس') >= 0 || t.indexOf('هیدرولیک') >= 0) return 'بشکه‌ای';
+      var c = String(((state.bootstrap && state.bootstrap.motorBrandCountries) || {})[String(brand || '').trim()] || '');
+      if (c.indexOf('چین') >= 0 || c.indexOf('ایران') >= 0 || c.indexOf('اسپانیا') >= 0) return 'دیسکی';
+      return 'بشکه‌ای';
+    }
+
+    function applyMotorDesign(picked) {
+      var el = document.getElementById('f-motorDesign');
+      if (!el) return;
+      var typeEl = document.getElementById('f-motorType');
+      var sysEl = document.getElementById('f-system');
+      var brandEl = document.getElementById('f-motorBrand');
+      var type = String((typeEl && typeEl.value) || (sysEl && sysEl.value) || '').trim();
+      var brand = String((brandEl && brandEl.value) || '').trim();
+      var next = motorDesignDefault(type, brand);
+      var saved = (picked && Object.prototype.hasOwnProperty.call(picked, 'motorDesign'))
+        ? String(picked.motorDesign || '').trim() : '';
+      var use = (picked && Object.prototype.hasOwnProperty.call(picked, 'motorDesign')) ? (saved || next) : next;
+      var opts = (state.bootstrap && state.bootstrap.options && state.bootstrap.options.motorDesign) || ['دیسکی', 'بشکه‌ای'];
+      fillSelect('f-motorDesign', opts, use);
+    }
+
+    function specDefault(key, values) {
+      if (key === 'motorDesign') {
+        var typeEl = document.getElementById('f-motorType');
+        var sysEl = document.getElementById('f-system');
+        var brandEl = document.getElementById('f-motorBrand');
+        var type = String((typeEl && typeEl.value) || (sysEl && sysEl.value) || (values && (values.motorType || values.system)) || '').trim();
+        var brand = String((brandEl && brandEl.value) || (values && values.motorBrand) || '').trim();
+        return motorDesignDefault(type, brand);
+      }
+      return String((((state.bootstrap || {}).defaults) || {})[key] || '').trim();
     }
 
     // صفر در اپ مدیر «-» نمایش داده می‌شود (مثل قالب حسابداری فرم محاسبه)؛ مقدار واقعی در data-raw می‌ماند.
@@ -4805,7 +4852,7 @@
     function submitIncompleteReason(reason) {
       var noteEl = document.getElementById('manager-note');
       var oldVal = (noteEl.value || '').trim();
-      var newVal = (oldVal ? oldVal + '\n' : '') + 'علت مغایرت: ' + reason;
+      var newVal = (oldVal ? oldVal + '\r\n' : '') + 'علت مغایرت: ' + reason;
       setManagerNoteValue(newVal);
       cancelIncomplete();
       markIncomplete(reason);
@@ -4835,7 +4882,7 @@
       if (state.finishing) return;
       var noteEl = document.getElementById('manager-note');
       var oldVal = String((noteEl && noteEl.value) || '').trim();
-      if (oldVal.indexOf(ALREADY_ISSUED_NOTE) < 0) setManagerNoteValue((oldVal ? oldVal + '\n' : '') + ALREADY_ISSUED_NOTE);
+      if (oldVal.indexOf(ALREADY_ISSUED_NOTE) < 0) setManagerNoteValue((oldVal ? oldVal + '\r\n' : '') + ALREADY_ISSUED_NOTE);
       cancelMoreActions();
       markRevoked();
     }

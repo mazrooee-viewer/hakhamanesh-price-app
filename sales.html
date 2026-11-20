@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261115213016">
+  <meta name="x-build" content="20261120095738">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261115213016" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261120095738" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1914,6 +1914,31 @@
         fillSelect('f-panelBrand', panelBrands, panelPref);
       }
       applyModelList(picked);
+      applyMotorDesign(picked);
+    }
+
+    function motorDesignDefault(type, brand) {
+      var t = String(type || '').replace(/\u200c/g, '').trim();
+      if (t.indexOf('گیربکس') >= 0 || t.indexOf('هیدرولیک') >= 0) return 'بشکه‌ای';
+      var c = String(((state.bootstrap && state.bootstrap.motorBrandCountries) || {})[String(brand || '').trim()] || '');
+      if (c.indexOf('چین') >= 0 || c.indexOf('ایران') >= 0 || c.indexOf('اسپانیا') >= 0) return 'دیسکی';
+      return 'بشکه‌ای';
+    }
+
+    function applyMotorDesign(picked) {
+      var el = document.getElementById('f-motorDesign');
+      if (!el) return;
+      var typeEl = document.getElementById('f-motorType');
+      var sysEl = document.getElementById('f-system');
+      var brandEl = document.getElementById('f-motorBrand');
+      var type = String((typeEl && typeEl.value) || (sysEl && sysEl.value) || '').trim();
+      var brand = String((brandEl && brandEl.value) || '').trim();
+      var next = motorDesignDefault(type, brand);
+      var saved = (picked && Object.prototype.hasOwnProperty.call(picked, 'motorDesign'))
+        ? String(picked.motorDesign || '').trim() : '';
+      var use = (picked && Object.prototype.hasOwnProperty.call(picked, 'motorDesign')) ? (saved || next) : next;
+      var opts = (state.bootstrap && state.bootstrap.options && state.bootstrap.options.motorDesign) || ['دیسکی', 'بشکه‌ای'];
+      fillSelect('f-motorDesign', opts, use);
     }
 
     function calcModeIsAuto() {
@@ -1985,7 +2010,7 @@
         if (!el || HIDDEN_KEYS.indexOf(f.key) >= 0) return;
         el.onchange = function () {
           if (f.key === 'system') applySystemLists(this.value, {});
-          else if (f.key === 'motorType' || f.key === 'motorBrand') applyModelList({});
+          else if (f.key === 'motorType' || f.key === 'motorBrand') { applyModelList({}); applyMotorDesign({}); }
           applySalesConditions();
         };
       });
