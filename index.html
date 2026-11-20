@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261120095738">
+  <meta name="x-build" content="20261120105957">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261120095738" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261120105957" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -3826,7 +3826,7 @@
       var autoLocked = calcModeIsAuto() && !data.preview;
       (b.fields || []).forEach(function (f) {
         var el = document.getElementById('f-' + f.key);
-        if (el) el.disabled = autoLocked;
+        if (el) el.disabled = autoLocked || f.key === 'carSling';
       });
       if (autoLocked) applyConditionTable();
       setOutSheet(data.suggestedOutSheet || 'Traction');
@@ -3853,7 +3853,7 @@
     }
 
     function fieldNeverPriced(key) {
-      if (key === 'motorDesign') return true;
+      if (key === 'motorDesign' || key === 'cabinBrand' || key === 'cabinCode') return true;
       var cells = (state.bootstrap && state.bootstrap.priceCells) || {};
       return !!(cells[key] && cells[key].have === 'no');
     }
@@ -3910,6 +3910,8 @@
         el.onchange = function () {
           if (f.key === 'system') applySystemLists(this.value, {});
           else if (f.key === 'motorType' || f.key === 'motorBrand') { applyModelList({}); applyMotorDesign({}); }
+          else if (f.key === 'input') applyCarSling();
+          else if (f.key === 'cabinBrand') applyCabinCodeList({});
           applyConditionTable();
           if (state.engine) applyLocalCalc();
           else applyPriceHighlight(currentFormValues());
@@ -3965,6 +3967,8 @@
       }
       applyModelList(values);
       applyMotorDesign(values);
+      applyCabinCodeList(values);
+      applyCarSling();
     }
 
     // پیش‌فرض طراحی موتور: گیربکس و هیدرولیک بشکه‌ای؛ گیرلس چین/ایران/اسپانیا دیسکی؛ ایتالیا/آلمان بشکه‌ای.
@@ -3992,7 +3996,38 @@
       fillSelect('f-motorDesign', opts, use);
     }
 
+    function carSlingChoice(system, input) {
+      return (String(system || '').trim() === 'هیدرولیک' || String(input || '').trim() === 'دو درب مجانب') ? 'دارد' : 'ندارد';
+    }
+
+    function applyCarSling() {
+      var el = document.getElementById('f-carSling');
+      if (!el) return;
+      var system = (document.getElementById('f-system') || {}).value || '';
+      var input = (document.getElementById('f-input') || {}).value || '';
+      var opts = (state.bootstrap && state.bootstrap.options && state.bootstrap.options.carSling) || ['ندارد', 'دارد'];
+      fillSelect('f-carSling', opts, carSlingChoice(system, input));
+      el.disabled = true;
+    }
+
+    function applyCabinCodeList(values) {
+      var brandEl = document.getElementById('f-cabinBrand');
+      var codeEl = document.getElementById('f-cabinCode');
+      if (!brandEl || !codeEl) return;
+      var brand = String(brandEl.value || '').trim();
+      var map = (state.bootstrap && state.bootstrap.cabinCodesByBrand) || {};
+      var codes = map[brand] || [];
+      var keep = String((values && values.cabinCode) || codeEl.value || '').trim();
+      if (codes.indexOf(keep) < 0) keep = '';
+      fillSelect('f-cabinCode', codes, keep);
+    }
+
     function specDefault(key, values) {
+      if (key === 'carSling') {
+        var sysEl = document.getElementById('f-system');
+        var inEl = document.getElementById('f-input');
+        return carSlingChoice((sysEl && sysEl.value) || (values && values.system), (inEl && inEl.value) || (values && values.input));
+      }
       if (key === 'motorDesign') {
         var typeEl = document.getElementById('f-motorType');
         var sysEl = document.getElementById('f-system');
