@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261120105957">
+  <meta name="x-build" content="20261120111919">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261120105957" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261120111919" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1761,9 +1761,9 @@
       return n ? fmtPrice(n) : '';
     }
     // درصد «براکت و لقمه و پیچ و مهره» روی خودِ قیمت ریل می‌نشیند، نه ردیف جداگانه (درخواست مدیر 1405/08/26).
-    // مبلغ اضافه همان ROUND(ریل × ۷٪) شیت است؛ فرمول D10 شیت هم از همین تاریخ درصد را داخل خودش دارد،
-    // پس اگر مکعب قیمت با فرمول تازه ساخته شده باشد (ورودی railBracket داخل ردیف ریل) قیمت مکعب شامل درصد است
-    // و نباید دوباره اضافه شود؛ وگرنه (مکعب قدیمی) درصد همین‌جا اضافه می‌شود.
+    // مبلغ همان فرمول شیت است: پایهٔ ریل + ROUND(پایه × ۷٪). «ندارد» فقط پایه را نگه می‌دارد.
+    // پایه را اپ از جدول ریل حساب می‌کند و ۷٪ را همین‌جا اضافه می‌کند، حتی اگر مکعب ورودی railBracket داشته باشد؛
+    // عدد مکعب ممکن است درصد را نداشته باشد و اتکا به آن قیمت ریل را بدون ۷٪ نشان می‌داد.
     // ردیف railBracket فقط انتخاب «دارد/ندارد» است و خودش قیمت نمی‌گیرد.
     function railBracketInCube() {
       var cube = state.engine && state.engine.priceCube;
@@ -1771,11 +1771,18 @@
       return !!(spec && spec.inputs && spec.inputs.indexOf('railBracket') >= 0);
     }
     function applyRailBracketOntoRail(values, prices) {
+      var local = parseNum(prices._railBase);
+      delete prices._railBase;
       prices.railBracket = '';
-      if (railBracketInCube()) return prices;
-      var extra = parseNum(railBracketPrice(values, prices.rail));
-      var base = parseNum(prices.rail);
-      if (extra > 0 && base > 0) prices.rail = fmtPrice(base + extra);
+      var base = local > 0 ? local : parseNum(prices.rail);
+      if (!(base > 0)) return prices;
+      if (!(local > 0) && railBracketInCube()) return prices;
+      if (String(values.railBracket || '').trim() === 'ندارد') {
+        prices.rail = fmtPrice(base);
+        return prices;
+      }
+      var extra = Math.round(base * RAIL_BRACKET_PCT);
+      if (extra > 0) prices.rail = fmtPrice(base + extra);
       return prices;
     }
     function computeLocalPrices(values) {
@@ -1861,6 +1868,7 @@
         var unit = rail.sizes[railSize] || 0;
         var qty = eng.railStops[String(values.stop)] || 0;
         prices.rail = fmtPrice(roundToman(unit * qty));
+        prices._railBase = prices.rail;
         if (railSize) markFresh_('rail', rail.name + '/' + railSize);
       }
 
@@ -1958,7 +1966,7 @@
       }
 
       prices = applyCubePrices(values, prices);
-      // براکت و لقمه و پیچ و مهره: ۷٪ روی خودِ قیمت ریل (بعد از مکعب، چون قیمت ریل ممکن است از مکعب بیاید)
+      // براکت و لقمه و پیچ و مهره: ۷٪ روی پایهٔ محلی ریل، بعد از مکعب تا عدد مکعب این درصد را پاک یا دوباره حساب نکند
       applyRailBracketOntoRail(values, prices);
       return prices;
     }
