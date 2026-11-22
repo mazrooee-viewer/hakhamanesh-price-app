@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261122162455">
+  <meta name="x-build" content="20261122172513">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261122162455" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261122172513" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -431,9 +431,10 @@
     .home-pkg { background: #efe7f8; color: #3b2060; border-color: #6b4c9a; }
     .home-reset-hp { background: #fde8e8; color: #6b1d1d; border-color: #b91c1c; }
     .home-hp-ex { background: #fef3c7; color: #5b3a06; border-color: #b45309; }
-    .hpx-row { display: grid; grid-template-columns: 1.3fr 1.5fr 78px 34px; gap: 6px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+    .hpx-row { direction: ltr; display: grid; grid-template-columns: 1.3fr 1.5fr 78px 34px; gap: 6px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
     .hpx-head { font-size: 12px; font-weight: 800; color: var(--muted); text-align: center; }
-    .hpx-row select, .hpx-row input { width: 100%; min-width: 0; height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 0 6px; font: inherit; font-size: 13px; background: #fff; }
+    /* جدول استثنای Have Price چپ‌به‌راست (درخواست مدیر 1405/09/01)؛ متن فارسی داخل خانه‌ها راست‌به‌چپ می‌ماند. */
+    .hpx-row select, .hpx-row input { direction: rtl; width: 100%; min-width: 0; height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 0 6px; font: inherit; font-size: 13px; background: #fff; }
     .hpx-row .hpx-flag.no { background: #fde8e8; color: #7f1d1d; font-weight: 800; }
     .hpx-row .hpx-flag.yes { background: #dcfce7; color: #14532d; font-weight: 800; }
     .hpx-del { height: 36px; border: 1px solid #fca5a5; border-radius: 8px; background: #fff; color: #b91c1c; font-weight: 800; cursor: pointer; }
@@ -1663,6 +1664,8 @@
         if (pct > 1) pct = pct / 100;
         return pct * baseFull + (Number(row.fixed) || 0);
       }
+      // قیمت کامل خالی = هنوز قیمت‌گذاری نشده → صفر (نه منفیِ قیمت پیش‌فرض)؛ همان IF(N(p)=0,0,…) فرمول شیت
+      if (!(Number(row.full) || 0)) return null;
       return (Number(row.full) || 0) - baseFull;
     }
     function specSystemKind(values) {
