@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261122172513">
+  <meta name="x-build" content="20261122174234">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261122172513" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261122174234" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1693,6 +1693,11 @@
         var stops = parseFloat(values.stop) || 0;
         return String(values.input || "").trim() === "ساده" ? stops + 1 : stops + 2;
       }
+      if (key === "pulley") {
+        // جدول «تعداد» زیر قیمت فلکه: گیربکس/1:1 (و هیدرولیک) یک ستون، MR/MRL ستون دیگر؛ خالی یا نبودِ جدول = ۱
+        var pq = Number((lux.pulleyQty || {})[kind === "گیرلس" ? "گیرلس" : "گیربکس"]) || 0;
+        return pq > 0 ? pq : 1;
+      }
       return 1;
     }
     function specRound(mode, n) {
@@ -3151,10 +3156,12 @@
     // همهٔ google.script.run آپلودر از __uploaderBridge همین صفحه (runGas) رد می‌شود؛ فقط توابع UP_FNS_ مجازند.
     var UP_CAT_ = { 'موتور': 'motors', 'تابلو فرمان': 'tablo', 'درب': 'doors', 'ریل': 'rails', 'کابین': 'cabin', 'کارسلینگ': 'cabinFrame', 'خرده‌ریز': 'parts' };
     var UP_FNS_ = { previewImageCatalog: true, listCatalogBrands: true, commitMatchedCatalogPrices: true, saveUploaderReviewImage: true, listUploaderReviewImages: true, removeUploaderReviewImage: true };
+    // حذف ردیف شیت زنده (1405/09/01): فقط اپ مدیر؛ در لینک ?app=prices رد می‌شود.
+    var UP_MANAGER_FNS_ = { findLiveRowsForDelete: true, deleteLiveSourceRow: true };
     var upState = { loaded: false, loading: false, prefill: null, groupKey: '', from: 'screen-home', committed: false };
     window.__uploaderBridge = {
       call: function (fn, argsJson, ok, fail) {
-        if (!UP_FNS_[fn]) { fail('تابع مجاز نیست: ' + fn); return; }
+        if (!UP_FNS_[fn] && !(UP_MANAGER_FNS_[fn] && !puPricesOnly())) { fail('تابع مجاز نیست: ' + fn); return; }
         var args;
         try { args = JSON.parse(argsJson || '[]'); } catch (e) { fail('درخواست نامعتبر'); return; }
         runGas.apply(null, [fn].concat(args)).then(function (res) {
@@ -3164,6 +3171,7 @@
         });
       },
       prefill: function () { return JSON.stringify(upState.prefill); },
+      canDeleteRows: function () { return !puPricesOnly(); },
       notify: function (type, json) {
         if (type === 'ready') { upHideLoading(); upDeliverShared(); return; }
         if (type === 'committed') {
