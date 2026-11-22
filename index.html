@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261120112939">
+  <meta name="x-build" content="20261122155509">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261120112939" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261122155509" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -430,6 +430,14 @@
     .home-short { background: #d7e4f2; color: #16324d; border-color: #3d6a8a; }
     .home-pkg { background: #efe7f8; color: #3b2060; border-color: #6b4c9a; }
     .home-reset-hp { background: #fde8e8; color: #6b1d1d; border-color: #b91c1c; }
+    .home-hp-ex { background: #fef3c7; color: #5b3a06; border-color: #b45309; }
+    .hpx-row { display: grid; grid-template-columns: 1.3fr 1.5fr 78px 34px; gap: 6px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+    .hpx-head { font-size: 12px; font-weight: 800; color: var(--muted); text-align: center; }
+    .hpx-row select, .hpx-row input { width: 100%; min-width: 0; height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 0 6px; font: inherit; font-size: 13px; background: #fff; }
+    .hpx-row .hpx-flag.no { background: #fde8e8; color: #7f1d1d; font-weight: 800; }
+    .hpx-row .hpx-flag.yes { background: #dcfce7; color: #14532d; font-weight: 800; }
+    .hpx-del { height: 36px; border: 1px solid #fca5a5; border-radius: 8px; background: #fff; color: #b91c1c; font-weight: 800; cursor: pointer; }
+    .hpx-hint { font-size: 12px; color: var(--muted); line-height: 1.8; margin: 10px 0; }
     .pkg-card { cursor: pointer; text-align: center; }
     .pkg-card .name { margin-bottom: 4px; }
     .pkg-meta { color: var(--muted); font-size: 13px; font-weight: 700; line-height: 1.7; }
@@ -722,6 +730,10 @@
           پکیج‌ها
           <span class="count">صدور و آرشیو لیست قیمت</span>
         </button>
+        <button class="home-btn home-hp-ex" type="button" onclick="openHavePriceEx()">
+          استثنای Have Price
+          <span class="count">جدول ردیف‌ها و ویژگی‌هایی که برعکس ستون Have Price فرم‌اند</span>
+        </button>
         <button class="home-btn home-reset-hp" id="reset-have-price" type="button" onclick="resetHavePrice()">
           reset have price
           <span class="count">پاک کردن قیمت ردیف‌های NO در فرم محاسبه شیت</span>
@@ -946,6 +958,31 @@
       <div class="actions">
         <button class="btn btn-main" id="save-short-path" type="button" onclick="saveShortPath()" disabled>ذخیره قیمت‌ها</button>
         <button class="btn btn-ghost" type="button" onclick="loadShortPath()">بازخوانی</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-hp-ex" class="screen">
+    <div class="top">
+      <div class="top-row">
+        <div>
+          <button class="back" type="button" onclick="event.preventDefault(); showHome();">بازگشت</button>
+          <h1>استثنای Have Price</h1>
+          <div class="meta">جدول Data_Offers از ستون AZ</div>
+        </div>
+        <div class="date-badge" data-date-slot></div>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="hpx-hint">ستون Have Price فرم محاسبه پیش‌فرض هر ردیف است. اگر ردیف و ویژگی انتخابی در این جدول باشد، مقدار جدول جای آن می‌نشیند. ویژگی خالی همیشه NO است.</div>
+      <div class="hpx-row hpx-head"><span>ردیف فرم</span><span>ویژگی</span><span>Have Price</span><span></span></div>
+      <div id="hpx-rows"><div class="empty">در حال بارگذاری...</div></div>
+      <div class="actions">
+        <button class="btn btn-ghost" type="button" onclick="hpxAdd()">+ افزودن ردیف</button>
+      </div>
+      <div class="actions">
+        <button class="btn btn-main" id="hpx-save" type="button" onclick="hpxSave()" disabled>ذخیره جدول</button>
+        <button class="btn btn-ghost" type="button" onclick="hpxLoad()">بازخوانی</button>
       </div>
     </div>
   </section>
@@ -3196,6 +3233,108 @@
     });
 
     // دکمهٔ reset have price: روی فرم محاسبهٔ شیت، قیمت دستی ردیف‌های NO پاک می‌شود (فرمول‌ها دست نمی‌خورند).
+    // ===== استثنای Have Price (سرور: HavePriceExceptions.js) =====
+    var hpx = { rows: [], fields: [], dirty: false, saving: false };
+    function openHavePriceEx() {
+      setHeaderDates(todayJalali());
+      showScreen('screen-hp-ex');
+      hpxLoad();
+    }
+    function hpxField(key) {
+      var k = String(key || '').replace(/\s+/g, '').toLowerCase();
+      for (var i = 0; i < hpx.fields.length; i++) if (hpx.fields[i].key.replace(/\s+/g, '').toLowerCase() === k) return hpx.fields[i];
+      return null;
+    }
+    function hpxSetDirty(v) {
+      hpx.dirty = v;
+      var b = document.getElementById('hpx-save');
+      if (b) b.disabled = !v || hpx.saving;
+    }
+    function hpxRender() {
+      var box = document.getElementById('hpx-rows');
+      if (!hpx.rows.length) { box.innerHTML = '<div class="empty">جدول خالی است؛ با «افزودن ردیف» شروع کنید</div>'; return; }
+      box.innerHTML = hpx.rows.map(function (r, i) {
+        var f = hpxField(r.key);
+        var keyOpts = '<option value="">— انتخاب —</option>' + hpx.fields.map(function (x) {
+          return '<option value="' + escapeHtml(x.key) + '"' + (f && f.key === x.key ? ' selected' : '') + '>' + escapeHtml(x.label) + '</option>';
+        }).join('') + (r.key && !f ? '<option value="' + escapeHtml(r.key) + '" selected>' + escapeHtml(r.key) + ' (در فرم نیست)</option>' : '');
+        var opts = (f && f.options) || [];
+        var spec = opts.length
+          ? '<select data-i="' + i + '" data-k="spec"><option value="">— ویژگی —</option>' + opts.map(function (o) {
+              return '<option value="' + escapeHtml(o) + '"' + (o === r.spec ? ' selected' : '') + '>' + escapeHtml(o) + '</option>';
+            }).join('') + (r.spec && opts.indexOf(r.spec) < 0 ? '<option value="' + escapeHtml(r.spec) + '" selected>' + escapeHtml(r.spec) + '</option>' : '') + '</select>'
+          : '<input data-i="' + i + '" data-k="spec" type="text" placeholder="ویژگی" value="' + escapeHtml(r.spec || '') + '">';
+        var flag = String(r.flag || 'NO').toUpperCase();
+        return '<div class="hpx-row">' +
+          '<select data-i="' + i + '" data-k="key">' + keyOpts + '</select>' + spec +
+          '<select class="hpx-flag ' + (flag === 'YES' ? 'yes' : 'no') + '" data-i="' + i + '" data-k="flag">' +
+            '<option value="NO"' + (flag !== 'YES' ? ' selected' : '') + '>NO</option>' +
+            '<option value="YES"' + (flag === 'YES' ? ' selected' : '') + '>YES</option></select>' +
+          '<button class="hpx-del" type="button" data-del="' + i + '" title="حذف">✕</button>' +
+          '</div>';
+      }).join('');
+      box.querySelectorAll('[data-k]').forEach(function (el) {
+        el.addEventListener('change', function () {
+          var r = hpx.rows[+el.getAttribute('data-i')];
+          var k = el.getAttribute('data-k');
+          r[k] = el.value;
+          if (k === 'key') r.spec = '';
+          hpxSetDirty(true);
+          if (k !== 'spec') hpxRender();
+        });
+        if (el.tagName === 'INPUT') el.addEventListener('input', function () { hpx.rows[+el.getAttribute('data-i')].spec = el.value; hpxSetDirty(true); });
+      });
+      box.querySelectorAll('[data-del]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          hpx.rows.splice(+el.getAttribute('data-del'), 1);
+          hpxSetDirty(true);
+          hpxRender();
+        });
+      });
+    }
+    function hpxApply(data) {
+      hpx.fields = (data && data.fields) || [];
+      hpx.rows = ((data && data.rows) || []).map(function (r) { return { key: r.key, spec: r.spec, flag: r.flag || 'NO' }; });
+      hpxSetDirty(false);
+      hpxRender();
+    }
+    function hpxLoad() {
+      if (hpx.dirty && !confirm('تغییرات ذخیره‌نشده پاک شود؟')) return;
+      document.getElementById('hpx-rows').innerHTML = '<div class="empty">در حال بارگذاری...</div>';
+      hpxSetDirty(false);
+      runGas('getHavePriceExceptionsTable').then(hpxApply).catch(function (err) {
+        document.getElementById('hpx-rows').innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری انجام نشد') + '</div>';
+        toast((err && err.message) || 'بارگذاری انجام نشد', true);
+      });
+    }
+    function hpxAdd() {
+      hpx.rows.push({ key: '', spec: '', flag: 'NO' });
+      hpxSetDirty(true);
+      hpxRender();
+    }
+    function hpxSave() {
+      if (hpx.saving) return;
+      var rows = hpx.rows.filter(function (r) { return r.key || r.spec; });
+      for (var i = 0; i < rows.length; i++) {
+        if (!rows[i].key || !String(rows[i].spec || '').trim()) return toast('ردیف ' + (i + 1) + ': ردیف فرم و ویژگی هر دو لازم است', true);
+      }
+      hpx.saving = true;
+      hpxSetDirty(true);
+      var btn = document.getElementById('hpx-save');
+      btn.textContent = 'در حال ذخیره...';
+      runGas('saveHavePriceExceptionsTable', rows).then(function (data) {
+        hpx.saving = false;
+        btn.textContent = 'ذخیره جدول';
+        hpxApply(data);
+        toast('جدول ذخیره شد (' + ((data && data.saved) || 0) + ' ردیف)');
+      }).catch(function (err) {
+        hpx.saving = false;
+        btn.textContent = 'ذخیره جدول';
+        hpxSetDirty(true);
+        toast((err && err.message) || 'ذخیره انجام نشد', true);
+      });
+    }
+
     function resetHavePrice() {
       if (!confirm('قیمت همهٔ ردیف‌های NO در «فرم محاسبه» شیت پاک شود؟')) return;
       var btn = document.getElementById('reset-have-price');
