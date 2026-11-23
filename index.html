@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261122215325">
+  <meta name="x-build" content="20261123183941">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261122215325" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261123183941" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -466,6 +466,30 @@
     .short-table .calc-head span,
     .short-table .short-row .part,
     .short-table .short-row .price { text-align: center; }
+    .short-row .sp-name { display: block; }
+    .short-row .sp-key { display: block; font-size: 10.5px; color: var(--muted); font-weight: 600; unicode-bidi: plaintext; margin-top: 1px; word-break: break-word; }
+    .sp-swap-btn { font-family: inherit; font-size: 10.5px; font-weight: 800; color: #134e4a; background: #e0f2f1; border: 1px solid #0f766e55; border-radius: 999px; padding: 0 8px; margin-top: 3px; cursor: pointer; }
+    .sp-swap-modal { display: none; position: fixed; inset: 0; z-index: 400; background: rgba(15, 23, 42, .55); align-items: center; justify-content: center; padding: 14px; }
+    .sp-swap-modal.open { display: flex; }
+    .sp-swap-card { width: 100%; max-width: 520px; max-height: 92vh; background: #fff; border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 20px 50px rgba(0,0,0,.3); }
+    .sp-swap-card h3 { margin: 0; font-size: 15px; }
+    .sp-swap-cur { font-size: 12px; color: var(--muted); line-height: 1.6; }
+    .sp-swap-cur b { color: var(--navy); unicode-bidi: plaintext; }
+    .sp-swap-row2 { display: flex; gap: 6px; }
+    .sp-swap-row2 select, .sp-swap-row2 input, .sp-swap-name { font-family: inherit; font-size: 13px; border: 1px solid var(--line); border-radius: 10px; padding: 7px 8px; background: #f8fafc; min-width: 0; }
+    .sp-swap-row2 select { flex: 0 0 38%; }
+    .sp-swap-row2 input { flex: 1; }
+    .sp-swap-list { overflow-y: auto; flex: 1; min-height: 120px; border: 1px solid var(--line); border-radius: 12px; }
+    .sp-swap-item { display: grid; grid-template-columns: 22px 1fr auto; gap: 6px; align-items: center; padding: 7px 9px; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .sp-swap-item:last-child { border-bottom: 0; }
+    .sp-swap-item.on { background: #e0f2f1; }
+    .sp-swap-item .k { font-size: 12.5px; font-weight: 800; unicode-bidi: plaintext; word-break: break-word; }
+    .sp-swap-item .l { font-size: 11px; color: var(--muted); }
+    .sp-swap-item .p { font-size: 12px; font-weight: 700; direction: ltr; white-space: nowrap; }
+    .sp-swap-label { font-size: 12px; font-weight: 800; }
+    .sp-swap-name { width: 100%; box-sizing: border-box; }
+    .sp-swap-actions { display: flex; gap: 8px; }
+    .sp-swap-actions .btn { flex: 1; }
     .short-hint {
       text-align: center; color: var(--muted); font-size: 12px; font-weight: 700;
       margin-top: 8px;
@@ -655,6 +679,10 @@
     .pt-sub { font-size: 11px; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 2px; direction: rtl; }
     .pt-key { unicode-bidi: plaintext; font-variant-numeric: tabular-nums; }
     .pt-name bdi { white-space: nowrap; }
+    .pt-model { color: #334155; font-weight: 600; }
+    .pt-model bdi { white-space: nowrap; }
+    .pt-del { font-family: inherit; font-size: 10.5px; font-weight: 800; color: var(--red); background: #fff; border: 1px solid #f1b7b7; border-radius: 999px; padding: 0 8px; cursor: pointer; }
+    .pt-del:disabled { opacity: .5; cursor: wait; }
     .pt-tag { font-size: 10.5px; font-weight: 800; border-radius: 999px; padding: 0 7px; background: #d7e4f2; color: #16324d; }
     .pt-row input { width: 100%; min-width: 0; border: 1px solid var(--line); background: #f8fafc; color: var(--navy); border-radius: 10px; padding: 8px 8px; font-family: inherit; font-size: 14px; font-weight: 700; direction: ltr; text-align: center; font-variant-numeric: tabular-nums; }
     .pt-row.dirty input { background: #fff2cc; border-color: #c9a227; }
@@ -936,6 +964,25 @@
     </div>
   </div>
 
+  <div id="sp-swap-modal" class="sp-swap-modal" role="dialog" aria-modal="true" aria-labelledby="sp-swap-title">
+    <div class="sp-swap-card">
+      <h3 id="sp-swap-title">تعویض کالای مسیر کوتاه</h3>
+      <div class="sp-swap-cur" id="sp-swap-cur"></div>
+      <div class="sp-swap-row2">
+        <select id="sp-swap-cat" aria-label="جدول"></select>
+        <input id="sp-swap-q" type="search" placeholder="جستجو: برند، مدل، کلید…" autocomplete="off">
+      </div>
+      <div class="sp-swap-list" id="sp-swap-list"><div class="empty">در حال بارگذاری...</div></div>
+      <label class="sp-swap-label" for="sp-swap-name">نام کالا در مسیر کوتاه</label>
+      <input class="sp-swap-name" id="sp-swap-name" type="text" autocomplete="off">
+      <div class="sp-swap-cur" id="sp-swap-sel">کالای جایگزین را انتخاب کنید (برای ردیف گروهی، چند کالا).</div>
+      <div class="sp-swap-actions">
+        <button class="btn btn-main" id="sp-swap-ok" type="button" onclick="spSwapSubmit()" disabled>ثبت تعویض</button>
+        <button class="btn btn-ghost" type="button" onclick="spSwapClose()">انصراف</button>
+      </div>
+    </div>
+  </div>
+
   <section id="screen-short" class="screen">
     <div class="top">
       <div class="top-row">
@@ -955,7 +1002,7 @@
         </div>
         <div id="short-path-rows"><div class="empty">در حال بارگذاری...</div></div>
       </div>
-      <div class="short-hint">فقط ستون قیمت ذخیره می‌شود؛ نام قطعات همان شیت مسیر کوتاه است</div>
+      <div class="short-hint">قیمت را ویرایش و ذخیره کنید؛ برای جایگزینی برند ناموجود «تعویض کالا» را بزنید</div>
       <div class="actions">
         <button class="btn btn-main" id="save-short-path" type="button" onclick="saveShortPath()" disabled>ذخیره قیمت‌ها</button>
         <button class="btn btn-ghost" type="button" onclick="loadShortPath()">بازخوانی</button>
@@ -2508,7 +2555,9 @@
       }
       box.innerHTML = rows.map(function (r) {
         return '<div class="calc-row short-row">' +
-          '<div class="part">' + escapeHtml(r.name) + '</div>' +
+          '<div class="part"><span class="sp-name">' + escapeHtml(r.name) + '</span>' +
+          (r.key ? '<span class="sp-key">' + escapeHtml(r.key) + '</span>' : '') +
+          (puPricesOnly() ? '' : '<button class="sp-swap-btn" type="button" data-sp-swap="' + r.row + '">تعویض کالا</button>') + '</div>' +
           '<input class="price" id="sp-' + r.row + '" type="text" inputmode="numeric" value="' +
           escapeHtml(formatShortPathPrice(r.price)) + '">' +
           '</div>';
@@ -2543,6 +2592,116 @@
       });
     }
 
+
+    // ===== تعویض کالای مسیر کوتاه (سرور: replaceShortPathItem در PriceTables.js؛ 1405/09/02) =====
+    // برند ناموجود با کالای دیگری از شیت All جایگزین می‌شود: uuid ردیف عوض می‌شود و قیمت/تاریخ همان کالا از All می‌آید.
+    var spSwap = { r: null, sel: [], nameTouched: false, oldBrand: '', busy: false };
+    function spSwapRows() {
+      var out = [];
+      ((ptState.data && ptState.data.tables) || []).forEach(function (t) {
+        t.brands.forEach(function (b) { b.rows.forEach(function (r) { out.push({ cat: t.cat, brand: b.brand, r: r }); }); });
+      });
+      return out;
+    }
+    function spSwapOpen(row) {
+      var r = (state.shortPathRows || []).filter(function (x) { return x.row === row; })[0];
+      if (!r) return;
+      if (state.shortPathDirty && !confirm('قیمت‌های ذخیره‌نشدهٔ مسیر کوتاه بعد از تعویض بازخوانی و پاک می‌شوند. ادامه می‌دهید؟')) return;
+      spSwap = { r: r, sel: [], nameTouched: false, oldBrand: '', busy: false };
+      document.getElementById('sp-swap-cur').innerHTML = 'ردیف ' + puFa(r.row) + ': <b>' + escapeHtml(r.name) + '</b>' +
+        (r.key ? '<br>کلید فعلی: <b>' + escapeHtml(r.key) + '</b>' : '<br>این ردیف هنوز به کالایی در All وصل نیست');
+      document.getElementById('sp-swap-name').value = r.name;
+      document.getElementById('sp-swap-q').value = '';
+      document.getElementById('sp-swap-modal').classList.add('open');
+      spSwapSelText();
+      var ready = function () {
+        var cur = String(r.key || '').split(' | ')[0].trim();
+        var hit = spSwapRows().filter(function (x) { return x.r.k === cur; })[0];
+        var sel = document.getElementById('sp-swap-cat');
+        var cats = ((ptState.data && ptState.data.tables) || []).map(function (t) { return t.cat; });
+        sel.innerHTML = cats.map(function (c) { return '<option>' + escapeHtml(c) + '</option>'; }).join('');
+        if (hit) { sel.value = hit.cat; spSwap.oldBrand = hit.brand; }
+        spSwapRender();
+      };
+      if (!ptState.data) { var cached = ptLsRead(); if (cached && cached.tables) ptState.data = cached; }
+      if (ptState.data) ready();
+      ptLoad(false).then(function () { if (spSwap.r === r && document.getElementById('sp-swap-modal').classList.contains('open')) ready(); });
+    }
+    function spSwapClose() { document.getElementById('sp-swap-modal').classList.remove('open'); spSwap.r = null; }
+    function spSwapRender() {
+      var cat = document.getElementById('sp-swap-cat').value;
+      var q = ptNorm(document.getElementById('sp-swap-q').value);
+      var cur = {};
+      String((spSwap.r && spSwap.r.key) || '').split(' | ').forEach(function (k) { if (k.trim()) cur[k.trim()] = true; });
+      var list = spSwapRows().filter(function (x) { return x.cat === cat && !cur[x.r.k] && (!q || ptNorm(x.brand + ' ' + x.r.l + ' ' + x.r.k).indexOf(q) >= 0); });
+      var more = list.length > 80;
+      var box = document.getElementById('sp-swap-list');
+      if (!ptState.data) { box.innerHTML = '<div class="empty">در حال بارگذاری...</div>'; return; }
+      box.innerHTML = list.slice(0, 80).map(function (x) {
+        var on = spSwap.sel.some(function (s) { return s.row === x.r.r && s.key === x.r.k; });
+        return '<div class="sp-swap-item' + (on ? ' on' : '') + '" data-sp-pick="' + escapeHtml(x.r.r + '|' + x.r.k) + '">' +
+          '<input type="checkbox" tabindex="-1"' + (on ? ' checked' : '') + '>' +
+          '<div><div class="k">' + escapeHtml(x.r.k) + '</div>' + (x.r.l ? '<div class="l">' + ptLabelHtml(x.r.l) + '</div>' : '') + '</div>' +
+          '<div class="p">' + (x.r.p === '' ? 'بدون قیمت' : escapeHtml(formatShortPathPrice(x.r.p))) + '</div></div>';
+      }).join('') + (more ? '<div class="empty">فقط ۸۰ ردیف اول؛ جستجو را دقیق‌تر کنید</div>' : '') || '<div class="empty">کالایی پیدا نشد</div>';
+    }
+    function spSwapSelText() {
+      var n = spSwap.sel.length;
+      document.getElementById('sp-swap-sel').textContent = n
+        ? 'انتخاب‌شده: ' + spSwap.sel.map(function (s) { return s.key; }).join(' | ') + (n > 1 ? ' (گروه هم‌قیمت؛ قیمت اولی می‌نشیند)' : '')
+        : 'کالای جایگزین را انتخاب کنید (برای ردیف گروهی، چند کالا).';
+      document.getElementById('sp-swap-ok').disabled = !n || spSwap.busy;
+    }
+    function spSwapPick(id) {
+      var bar = id.indexOf('|');
+      var row = Number(id.slice(0, bar)), key = id.slice(bar + 1);
+      var i = -1;
+      spSwap.sel.forEach(function (s, j) { if (s.row === row && s.key === key) i = j; });
+      if (i >= 0) spSwap.sel.splice(i, 1);
+      else {
+        spSwap.sel.push({ row: row, key: key });
+        // نام پیشنهادی: برند قبلی در نام با برند تازه عوض می‌شود (اگر مدیر خودش نام را عوض نکرده باشد)
+        var hit = spSwapRows().filter(function (x) { return x.r.r === row && x.r.k === key; })[0];
+        var nameEl = document.getElementById('sp-swap-name');
+        if (hit && spSwap.sel.length === 1 && !spSwap.nameTouched && spSwap.oldBrand && spSwap.r.name.indexOf(spSwap.oldBrand) >= 0) {
+          nameEl.value = spSwap.r.name.split(spSwap.oldBrand).join(hit.brand);
+        }
+      }
+      spSwapRender();
+      spSwapSelText();
+    }
+    function spSwapSubmit() {
+      var r = spSwap.r;
+      var name = document.getElementById('sp-swap-name').value.trim();
+      if (!r || !spSwap.sel.length || spSwap.busy) return;
+      if (!name) { toast('نام کالا خالی است', true); return; }
+      spSwap.busy = true;
+      var btn = document.getElementById('sp-swap-ok');
+      btn.disabled = true; btn.textContent = 'در حال ثبت…';
+      runGas('replaceShortPathItem', { row: r.row, oldIds: r.uuid || '', name: name, items: spSwap.sel.slice() }).then(function (res) {
+        if (!res || res.ok === false) throw new Error((res && res.error) || 'تعویض انجام نشد');
+        spSwapClose();
+        toast(res.warn ? 'تعویض شد؛ ' + res.warn : 'کالای ردیف ' + puFa(res.row) + ' تعویض شد', !!res.warn);
+        state.shortPathDirty = false;
+        loadShortPath();
+      }).catch(function (err) {
+        toast((err && err.message) || 'تعویض انجام نشد', true);
+      }).then(function () {
+        spSwap.busy = false; btn.textContent = 'ثبت تعویض'; spSwapSelText();
+      });
+    }
+    document.addEventListener('click', function (e) {
+      var t = e.target.closest && e.target.closest('[data-sp-swap],[data-sp-pick]');
+      if (!t) { if (e.target && e.target.id === 'sp-swap-modal') spSwapClose(); return; }
+      if (t.hasAttribute('data-sp-swap')) spSwapOpen(Number(t.getAttribute('data-sp-swap')));
+      else spSwapPick(t.getAttribute('data-sp-pick'));
+    });
+    document.addEventListener('input', function (e) {
+      if (!e.target) return;
+      if (e.target.id === 'sp-swap-q') { clearTimeout(spSwap.qt); spSwap.qt = setTimeout(spSwapRender, 150); }
+      else if (e.target.id === 'sp-swap-name') spSwap.nameTouched = true;
+    });
+    document.addEventListener('change', function (e) { if (e.target && e.target.id === 'sp-swap-cat') spSwapRender(); });
 
     // ===== جداول قیمت (سرور: PriceTables.js) =====
     // داده از شیت All (همهٔ جداول قیمت). نمایش فوری از localStorage، تازه‌سازی پس‌زمینه بدون پاک‌کردن ویرایش‌های ذخیره‌نشده.
@@ -2629,8 +2788,10 @@
       var val = ed != null ? ed : formatShortPathPrice(r.p);
       var err = ptState.errs[id], warn = ptState.warns[id];
       return '<div class="pt-row' + (ed != null ? ' dirty' : '') + (err ? ' err' : '') + '" data-pt-id="' + escapeHtml(id) + '">' +
-        '<div><div class="pt-name">' + ptLabelHtml(r.l || r.k) + '</div>' +
-        '<div class="pt-sub"><span class="pt-key">' + escapeHtml(r.k) + '</span>' + puAge(r.d) + (r.s ? '<span class="pt-tag">مسیر کوتاه</span>' : '') + '</div></div>' +
+        // کلید کنترلی بالا (خواناتر برای مدیر؛ 1405/09/02) و شرح مدل زیر آن
+        '<div><div class="pt-name pt-key">' + escapeHtml(r.k) + '</div>' +
+        '<div class="pt-sub">' + (r.l ? '<span class="pt-model">' + ptLabelHtml(r.l) + '</span>' : '') + puAge(r.d) + (r.s ? '<span class="pt-tag">مسیر کوتاه</span>' : '') +
+        (ptCanDelete() ? '<button class="pt-del" type="button" data-pt-del="' + escapeHtml(id) + '" title="ردیف کالای منسوخ از تب مبدأ حذف شود">حذف ردیف</button>' : '') + '</div></div>' +
         '<input type="text" inputmode="numeric" data-pt-in="' + escapeHtml(id) + '" value="' + escapeHtml(val) + '" placeholder="بدون قیمت" aria-label="قیمت ' + escapeHtml(r.l || r.k) + '">' +
         (err ? '<div class="pt-err">' + escapeHtml(err) + '</div>' : '') + (warn ? '<div class="pt-warn">' + escapeHtml(warn) + '</div>' : '') +
         '</div>';
@@ -2683,7 +2844,58 @@
       return out;
     }
 
+    // ===== حذف ردیف کالای منسوخ (فقط موتور/تابلو فرمان؛ سرور: findLiveRowsForDelete / deleteLiveSourceRow در Uploader.js) =====
+    // ردیف از تب مبدأ پاک می‌شود، All هم‌گام و ردیفش «حذف‌شده در مبدأ» (خاکستری) می‌شود؛ رونوشت ردیف در تب مخفی می‌ماند.
+    var PT_DEL_CATS = { 'موتور': true, 'تابلو فرمان': true };
+    var ptDelBusy = false;
+    function ptCanDelete() { return !puPricesOnly() && !!PT_DEL_CATS[ptState.cat]; }
+    function ptDeleteRow(id, btn) {
+      var r = ptFindRow(id);
+      if (!r || ptDelBusy) return;
+      if (ptState.saving) { toast('اول صبر کنید ذخیرهٔ قیمت‌ها تمام شود', true); return; }
+      ptDelBusy = true;
+      if (btn) { btn.disabled = true; btn.textContent = '…'; }
+      var done = function () { ptDelBusy = false; if (btn) { btn.disabled = false; btn.textContent = 'حذف ردیف'; } };
+      runGas('findLiveRowsForDelete', r.k, { allRow: r.r }).then(function (res) {
+        if (!res || res.ok === false) throw new Error((res && res.error) || 'ردیف پیدا نشد');
+        var it = (res.items || [])[0];
+        if (!it) throw new Error('این ردیف دیگر در شیت نیست؛ جدول را بازخوانی کنید');
+        if (!it.supported) throw new Error(it.reason || 'این ردیف قابل حذف نیست');
+        var sib = it.siblings && it.siblings.length > 1;
+        var msg = 'ردیف ' + puFa(it.row) + ' تب «' + it.sheet + '» برای همیشه از شیت زنده حذف شود؟\n\n' +
+          (it.preview ? it.preview + '\n\n' : '') +
+          (sib ? 'این ردیف ' + puFa(it.siblings.length) + ' کلید دارد و همه با هم حذف می‌شوند:\n' + it.siblings.join('\n') : 'کلید: ' + it.key) +
+          '\n\nردیف All خاکستری و «حذف‌شده در مبدأ» می‌شود؛ رونوشت ردیف در تب مخفی پشتیبان می‌ماند.';
+        if (!confirm(msg)) return null;
+        toast('در حال حذف و هم‌گام‌سازی All…');
+        return runGas('deleteLiveSourceRow', { sheet: it.sheet, uuid: it.uuid, key: it.key }).then(function (out) {
+          if (!out || out.ok === false) throw new Error((out && out.error) || 'حذف انجام نشد');
+          toast(out.synced ? 'ردیف حذف شد (' + puFa((out.keys || []).length || 1) + ' کلید)'
+            : 'ردیف حذف شد ولی هم‌گام‌سازی All انجام نشد: ' + (out.syncError || '') + ' — از منوی شیت هم‌گام‌سازی All را اجرا کنید', !out.synced);
+          var gone = {};
+          (out.keys || [it.key]).forEach(function (k) { gone[k] = true; });
+          ((ptState.data && ptState.data.tables) || []).forEach(function (t) {
+            t.brands.forEach(function (b) {
+              b.rows = b.rows.filter(function (x) {
+                if (!gone[x.k]) return true;
+                delete ptState.edits[ptId(x)]; delete ptState.errs[ptId(x)];
+                t.total--; return false;
+              });
+            });
+          });
+          ptLsWrite(ptState.data);
+          ptRender();
+          ptLoad(true);
+          return out;
+        });
+      }).catch(function (err) {
+        toast((err && err.message) || 'حذف انجام نشد', true);
+      }).then(done, done);
+    }
+
     document.addEventListener('click', function (e) {
+      var del = e.target.closest && e.target.closest('[data-pt-del]');
+      if (del && document.getElementById('screen-tables').contains(del)) { ptDeleteRow(del.getAttribute('data-pt-del'), del); return; }
       var el = e.target.closest && e.target.closest('[data-pt-cat],[data-pt-brand],[data-pt-more]');
       if (!el || !document.getElementById('screen-tables').contains(el)) return;
       if (el.hasAttribute('data-pt-cat')) { ptState.cat = el.getAttribute('data-pt-cat'); ptRender(); window.scrollTo(0, 0); }
@@ -3156,12 +3368,10 @@
     // همهٔ google.script.run آپلودر از __uploaderBridge همین صفحه (runGas) رد می‌شود؛ فقط توابع UP_FNS_ مجازند.
     var UP_CAT_ = { 'موتور': 'motors', 'تابلو فرمان': 'tablo', 'درب': 'doors', 'ریل': 'rails', 'کابین': 'cabin', 'کارسلینگ': 'cabinFrame', 'خرده‌ریز': 'parts' };
     var UP_FNS_ = { previewImageCatalog: true, listCatalogBrands: true, commitMatchedCatalogPrices: true, saveUploaderReviewImage: true, listUploaderReviewImages: true, removeUploaderReviewImage: true };
-    // حذف ردیف شیت زنده (1405/09/01): فقط اپ مدیر؛ در لینک ?app=prices رد می‌شود.
-    var UP_MANAGER_FNS_ = { findLiveRowsForDelete: true, deleteLiveSourceRow: true };
     var upState = { loaded: false, loading: false, prefill: null, groupKey: '', from: 'screen-home', committed: false };
     window.__uploaderBridge = {
       call: function (fn, argsJson, ok, fail) {
-        if (!UP_FNS_[fn] && !(UP_MANAGER_FNS_[fn] && !puPricesOnly())) { fail('تابع مجاز نیست: ' + fn); return; }
+        if (!UP_FNS_[fn]) { fail('تابع مجاز نیست: ' + fn); return; }
         var args;
         try { args = JSON.parse(argsJson || '[]'); } catch (e) { fail('درخواست نامعتبر'); return; }
         runGas.apply(null, [fn].concat(args)).then(function (res) {
@@ -3171,7 +3381,6 @@
         });
       },
       prefill: function () { return JSON.stringify(upState.prefill); },
-      canDeleteRows: function () { return !puPricesOnly(); },
       notify: function (type, json) {
         if (type === 'ready') { upHideLoading(); upDeliverShared(); return; }
         if (type === 'committed') {
