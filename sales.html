@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261123183941">
+  <meta name="x-build" content="20261124210511">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261123183941" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261124210511" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -260,6 +260,10 @@
     .calc-row .part {
       font-size: 13px; font-weight: 700; line-height: 1.4;
       text-align: center;
+    }
+    .calc-row input.text-field {
+      padding: 4px 6px; border-radius: 8px; border: 1px solid var(--line);
+      font-size: 12px; text-align: center; min-width: 0; width: 100%; box-sizing: border-box;
     }
     .calc-row select {
       padding: 4px 6px; border-radius: 8px;
@@ -1211,6 +1215,8 @@
 
     function fillSelect(id, options, selected) {
       var el = document.getElementById(id);
+      // فیلد متنی (مثل «محل نصب»): کشو نیست؛ مقدار خالی (پکیج/شرط) متنی را که کاربر نوشته پاک نمی‌کند.
+      if (el && el.tagName === 'INPUT') { if (selected != null && String(selected) !== '') el.value = String(selected); return; }
       var opts = options || [];
       var html = '';
       var found = false;
@@ -2017,7 +2023,7 @@
         if (HIDDEN_KEYS.indexOf(f.key) >= 0) return;
         state.extraKeys.push(f.key);
         box.innerHTML += '<div class="calc-row">' +
-          '<select id="f-' + f.key + '"></select>' +
+          (f.text ? '<input type="text" class="text-field" id="f-' + f.key + '" maxlength="60" placeholder="مثلاً اصفهان" autocomplete="off">' : '<select id="f-' + f.key + '"></select>') +
           '<div class="part">' + escapeHtml(f.header) + (f.required ? ' *' : '') + '</div>' +
           '</div>';
       });
@@ -2030,7 +2036,7 @@
       applySystemLists((document.getElementById('f-system') && document.getElementById('f-system').value) || selected.system || '', selected);
       (b.fields || []).forEach(function (f) {
         var el = document.getElementById('f-' + f.key);
-        if (el) el.disabled = calcModeIsAuto() || f.key === 'carSling';
+        if (el) el.disabled = (calcModeIsAuto() && !f.text) || f.key === 'carSling';
       });
       applySalesConditions(selected);
       (b.fields || []).forEach(function (f) {

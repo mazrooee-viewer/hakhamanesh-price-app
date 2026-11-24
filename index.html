@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261123183941">
+  <meta name="x-build" content="20261124210511">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261123183941" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261124210511" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -370,6 +370,7 @@
     .calc-row input.price[readonly].price-formula { background: #cfe2f3; }
     .calc-row input.price[readonly].price-changed { background: #fff2cc; }
     .calc-row select.spec-changed { background: #fff2cc; }
+    .calc-row input.text-field { font-size: 12px; text-align: center; border: 1px solid var(--line); min-width: 0; width: 100%; box-sizing: border-box; }
     .calc-row .age.age-hidden { visibility: hidden; }
     .calc-row input.price.price-zero-default { visibility: hidden; }
     .calc-row input.price.price-na, .calc-row input.price[readonly].price-na { background: #fee2e2; color: #b91c1c; font-weight: 800; font-size: 10.5px; direction: rtl; }
@@ -2230,6 +2231,8 @@
     function fillSelect(id, options, selected) {
       var el = document.getElementById(id);
       if (!el) return;
+      // فیلد متنی (مثل «محل نصب»): کشو نیست؛ مقدار خالی (پکیج/شرط) متنی را که کاربر نوشته پاک نمی‌کند.
+      if (el.tagName === 'INPUT') { if (selected != null && String(selected) !== '') el.value = String(selected); return; }
       var opts = options || [];
       var html = '';
       var found = false;
@@ -4173,7 +4176,7 @@
           (noPrice ? '<div class="price-wrap price-none"></div>' :
           '<div class="price-wrap"><input class="price" id="p-' + f.key + '" type="text" readonly>' +
           '<button type="button" class="age age-none" id="age-' + f.key + '" data-title="بدون تاریخ">—</button></div>') +
-          '<select id="f-' + f.key + '"></select>' +
+          (f.text ? '<input type="text" class="text-field" id="f-' + f.key + '" maxlength="60" placeholder="مثلاً اصفهان" autocomplete="off">' : '<select id="f-' + f.key + '"></select>') +
           '<div class="part">' + escapeHtml(f.header) + (f.required ? ' *' : '') + '</div>' +
           '</div>';
       });
@@ -4195,7 +4198,7 @@
       var autoLocked = calcModeIsAuto() && !data.preview;
       (b.fields || []).forEach(function (f) {
         var el = document.getElementById('f-' + f.key);
-        if (el) el.disabled = autoLocked || f.key === 'carSling';
+        if (el) el.disabled = (autoLocked && !f.text) || f.key === 'carSling';
       });
       if (autoLocked) applyConditionTable();
       setOutSheet(data.suggestedOutSheet || 'Traction');
@@ -4222,7 +4225,7 @@
     }
 
     function fieldNeverPriced(key) {
-      if (key === 'motorDesign' || key === 'cabinBrand' || key === 'cabinCode') return true;
+      if (key === 'motorDesign' || key === 'cabinBrand' || key === 'cabinCode' || key === 'installCity') return true;
       var cells = (state.bootstrap && state.bootstrap.priceCells) || {};
       return !!(cells[key] && cells[key].have === 'no');
     }
@@ -4237,7 +4240,7 @@
         var sel = document.getElementById('f-' + f.key);
         var cur = String((values && values[f.key]) || '').trim();
         var def = specDefault(f.key, values);
-        if (sel && sel.classList) sel.classList.toggle('spec-changed', cur !== def && !!(cur || def));
+        if (sel && sel.classList && !f.text) sel.classList.toggle('spec-changed', cur !== def && !!(cur || def));
         var el = document.getElementById('p-' + f.key);
         if (!el) return;
         var meta = cells[f.key] || {};
