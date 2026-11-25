@@ -1596,6 +1596,18 @@
       if (eq(rowType, 'لولایی')) return doorWidthNum(d.size) !== '' && doorWidthNum(d.size) === doorWidthNum(values.doorSize);
       return eq(d.open, values.floorDoorOpen) && eq(d.size, values.doorSize);
     }
+    // درب کابینِ درب طبقهٔ لولایی «نیمه اتوماتیک» است: همان قاعدهٔ _Calc (نوع «نیمه اتوماتیک»، بازشوی درب کابین، سایز «عرض دولته»، ستون E).
+    function hingedCabinDoorRow(values, eng) {
+      var open = String(values.cabinDoorOpen || '').trim();
+      if (!open || open === 'لولایی') open = 'تلسکوپی';
+      var size = doorWidthNum(values.doorSize) + ' دولته';
+      var row = null;
+      (eng.doors || []).some(function (d) {
+        if (eq(d.floorType, 'نیمه اتوماتیک') && eq(d.open, open) && eq(d.size, size)) { row = d; return true; }
+        return false;
+      });
+      return row;
+    }
     // === DOOR_BRAND_ROWS_END ===
     function panelSheetModel(model) {
       var m = String(model || '').trim();
@@ -1940,8 +1952,9 @@
         if (!eq(values.floorDoor, 'ندارد')) markFresh_('floorDoor', door.floorKey);
         if (values.cabinDoor === 'ندارد') prices.cabinDoor = '';
         else {
-          prices.cabinDoor = fmtPrice(roundToman(door.cabinPrice * doorMul));
-          markFresh_('cabinDoor', door.cabinKey);
+          var cabinRow = eq(doorRowType, 'لولایی') ? hingedCabinDoorRow(values, eng) : door;
+          prices.cabinDoor = fmtPrice(roundToman((cabinRow ? cabinRow.cabinPrice : 0) * doorMul));
+          if (cabinRow) markFresh_('cabinDoor', cabinRow.cabinKey);
         }
       }
 
