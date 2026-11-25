@@ -1906,7 +1906,7 @@
     // === DOOR_HEIGHT_GRID_START ===
     // «ارتفاع درب» بر اساس جدول «ضرایب ارتفاع درب» (شیت لاکچری 'ملاحظات خرده ریز'!AJ1:AN24؛ همان فرمول فرم محاسبه D34):
     // درصد هر عرض × ارتفاع نسبت به درب 80×200. اضافه‌قیمت = قیمت درب طبقه × نسبت + قیمت درب کابین × نسبت،
-    // که نسبت = (1+درصد عرض/ارتفاع انتخابی)/(1+درصد همان عرض در ارتفاع 200) − 1. عرض/ارتفاعِ خارج از جدول → همان مبلغ ثابت قبلی.
+    // که نسبت = (1+درصد عرض/ارتفاع انتخابی)/(1+درصد همان عرض در ارتفاع 200) − 1. عرض/ارتفاعِ خارج از جدول یا نبودِ قیمت درب → همان مبلغ ثابت قبلی.
     // اگر سرور جدول را در luxury.doorHeightGrid بفرستد همان خوانده می‌شود، وگرنه این نسخهٔ پیش‌فرض (هم‌عدد با شیت).
     var DOOR_HEIGHT_GRID_DEFAULT = {
       heights: [200, 210, 220, 230],
@@ -1933,7 +1933,9 @@
       var rF = doorHeightRatio(grid, semiF ? 'semi' : 'floor', w, h);
       var rC = doorHeightRatio(grid, semiC ? 'semi' : 'cabin', w, h);
       if (rF === null || rC === null) return prices;
-      var v = parseNum(prices.floorDoor) * rF + parseNum(prices.cabinDoor) * rC;
+      var fp = parseNum(prices.floorDoor), cp = parseNum(prices.cabinDoor);
+      if (!(fp + cp)) return prices; // بدون قیمت درب (ندارد یا پیدا نشد) → همان مبلغ ثابت قبلی، مثل فرمول شیت
+      var v = fp * rF + cp * rC;
       var r = Math.floor(v / 1000000 + 0.5) * 1000000;
       prices.doorHeight = r ? fmtPrice(r) : '0';
       return prices;
