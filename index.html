@@ -1903,6 +1903,42 @@
       if (extra > 0) prices.rail = fmtPrice(base + extra);
       return prices;
     }
+    // === DOOR_HEIGHT_GRID_START ===
+    // «ارتفاع درب» بر اساس جدول «ضرایب ارتفاع درب» (شیت لاکچری 'ملاحظات خرده ریز'!AJ1:AN24؛ همان فرمول فرم محاسبه D34):
+    // درصد هر عرض × ارتفاع نسبت به درب 80×200. اضافه‌قیمت = قیمت درب طبقه × نسبت + قیمت درب کابین × نسبت،
+    // که نسبت = (1+درصد عرض/ارتفاع انتخابی)/(1+درصد همان عرض در ارتفاع 200) − 1. عرض/ارتفاعِ خارج از جدول → همان مبلغ ثابت قبلی.
+    // اگر سرور جدول را در luxury.doorHeightGrid بفرستد همان خوانده می‌شود، وگرنه این نسخهٔ پیش‌فرض (هم‌عدد با شیت).
+    var DOOR_HEIGHT_GRID_DEFAULT = {
+      heights: [200, 210, 220, 230],
+      floor: { 70: [-0.045, -0.035, -0.03, -0.025], 80: [0, 0.015, 0.015, 0.02], 90: [0.085, 0.1, 0.105, 0.11], 100: [0.145, 0.16, 0.165, 0.17], 110: [0.23, 0.25, 0.255, 0.26], 120: [0.31, 0.335, 0.335, 0.34], 130: [0.345, 0.37, 0.375, 0.38] },
+      cabin: { 70: [-0.025, -0.02, -0.02, -0.015], 80: [0, 0.005, 0.01, 0.01], 90: [0.025, 0.035, 0.04, 0.04], 100: [0.06, 0.07, 0.07, 0.075], 110: [0.1, 0.115, 0.115, 0.12], 120: [0.165, 0.175, 0.18, 0.18], 130: [0.21, 0.225, 0.225, 0.23] },
+      semi: { 70: [-0.01, 0, 0, 0.005], 80: [0, 0.01, 0.01, 0.015], 90: [0.045, 0.055, 0.055, 0.06], 100: [0.065, 0.08, 0.08, 0.085], 110: [0.095, 0.11, 0.11, 0.115], 120: [0.145, 0.16, 0.16, 0.165] }
+    };
+    function doorHeightRatio(grid, part, w, h) {
+      var row = grid && grid[part] && grid[part][w];
+      var hs = (grid && grid.heights) || [];
+      var i = hs.indexOf(h), i0 = hs.indexOf(200);
+      if (!row || i < 0 || i0 < 0 || row[i] == null || row[i0] == null) return null;
+      return (1 + Number(row[i])) / (1 + Number(row[i0])) - 1;
+    }
+    function applyDoorHeightGrid(values, prices, lux) {
+      var hTxt = String(values.doorHeight || '').replace(/[\s\u200c]/g, '');
+      if (!hTxt || hTxt === 'ندارد' || hTxt === '200' || hTxt === '200سانتیمتر') return prices;
+      var grid = (lux && lux.doorHeightGrid) || DOOR_HEIGHT_GRID_DEFAULT;
+      var w = parseInt((String(values.doorSize || '').match(/\d+/) || [''])[0], 10);
+      var h = parseInt((String(values.doorHeight || '').match(/\d+/) || [''])[0], 10);
+      var floorType = String(values.floorDoor || '').trim();
+      var semiF = floorType === 'نیمه اتوماتیک' || floorType === 'لولایی';
+      var semiC = String(values.cabinDoor || '').trim() === 'نیمه اتوماتیک';
+      var rF = doorHeightRatio(grid, semiF ? 'semi' : 'floor', w, h);
+      var rC = doorHeightRatio(grid, semiC ? 'semi' : 'cabin', w, h);
+      if (rF === null || rC === null) return prices;
+      var v = parseNum(prices.floorDoor) * rF + parseNum(prices.cabinDoor) * rC;
+      var r = Math.floor(v / 1000000 + 0.5) * 1000000;
+      prices.doorHeight = r ? fmtPrice(r) : '0';
+      return prices;
+    }
+    // === DOOR_HEIGHT_GRID_END ===
     function computeLocalPrices(values) {
       var eng = state.engine;
       var prices = {};
@@ -2037,7 +2073,7 @@
           var amount = specFormPrice(key, values[key], values, lux);
           prices[key] = amount === '' ? '' : (amount ? fmtPrice(amount) : '0');
         });
-        return applyRailBracketOntoRail(values, applyCubePrices(values, prices));
+        return applyDoorHeightGrid(values, applyRailBracketOntoRail(values, applyCubePrices(values, prices)), lux);
       }
       // دادهٔ موتور قیمت قدیمی (بدون specTables): همان محاسبهٔ قبلی
       if (values.doorHeight && values.doorHeight !== 'ندارد' && values.doorHeight !== '200') {
@@ -2087,7 +2123,7 @@
       prices = applyCubePrices(values, prices);
       // براکت و لقمه و پیچ و مهره: ۷٪ روی پایهٔ محلی ریل، بعد از مکعب تا عدد مکعب این درصد را پاک یا دوباره حساب نکند
       applyRailBracketOntoRail(values, prices);
-      return prices;
+      return applyDoorHeightGrid(values, prices, lux);
     }
     // سود لگاریتمی (همان autoProfitPercent_ سرور): درصد خالی = K × بها^(P−1) × ۱۰۰ با بها به میلیون تومان
     function autoProfitPct(sum) {
