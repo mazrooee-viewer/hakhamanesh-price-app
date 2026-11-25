@@ -1586,6 +1586,28 @@
       var own = (eng.doors || []).some(function (d) { return eq(d.floorType, brand); });
       return own ? brand : floor;
     }
+    // درب لولایی در «درب و کابین» بازشوی «لولایی» و عرض بدون «دولته» دارد (۶۰/۷۰/۸۰/۹۰)؛ فرم «تلسکوپی» و «80 دولته» می‌فرستد.
+    // پس برای لولایی بازشو نادیده گرفته و فقط عدد عرض مقایسه می‌شود (همان قاعدهٔ getOptionsList_Fast در Auto pdf.js).
+    function doorWidthNum(s) {
+      return (String(s || '').match(/\d+/) || [''])[0];
+    }
+    function doorRowMatches(d, values, rowType) {
+      if (!eq(d.floorType, rowType)) return false;
+      if (eq(rowType, 'لولایی')) return doorWidthNum(d.size) !== '' && doorWidthNum(d.size) === doorWidthNum(values.doorSize);
+      return eq(d.open, values.floorDoorOpen) && eq(d.size, values.doorSize);
+    }
+    // درب کابینِ درب طبقهٔ لولایی «نیمه اتوماتیک» است: همان قاعدهٔ _Calc (نوع «نیمه اتوماتیک»، بازشوی درب کابین، سایز «عرض دولته»، ستون E).
+    function hingedCabinDoorRow(values, eng) {
+      var open = String(values.cabinDoorOpen || '').trim();
+      if (!open || open === 'لولایی') open = 'تلسکوپی';
+      var size = doorWidthNum(values.doorSize) + ' دولته';
+      var row = null;
+      (eng.doors || []).some(function (d) {
+        if (eq(d.floorType, 'نیمه اتوماتیک') && eq(d.open, open) && eq(d.size, size)) { row = d; return true; }
+        return false;
+      });
+      return row;
+    }
     // === DOOR_BRAND_ROWS_END ===
     function panelSheetModel(model) {
       var m = String(model || '').trim();
@@ -1920,7 +1942,7 @@
       var door = null;
       var doorRowType = doorRowTypeFor(values, eng);
       (eng.doors || []).some(function (d) {
-        if (eq(d.floorType, doorRowType) && eq(d.open, values.floorDoorOpen) && eq(d.size, values.doorSize)) {
+        if (doorRowMatches(d, values, doorRowType)) {
           door = d;
           return true;
         }
@@ -1933,8 +1955,9 @@
         if (!eq(values.floorDoor, 'ندارد')) markFresh_('floorDoor', door.floorKey);
         if (values.cabinDoor === 'ندارد') prices.cabinDoor = '';
         else {
-          prices.cabinDoor = fmtPrice(roundToman(door.cabinPrice * doorMul));
-          markFresh_('cabinDoor', door.cabinKey);
+          var cabinRow = eq(doorRowType, 'لولایی') ? hingedCabinDoorRow(values, eng) : door;
+          prices.cabinDoor = fmtPrice(roundToman((cabinRow ? cabinRow.cabinPrice : 0) * doorMul));
+          if (cabinRow) markFresh_('cabinDoor', cabinRow.cabinKey);
         }
       }
 
