@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261126200000">
+  <meta name="x-build" content="20261126201039">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest","getUsdRates"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","saveWageTable","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest","getUsdRates"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261126200000" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261126201039" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -700,6 +700,16 @@
     .pt-bar { position: sticky; bottom: 0; z-index: 4; display: flex; gap: 8px; padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(to top, var(--bg) 75%, rgba(226,232,240,0)); }
     .pt-bar .btn { flex: 1; font-size: 14px; padding: 12px 8px; }
     .pt-more { width: 100%; margin: 4px 0 10px; }
+    /* افزایش درصدی زیر هر جدول (1405/09/06) */
+    .pt-pct { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #f8fafc; border-top: 1px solid var(--line); flex-wrap: wrap; }
+    .pt-pct label { flex: 1; min-width: 140px; font-size: 12px; font-weight: 800; color: var(--navy); }
+    .pt-pct label small { display: block; font-weight: 600; color: var(--muted); font-size: 11px; }
+    .pt-pct-box { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; background: #fff; overflow: hidden; }
+    .pt-pct-box input { width: 64px; border: 0; padding: 8px 6px; font-family: inherit; font-size: 14px; font-weight: 800; text-align: center; direction: ltr; color: var(--navy); background: transparent; }
+    .pt-pct-box span { padding: 0 8px 0 4px; font-weight: 800; color: var(--muted); }
+    .pt-pct button { font-family: inherit; font-size: 12.5px; font-weight: 800; border: 0; border-radius: 10px; padding: 9px 14px; background: var(--navy); color: #fff; cursor: pointer; }
+    .pt-bhead small { font-size: 11px; font-weight: 700; color: var(--muted); margin-inline-start: 6px; }
+    .pt-row.ro input { background: #eef2f7; color: var(--muted); }
   </style>
 </head>
 <body>
@@ -2953,6 +2963,7 @@
     var PT_LS_KEY = 'plPriceTables:v1';
     var PT_PAGE = 60;
     var PT_MAX_PRICE = 100000000000; // ۱۰۰ میلیارد تومان؛ بالاتر از آن یعنی رقم‌ها دوبار تایپ شده‌اند
+    var PT_SAVE_CHUNK = 300; // همان سقف PT_MAX_ROWS_PER_SAVE_ سرور
     var ptState = { data: null, cat: '', q: '', open: {}, edits: {}, errs: {}, warns: {}, saving: false, loading: false, shown: {} };
     function ptLsRead() { try { var t = localStorage.getItem(PT_LS_KEY); return t ? JSON.parse(t) : null; } catch (e) { return null; } }
     function ptLsWrite(d) { try { localStorage.setItem(PT_LS_KEY, JSON.stringify(d)); } catch (e) {} }
@@ -3021,7 +3032,7 @@
     }
     function ptMatch(r, brand, q) {
       if (!q) return true;
-      return ptNorm(brand + ' ' + r.l + ' ' + r.k).indexOf(q) >= 0;
+      return ptNorm(brand + ' ' + r.l + ' ' + r.k + ' ' + (r.n || '')).indexOf(q) >= 0;
     }
     // هر بخش برچسب جدا ایزوله می‌شود تا «6 نفر» و «1 m/s» در متن راست‌به‌چپ جابه‌جا نشوند
     function ptLabelHtml(l) {
@@ -3032,12 +3043,12 @@
       var ed = ptState.edits[id];
       var val = ed != null ? ed : formatShortPathPrice(r.p);
       var err = ptState.errs[id], warn = ptState.warns[id];
-      return '<div class="pt-row' + (ed != null ? ' dirty' : '') + (err ? ' err' : '') + '" data-pt-id="' + escapeHtml(id) + '">' +
+      return '<div class="pt-row' + (ed != null ? ' dirty' : '') + (err ? ' err' : '') + (r.f ? ' ro' : '') + '" data-pt-id="' + escapeHtml(id) + '">' +
         // کلید کنترلی بالا (خواناتر برای مدیر؛ 1405/09/02) و شرح مدل زیر آن
-        '<div><div class="pt-name pt-key">' + escapeHtml(r.k) + '</div>' +
-        '<div class="pt-sub">' + (r.l ? '<span class="pt-model">' + ptLabelHtml(r.l) + '</span>' : '') + puAge(r.d) + (r.s ? '<span class="pt-tag">مسیر کوتاه</span>' : '') +
+        '<div>' + (r.n ? '<div class="pt-name" dir="rtl">' + escapeHtml(r.n) + '</div>' : '<div class="pt-name pt-key">' + escapeHtml(r.k) + '</div>') +
+        '<div class="pt-sub">' + (r.l ? '<span class="pt-model">' + ptLabelHtml(r.l) + '</span>' : '') + (r.w ? '' : puAge(r.d)) + (r.s ? '<span class="pt-tag">مسیر کوتاه</span>' : '') + (r.f ? '<span class="pt-tag">فرمول شیت</span>' : '') +
         (ptCanDelete() ? '<button class="pt-del" type="button" data-pt-del="' + escapeHtml(id) + '" title="ردیف کالای منسوخ از تب مبدأ حذف شود">حذف ردیف</button>' : '') + '</div></div>' +
-        '<input type="text" inputmode="numeric" data-pt-in="' + escapeHtml(id) + '" value="' + escapeHtml(val) + '" placeholder="بدون قیمت" aria-label="قیمت ' + escapeHtml(r.l || r.k) + '">' +
+        '<input type="text" inputmode="numeric" data-pt-in="' + escapeHtml(id) + '" value="' + escapeHtml(val) + '" placeholder="بدون قیمت"' + (r.f ? ' readonly title="این خانه در شیت فرمول است"' : '') + ' aria-label="قیمت ' + escapeHtml(r.l || r.k) + '">' +
         (err ? '<div class="pt-err">' + escapeHtml(err) + '</div>' : '') + (warn ? '<div class="pt-warn">' + escapeHtml(warn) + '</div>' : '') +
         '</div>';
     }
@@ -3047,7 +3058,45 @@
       var lim = q ? rows.length : (ptState.shown[key] || PT_PAGE);
       var html = rows.slice(0, lim).map(ptRowHtml).join('');
       if (rows.length > lim) html += '<button class="btn btn-ghost pt-more" type="button" data-pt-more="' + escapeHtml(key) + '">نمایش ' + puFa(Math.min(PT_PAGE, rows.length - lim)) + ' ردیف دیگر (' + puFa(rows.length - lim) + ' مانده)</button>';
-      return html;
+      return '<div class="pt-rows">' + html + '</div>' + ptPctBarHtml(key, q ? rows.length : 0);
+    }
+    // ===== افزایش درصدی همهٔ قیمت‌های یک جدول (درخواست مدیر 1405/09/06) =====
+    // قیمت‌های جدول (یا فقط ردیف‌های جستجو) به‌صورت «تغییر ذخیره‌نشده» زرد می‌شوند؛ با «ذخیره» ثبت می‌شوند. گرد به هزار تومان.
+    function ptPctBarHtml(key, filtered) {
+      return '<div class="pt-pct"><label>افزایش قیمت‌های این جدول' +
+        '<small>' + (filtered ? 'فقط ' + puFa(filtered) + ' ردیف جستجو' : 'همهٔ ردیف‌های قیمت‌دار') + ' · برای کاهش عدد منفی بزنید</small></label>' +
+        '<div class="pt-pct-box"><input type="text" inputmode="decimal" data-pt-pct-in="' + escapeHtml(key) + '" placeholder="۰" aria-label="درصد افزایش"><span>٪</span></div>' +
+        '<button type="button" data-pt-pct="' + escapeHtml(key) + '">اعمال</button></div>';
+    }
+    function ptPctParse(v) {
+      var s = ptNorm(v).replace(/[٫,،]/g, '.').replace(/[٪%\s]/g, '').replace(/^−/, '-');
+      return /^[-+]?\d+(\.\d+)?$/.test(s) ? Number(s) : NaN;
+    }
+    function ptPctRound(n) { return n >= 100000 ? Math.round(n / 1000) * 1000 : Math.round(n); }
+    function ptApplyPct(key) {
+      var inp = document.querySelector('[data-pt-pct-in="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]');
+      var pct = ptPctParse(inp ? inp.value : '');
+      if (!isFinite(pct) || pct === 0) { toast('درصد را وارد کنید (مثلاً ۱۰)', true); if (inp) inp.focus(); return; }
+      if (pct <= -90 || pct > 300) { toast('درصد باید بین −۹۰ و ۳۰۰ باشد', true); return; }
+      var cut = key.indexOf('|');
+      var t = ptCatTable(key.slice(0, cut)), brand = key.slice(cut + 1);
+      var b = t && t.brands.filter(function (x) { return x.brand === brand; })[0];
+      if (!b) return;
+      var q = ptNorm(ptState.q), n = 0;
+      b.rows.forEach(function (r) {
+        if (r.f || !ptMatch(r, b.brand, q)) return;
+        var id = ptId(r);
+        var cur = ptState.edits[id] != null ? puParse(ptState.edits[id]) : Number(r.p);
+        if (!isFinite(cur) || cur <= 0) return;
+        var next = ptPctRound(cur * (1 + pct / 100));
+        if (!(next > 0)) return;
+        if (next === Number(r.p)) delete ptState.edits[id]; else ptState.edits[id] = formatShortPathPrice(next);
+        delete ptState.errs[id];
+        n++;
+      });
+      ptState.open[key] = true;
+      ptRender();
+      toast(n ? puFa(n) + ' قیمت ' + puFa(Math.abs(pct)) + '٪ ' + (pct > 0 ? 'افزایش' : 'کاهش') + ' یافت؛ برای ثبت «ذخیره» را بزنید' : 'ردیف قیمت‌داری در این جدول نیست', !n);
     }
     function ptRender() {
       ptRenderTabs();
@@ -3065,13 +3114,15 @@
         var open = q ? true : !!ptState.open[key];
         var dirty = b.rows.filter(function (r) { return ptState.edits[ptId(r)] != null; }).length;
         return '<section class="pt-brand' + (open ? ' open' : '') + '">' +
-          '<button class="pt-bhead" type="button" data-pt-brand="' + escapeHtml(key) + '" aria-expanded="' + open + '"><b>' + escapeHtml(b.brand) + '</b>' +
+          '<button class="pt-bhead" type="button" data-pt-brand="' + escapeHtml(key) + '" aria-expanded="' + open + '"><b>' + (t.group === 'type' ? '<small>نوع آسانسور</small> ' : '') + '<bdi>' + escapeHtml(b.brand) + '</bdi></b>' +
           '<span>' + (dirty ? '<span class="pt-dot" style="background:var(--gold);color:#111;border-radius:999px;padding:0 6px">' + puFa(dirty) + ' تغییر</span>' : '') + puFa(n) + ' ردیف <span class="pt-chev">▾</span></span></button>' +
-          (open ? '<div class="pt-rows">' + ptBrandBody(b, q) + '</div>' : '') + '</section>';
+          (open ? ptBrandBody(b, q) : '') + '</section>';
       }).join('');
       body.innerHTML = html || '<div class="empty">ردیفی با این جستجو پیدا نشد</div>';
-      info.textContent = 'جدول ' + t.cat + ' · ' + puFa(t.brands.length) + ' برند · ' + puFa(shown) + ' ردیف' + (q ? ' (جستجو)' : '') +
-        ' · قیمت تومان؛ ذخیره به شیت مبدأ، All، مسیر کوتاه و تاریخچه می‌رود و تاریخ امروز می‌گیرد.';
+      // جداکنندهٔ «،» (نقطهٔ میانی کنار رقم فارسی شبیه صفر خوانده می‌شود: «۱ ·» ≈ «۱۰»)
+      info.textContent = 'جدول ' + t.cat + '، ' + puFa(t.brands.length) + (t.group === 'type' ? ' نوع آسانسور' : ' برند') + '، ' + puFa(shown) + ' ردیف' + (q ? ' (جستجو)' : '') +
+        (t.wage ? '؛ مبلغ هر توقف به تومان (اپ: حداقل ۴ توقف)؛ ذخیره مستقیم در تب «خرده ریز و دستمزد».'
+          : '؛ قیمت تومان؛ ذخیره به شیت مبدأ، All، مسیر کوتاه و تاریخچه می‌رود و تاریخ امروز می‌گیرد.');
       ptSyncBar();
     }
     function ptSyncBar() {
@@ -3141,6 +3192,8 @@
     document.addEventListener('click', function (e) {
       var del = e.target.closest && e.target.closest('[data-pt-del]');
       if (del && document.getElementById('screen-tables').contains(del)) { ptDeleteRow(del.getAttribute('data-pt-del'), del); return; }
+      var pb = e.target.closest && e.target.closest('[data-pt-pct]');
+      if (pb && document.getElementById('screen-tables').contains(pb)) { ptApplyPct(pb.getAttribute('data-pt-pct')); return; }
       var el = e.target.closest && e.target.closest('[data-pt-cat],[data-pt-brand],[data-pt-more]');
       if (!el || !document.getElementById('screen-tables').contains(el)) return;
       if (el.hasAttribute('data-pt-cat')) { ptState.cat = el.getAttribute('data-pt-cat'); ptRender(); window.scrollTo(0, 0); }
@@ -3168,6 +3221,10 @@
       ptRenderTabs();
       ptSyncBar();
     });
+    document.addEventListener('keydown', function (e) {
+      var t = e.target;
+      if (e.key === 'Enter' && t && t.getAttribute && t.getAttribute('data-pt-pct-in')) { e.preventDefault(); ptApplyPct(t.getAttribute('data-pt-pct-in')); }
+    });
     document.addEventListener('focusin', function (e) {
       var t = e.target;
       if (!(t && t.getAttribute && t.getAttribute('data-pt-in'))) return;
@@ -3186,51 +3243,73 @@
       if (ptState.saving) return;
       var ids = Object.keys(ptState.edits);
       if (!ids.length) return;
-      var rows = [], bad = 0, sent = {};
+      var rows = [], wage = [], bad = 0, sent = {};
       ids.forEach(function (id) {
         var r = ptFindRow(id);
         if (!r) return;
         var n = puParse(ptState.edits[id]);
         if (!isFinite(n) || n <= 0) { ptState.errs[id] = 'عدد قیمت را به تومان (بزرگ‌تر از صفر) وارد کنید'; bad++; return; }
         if (n > PT_MAX_PRICE) { ptState.errs[id] = 'عدد بیش از حد بزرگ است؛ دوباره وارد کنید'; bad++; return; }
-        rows.push({ row: r.r, key: r.k, price: n });
+        // دستمزد نصب: خانهٔ مستقیم تب «خرده ریز و دستمزد» (سرور: saveWageTable)
+        if (r.w) wage.push({ cell: r.r, key: r.k, price: n });
+        else rows.push({ row: r.r, key: r.k, price: n });
         sent[id] = ptState.edits[id];
       });
       if (bad) { ptRender(); toast(puFa(bad) + ' قیمت نامعتبر است', true); return; }
-      if (!rows.length) return;
+      if (!rows.length && !wage.length) return;
       // آینه روی شیت زنده ≈ ۲۰ تا ۳۰ ثانیه طول می‌کشد؛ صفحه قفل نمی‌شود و می‌توان ردیف‌های دیگر را ویرایش کرد.
+      // سرور در هر ذخیره حداکثر ۳۰۰ ردیف می‌پذیرد؛ افزایش درصدی چند جدول تکه‌تکه و پشت سر هم فرستاده می‌شود.
       ptState.saving = true;
       ptSyncBar();
       toast('ذخیره در پس‌زمینه… (حدود ۳۰ ثانیه؛ می‌توانید ادامه دهید)');
-      runGas('savePriceTables', { rows: rows }).then(function (res) {
-        ptState.saving = false;
+      var jobs = [];
+      for (var i = 0; i < rows.length; i += PT_SAVE_CHUNK) jobs.push({ rows: rows.slice(i, i + PT_SAVE_CHUNK) });
+      for (var j = 0; j < wage.length; j += PT_SAVE_CHUNK) jobs.push({ rows: wage.slice(j, j + PT_SAVE_CHUNK), wage: true });
+      var tot = { changed: 0, equal: 0, failed: 0, histErr: '', today: '', errMsg: '', mirror: false };
+      var handle = function (job, res) {
         var today = (res && res.today) || '';
-        var failed = 0;
+        if (today) tot.today = today;
+        tot.changed += (res && res.changed) || 0;
+        tot.equal += (res && res.equal) || 0;
+        if (res && res.historyError) tot.histErr = res.historyError;
         ((res && res.results) || []).forEach(function (x) {
-          var id = x.row + '|' + x.key;
+          var id = (job.wage ? x.cell : x.row) + '|' + x.key;
           var r = ptFindRow(id);
           if (x.status === 'changed' || x.status === 'equal') {
-            if (r) { if (x.status === 'changed') r.p = x.price; r.d = x.date || today || r.d; }
+            if (r) { if (x.status === 'changed') r.p = x.price; if (!r.w) r.d = x.date || today || r.d; }
             // اگر حین ذخیره دوباره ویرایش شده، ویرایش تازه می‌ماند
             if (ptState.edits[id] === sent[id]) delete ptState.edits[id];
             delete ptState.errs[id];
             if (x.warn) ptState.warns[id] = x.warn; else delete ptState.warns[id];
           } else {
-            failed++;
+            tot.failed++;
             ptState.errs[id] = x.error || 'ذخیره نشد';
           }
         });
+      };
+      var chain = Promise.resolve();
+      jobs.forEach(function (job) {
+        chain = chain.then(function () {
+          var req = job.wage ? runGas('saveWageTable', { rows: job.rows }) : runGas('savePriceTables', { rows: job.rows });
+          return req.then(function (res) {
+            handle(job, res);
+            if (!job.wage) tot.mirror = true;
+          }, function (err) {
+            tot.errMsg = (err && err.message) || 'ذخیره انجام نشد';
+            job.rows.forEach(function (x) { var id = (job.wage ? x.cell : x.row) + '|' + x.key; ptState.errs[id] = tot.errMsg; tot.failed++; });
+          });
+        });
+      });
+      chain.then(function () {
+        ptState.saving = false;
         if (ptState.data) ptLsWrite(ptState.data);
         ptRender();
-        var msg = puFa((res && res.changed) || 0) + ' قیمت ذخیره شد' + ((res && res.equal) ? ' · ' + puFa(res.equal) + ' بدون تغییر (فقط تاریخ)' : '');
-        if (failed) toast(msg + ' · ' + puFa(failed) + ' ردیف ذخیره نشد', true); else toast(msg);
-        if (res && res.historyError) toast('قیمت‌ها ذخیره شد ولی تاریخچه ثبت نشد: ' + res.historyError, true);
+        var msg = puFa(tot.changed) + ' قیمت ذخیره شد' + (tot.equal ? ' · ' + puFa(tot.equal) + ' بدون تغییر' + (tot.mirror ? ' (فقط تاریخ)' : '') : '');
+        if (tot.errMsg && !tot.changed && !tot.equal) toast(tot.errMsg, true);
+        else if (tot.failed) toast(msg + ' · ' + puFa(tot.failed) + ' ردیف ذخیره نشد', true); else toast(msg);
+        if (tot.histErr) toast('قیمت‌ها ذخیره شد ولی تاریخچه ثبت نشد: ' + tot.histErr, true);
         // صفحهٔ «به روز رسانی قیمت ها» هم تیک تاریخ امروز را ببیند (کش سرور آن در ذخیره باطل شده است)
-        if (puState.board) loadPriceUpdate(true);
-      }).catch(function (err) {
-        ptState.saving = false;
-        ptSyncBar();
-        toast((err && err.message) || 'ذخیره انجام نشد', true);
+        if (tot.mirror && puState.board) loadPriceUpdate(true);
       });
     }
 
