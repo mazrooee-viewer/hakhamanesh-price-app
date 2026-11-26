@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261126201039">
+  <meta name="x-build" content="20261126202955">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","saveWageTable","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest","getUsdRates"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getBasePriceHistory","startBasePriceHistoryArchive","getBasePriceHistoryStatus","saveWageTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest","getUsdRates"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261126201039" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261126202955" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -266,6 +266,30 @@
     }
     .price-rule-q { color: var(--navy); font-weight: 800; margin-top: 6px; }
     .price-rule-card .actions { justify-content: center; }
+    /* جدول تفاوت قیمت قبل از صدور پکیج پایه */
+    .pdiff-modal { display: none; position: fixed; inset: 0; z-index: 410; background: rgba(15, 23, 42, .55); align-items: flex-start; justify-content: center; padding: 12px; overflow-y: auto; }
+    .pdiff-card { width: 100%; max-width: 760px; background: #fff; border-radius: 16px; padding: 14px 10px; font-family: Vazirmatn, Tahoma, sans-serif; box-shadow: 0 20px 40px rgba(15, 23, 42, .25); }
+    .pdiff-card h3 { margin: 0 0 4px; font-size: 17px; color: var(--navy); }
+    .pdiff-sub { margin: 0 0 12px; font-size: 13px; color: var(--muted); line-height: 1.7; }
+    .pdiff-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; font-size: 13px; }
+    .pdiff-bar select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+    .pdiff-cap { margin: 14px 0 6px; font-weight: 800; color: var(--navy); font-size: 14px; }
+    .pdiff-wrap { overflow-x: auto; }
+    .pdiff-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .pdiff-table th { background: #1f3a5f; color: #fff; padding: 6px 4px; font-weight: 700; line-height: 1.5; }
+    .pdiff-table td { border-bottom: 1px solid var(--line); padding: 7px 4px; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .pdiff-unit { font-size: 11px; color: var(--muted); font-weight: 400; }
+    .pdiff-table tr.pdiff-row { cursor: pointer; }
+    .pdiff-table tr.pdiff-row:hover td { background: #f1f5f9; }
+    .pdiff-up { color: #b91c1c; font-weight: 700; }
+    .pdiff-down { color: #15803d; font-weight: 700; }
+    .pdiff-items td { background: #f8fafc; text-align: right; padding: 6px 10px; white-space: normal; }
+    .pdiff-items table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .pdiff-items th { background: #e2e8f0; color: var(--navy); }
+    .pdiff-items td { border-bottom: 1px solid #e2e8f0; text-align: center; background: #fff; }
+    .pdiff-opt { font-size: 11px; color: var(--muted); white-space: normal; margin-top: 2px; }
+    .pdiff-note { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.7; }
+    .pdiff-card .actions { justify-content: center; margin-top: 14px; }
     .form-dock { display: none; }
     #screen-form.active .form-dock {
       display: flex;
@@ -971,6 +995,24 @@
       <div id="pdfs" class="pdfs"></div>
     </div>
   </section>
+
+  <div id="pdiff-modal" class="pdiff-modal">
+    <div class="pdiff-card" role="dialog" aria-modal="true">
+      <h3 id="pdiff-title">جدول تفاوت قیمت</h3>
+      <p class="pdiff-sub" id="pdiff-sub"></p>
+      <div class="pdiff-bar">
+        <label for="pdiff-base">مقایسه با:</label>
+        <select id="pdiff-base" onchange="renderPriceDiffTable()"></select>
+        <button class="btn btn-ghost" id="pdiff-archive" type="button" onclick="startPriceHistoryArchive()" style="padding:6px 10px;">ساخت تاریخچه از آرشیو PDF</button>
+      </div>
+      <div id="pdiff-body"><div class="empty">در حال بارگذاری...</div></div>
+      <div class="pdiff-note">قیمت ورژن جدید با موتور قیمت اپ و سود جدول سود همین پکیج حساب شده است. برای دیدن ریز اقلام روی ردیف هر توقف بزنید. ورژن‌های آرشیو PDF فقط قیمت نهایی دارند.</div>
+      <div class="actions">
+        <button class="btn btn-bad" id="pdiff-no" type="button">انصراف</button>
+        <button class="btn btn-main" id="pdiff-yes" type="button">تأیید و صدور</button>
+      </div>
+    </div>
+  </div>
 
   <div id="price-rule-modal" class="price-rule-modal">
     <div class="price-rule-card" role="dialog" aria-modal="true">
@@ -4040,8 +4082,209 @@
       btn.textContent = busy ? 'در حال صدور...' : 'صدور لیست قیمت های پایه';
     }
 
+    // صدور پکیج پایه فقط بعد از دیدن و تأیید جدول تفاوت قیمت (درخواست مدیر ۱۴۰۵/۰۹/۰۵)
     function issueBasePricesFromPreview() {
-      issuePackageFromApp(state.previewPackageName);
+      var name = state.previewPackageName;
+      if (!name) return toast('پکیج انتخاب نشده', true);
+      if (state.packageIssuing) return toast('صبر کنید تا صدور پکیج جاری تمام شود', true);
+      openPriceDiff(name).then(function (ok) {
+        if (ok) issuePackageFromApp(name);
+        else toast('صدور انجام نشد');
+      });
+    }
+
+    // قیمت نهایی هر ظرفیت × توقف پکیج با موتور قیمت اپ؛ سود = جدول سود همین پکیج (میلیون تومان)، مثل runSpecialPackage.
+    function packageProfitToman(packageName, stop) {
+      var t = (state.profitTables || {})[packageName];
+      var rows = (state.formMode === 'package' && state.previewPackageName === packageName && (state.profitTableRows || []).length)
+        ? collectProfitTableRows() : ((t && t.rows) || []);
+      for (var i = 0; i < rows.length; i++) {
+        if (String(rows[i].stop).trim() === String(stop).trim()) return (Number(rows[i].value) || 0) * 1000000;
+      }
+      return 0;
+    }
+
+    function computePackageNewPrices(packageName) {
+      var pkg = findPackageStruct(packageName);
+      if (!pkg) return null;
+      var caps = (pkg.caps || []).map(String).filter(String);
+      if (!caps.length && pkg.values && pkg.values.caps) caps = [String(pkg.values.caps)];
+      var stops = (pkg.stops || []).map(String).filter(String);
+      if (!stops.length && pkg.values && pkg.values.stop) stops = [String(pkg.values.stop)];
+      var labels = {};
+      ((state.bootstrap && state.bootstrap.fields) || []).forEach(function (f) { labels[f.key] = f.header || f.key; });
+      var out = {};
+      caps.forEach(function (cap) {
+        stops.forEach(function (stop) {
+          var values = JSON.parse(JSON.stringify(pkg.values || {}));
+          values.caps = cap;
+          values.stop = stop;
+          var prices = dropNeverPriced(computeLocalPrices(values));
+          var sum = 0;
+          var items = {};
+          Object.keys(prices).forEach(function (k) {
+            var v = parseNum(prices[k]);
+            sum += v;
+            items[k] = { label: labels[k] || k, option: values[k] || '', toman: v };
+          });
+          var profit = packageProfitToman(pkg.packageName || packageName, stop);
+          var costToman = Math.round((sum + profit) / 10000) * 10000;
+          items.profit = { label: 'سود', option: '', toman: profit };
+          out[cap + '|' + stop] = { cap: cap, stop: stop, finalRial: mround(costToman, 5000000) * 10, items: items };
+        });
+      });
+      return { caps: caps, stops: stops, rows: out };
+    }
+
+    function openPriceDiff(packageName) {
+      return new Promise(function (resolve) {
+        var modal = document.getElementById('pdiff-modal');
+        var fresh = computePackageNewPrices(packageName);
+        state.priceDiff = { packageName: packageName, fresh: fresh, versions: [], nextVersion: '' };
+        document.getElementById('pdiff-title').textContent = 'جدول تفاوت قیمت — ' + packageDisplayName(packageName);
+        document.getElementById('pdiff-sub').textContent = 'قبل از صدور، قیمت هر توقف ورژن جدید را با ورژن قبلی مقایسه کنید.';
+        document.getElementById('pdiff-base').innerHTML = '';
+        document.getElementById('pdiff-body').innerHTML = '<div class="empty">در حال خواندن تاریخچه...</div>';
+        modal.style.display = 'flex';
+        var noBtn = document.getElementById('pdiff-no');
+        var yesBtn = document.getElementById('pdiff-yes');
+        function close(ok) {
+          modal.style.display = 'none';
+          noBtn.onclick = null;
+          yesBtn.onclick = null;
+          resolve(!!ok);
+        }
+        noBtn.onclick = function () { close(false); };
+        yesBtn.onclick = function () { close(true); };
+        if (!fresh) {
+          document.getElementById('pdiff-body').innerHTML = '<div class="empty">ساختار این پکیج در اپ نیست</div>';
+          return;
+        }
+        loadPriceDiffHistory(packageName);
+      });
+    }
+
+    function loadPriceDiffHistory(packageName) {
+      runGas('getBasePriceHistory', packageName).then(function (data) {
+        if (!state.priceDiff || state.priceDiff.packageName !== packageName) return;
+        state.priceDiff.versions = (data && data.versions) || [];
+        state.priceDiff.nextVersion = (data && data.nextVersion) || '';
+        var sel = document.getElementById('pdiff-base');
+        sel.innerHTML = state.priceDiff.versions.length
+          ? state.priceDiff.versions.map(function (v, i) {
+            return '<option value="' + i + '">ورژن ' + escapeHtml(v.version) + ' — ' + escapeHtml(v.issueDate) + (i === 0 ? ' (آخرین)' : '') + '</option>';
+          }).join('')
+          : '<option value="-1">ورژن قبلی ثبت نشده</option>';
+        renderPriceDiffTable();
+      }).catch(function (err) {
+        document.getElementById('pdiff-body').innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'خواندن تاریخچه انجام نشد') + '</div>';
+        state.priceDiff.versions = [];
+        renderPriceDiffTable();
+      });
+    }
+
+    function pdiffFmt(n) { return n ? fmtPrice(n) : '—'; }
+
+    function pdiffChangeCells(oldVal, newVal) {
+      if (!oldVal || !newVal) return { pct: '<td>—</td>', diff: '<td>—</td>' };
+      var d = newVal - oldVal;
+      var pct = Math.round(d / oldVal * 1000) / 10;
+      var cls = d > 0 ? 'pdiff-up' : (d < 0 ? 'pdiff-down' : '');
+      var sign = d > 0 ? '+' : (d < 0 ? '−' : '');
+      return {
+        pct: '<td class="' + cls + '" dir="ltr">' + sign + Math.abs(pct) + '٪</td>',
+        diff: '<td class="' + cls + '" dir="ltr">' + (d ? sign + fmtPrice(Math.abs(d)) : '0') + '</td>'
+      };
+    }
+
+    function renderPriceDiffTable() {
+      var pd = state.priceDiff;
+      if (!pd || !pd.fresh) return;
+      var idx = Number(document.getElementById('pdiff-base').value);
+      var base = (pd.versions || [])[idx] || null;
+      var baseRows = {};
+      if (base) base.rows.forEach(function (r) { baseRows[r.cap + '|' + r.stop] = r; });
+      var newLabel = 'ورژن جدید' + (pd.nextVersion ? ' (' + escapeHtml(pd.nextVersion) + ')' : '');
+      var baseLabel = base ? ('ورژن ' + escapeHtml(base.version)) : 'ورژن قبلی';
+      var html = '';
+      pd.fresh.caps.forEach(function (cap) {
+        html += '<div class="pdiff-cap">ظرفیت ' + escapeHtml(cap) + ' نفر <span class="pdiff-unit">(مبالغ به ریال)</span></div><div class="pdiff-wrap"><table class="pdiff-table"><thead><tr>' +
+          '<th>توقف</th><th>درصد افزایش</th><th>' + baseLabel + '</th><th>' + newLabel + '</th><th>تفاوت</th></tr></thead><tbody>';
+        pd.fresh.stops.forEach(function (stop) {
+          var key = cap + '|' + stop;
+          var nw = pd.fresh.rows[key];
+          var old = baseRows[key];
+          var oldVal = old ? old.finalRial : 0;
+          var ch = pdiffChangeCells(oldVal, nw.finalRial);
+          html += '<tr class="pdiff-row" onclick="togglePriceDiffItems(this)" data-key="' + escapeHtml(key) + '">' +
+            '<td><b>' + escapeHtml(stop) + '</b></td>' + ch.pct + '<td dir="ltr">' + pdiffFmt(oldVal) + '</td><td dir="ltr">' + pdiffFmt(nw.finalRial) + '</td>' +
+            ch.diff + '</tr>';
+        });
+        html += '</tbody></table></div>';
+      });
+      if (!base) html = '<div class="pdiff-note">برای این پکیج هنوز ورژن قبلی در شیت Base Price History نیست؛ با دکمهٔ «ساخت تاریخچه از آرشیو PDF» ساخته می‌شود.</div>' + html;
+      document.getElementById('pdiff-body').innerHTML = html;
+    }
+
+    function togglePriceDiffItems(tr) {
+      var next = tr.nextElementSibling;
+      if (next && next.classList.contains('pdiff-items')) { next.remove(); return; }
+      var pd = state.priceDiff;
+      var key = tr.getAttribute('data-key');
+      var idx = Number(document.getElementById('pdiff-base').value);
+      var base = (pd.versions || [])[idx] || null;
+      var old = null;
+      if (base) base.rows.forEach(function (r) { if (r.cap + '|' + r.stop === key) old = r; });
+      var nw = pd.fresh.rows[key];
+      var oldItems = (old && old.items) || null;
+      var keys = Object.keys(nw.items);
+      if (oldItems) Object.keys(oldItems).forEach(function (k) { if (keys.indexOf(k) < 0) keys.push(k); });
+      var rows = keys.map(function (k) {
+        var n = nw.items[k] || {};
+        var o = oldItems ? (oldItems[k] || null) : null;
+        var nv = Number(n.toman) || 0, ov = o ? (Number(o.toman) || 0) : 0;
+        if (!nv && !ov) return '';
+        var d = o ? nv - ov : 0;
+        var cls = d > 0 ? 'pdiff-up' : (d < 0 ? 'pdiff-down' : '');
+        var sign = d > 0 ? '+' : (d < 0 ? '−' : '');
+        var optOld = o && o.option ? '<div class="pdiff-opt">' + escapeHtml(o.option) + '</div>' : '';
+        var optNew = n.option ? '<div class="pdiff-opt">' + escapeHtml(n.option) + '</div>' : '';
+        return '<tr><td>' + escapeHtml(n.label || (o && o.label) || k) + '</td>' +
+          '<td><span dir="ltr">' + (o ? pdiffFmt(ov) : '—') + '</span>' + optOld + '</td>' +
+          '<td><span dir="ltr">' + pdiffFmt(nv) + '</span>' + optNew + '</td>' +
+          '<td class="' + cls + '" dir="ltr">' + (o ? (d ? sign + fmtPrice(Math.abs(d)) : '0') : '—') + '</td></tr>';
+      }).join('');
+      var extra = '';
+      if (old && (old.coverRial || old.upsRial)) {
+        extra = '<div class="pdiff-note">پیشنهادات ورژن ' + escapeHtml(base.version) + ': ' +
+          (old.coverRial ? 'روکش استیل هر درب ' + fmtPrice(old.coverRial) + ' ریال' : '') +
+          (old.coverRial && old.upsRial ? ' — ' : '') +
+          (old.upsRial ? 'UPS ' + fmtPrice(old.upsRial) + ' ریال' : '') + '</div>';
+      }
+      var note = oldItems ? '' : '<div class="pdiff-note">ورژن مبنا ریز اقلام ندارد (آرشیو PDF)؛ فقط ریز اقلام ورژن جدید نمایش داده می‌شود.</div>';
+      var row = document.createElement('tr');
+      row.className = 'pdiff-items';
+      row.innerHTML = '<td colspan="5"><table><thead><tr><th>قلم</th><th>قبلی (تومان)</th><th>جدید (تومان)</th><th>تفاوت</th></tr></thead><tbody>' +
+        rows + '</tbody></table>' + extra + note + '</td>';
+      tr.parentNode.insertBefore(row, tr.nextSibling);
+    }
+
+    function startPriceHistoryArchive() {
+      var btn = document.getElementById('pdiff-archive');
+      btn.disabled = true;
+      btn.textContent = 'در حال ساخت تاریخچه...';
+      runGas('startBasePriceHistoryArchive').then(function (res) {
+        var st = (res && res.state) || {};
+        if (res && res.ok === false) toast(res.error || 'ساخت تاریخچه انجام نشد', true);
+        else if (st.done) toast('تاریخچه ساخته شد (' + (st.files || 0) + ' PDF)');
+        else toast((st.files || 0) + ' PDF خوانده شد؛ بقیه خودکار در پس‌زمینه ادامه دارد');
+        if (state.priceDiff) loadPriceDiffHistory(state.priceDiff.packageName);
+      }).catch(function (err) {
+        toast((err && err.message) || 'ساخت تاریخچه انجام نشد', true);
+      }).then(function () {
+        btn.disabled = false;
+        btn.textContent = 'ساخت تاریخچه از آرشیو PDF';
+      });
     }
 
     function askPriceRuleConfirm(messages) {
