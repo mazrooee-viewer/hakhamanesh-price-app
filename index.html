@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261125215402">
+  <meta name="x-build" content="20261126090000">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest","getUsdRates"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261125215402" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261126090000" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -386,6 +386,13 @@
     .age-warn { background: #fdba74; color: #7c2d12; }
     .age-old { background: #fecaca; color: #7f1d1d; }
     .age-none { background: #e2e8f0; color: #64748b; }
+    .age .age-usd { display: block; font-size: 9px; line-height: 1.3; direction: ltr; unicode-bidi: isolate; opacity: .92; }
+    .usd-banner .usd-part { white-space: nowrap; }
+    .usd-banner .usd-sep { opacity: .5; }
+    .usd-banner { margin: 0 0 6px; padding: 6px 10px; border-radius: 10px; font-size: 12px; line-height: 1.7; background: #f1f5f9; color: #334155; }
+    .usd-banner.usd-ok { background: #dcfce7; color: #14532d; }
+    .usd-banner.usd-warn { background: #ffedd5; color: #7c2d12; }
+    .usd-banner.usd-bad { background: #fee2e2; color: #7f1d1d; font-weight: 700; }
     .calc-row input[type="number"] {
       text-align: center; font-size: 13px;
     }
@@ -832,6 +839,7 @@
           <span>ویژگی</span>
           <span>اجزاء</span>
         </div>
+        <div id="usd-banner" class="usd-banner" hidden></div>
         <div id="form-fields"></div>
         <div class="calc-row">
           <input class="price" id="total" type="text" readonly>
@@ -1849,6 +1857,159 @@
       return { cls: 'age-old', text: n + ' روز', title: title };
     }
     // PRICE_AGE_END
+    // ===== هشدار دلار: نسبت نرخ دلار (ریال، tgju) روز امروز به روز ثبت قیمت هر قلم =====
+    // ≤۲٪ سبز · بیشتر از ۲٪ و کمتر از ۳٪ نارنجی · ۳٪ و بیشتر قرمز (درخواست مدیر 1405/09/05).
+    // رنگ کپسول سن قیمت = بدترینِ «سن قیمت» و «رشد دلار».
+    var USD_WARN_PCT = 2, USD_BAD_PCT = 3;
+    var USD_LS_KEY = 'usdRates:v1';
+    var USD_TTL = 3 * 3600000, USD_FAIL_TTL = 15 * 60000;
+    var USD_TGJU_URL = 'https://api.tgju.org/v1/market/indicator/summary-table-data/price_dollar_rl?lang=fa&order_dir=desc&start=0&length=500';
+    var usdState = { rates: null, keys: null, at: 0, loading: null, failedAt: 0 };
+    function usdFaDigits_(s) { return String(s).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; }); }
+    function usdEnDigits_(s) {
+      return String(s == null ? '' : s).replace(/[۰-۹]/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); })
+        .replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); });
+    }
+    function usdIso_(y, m, d) { return y + '-' + (m < 10 ? '0' : '') + m + '-' + (d < 10 ? '0' : '') + d; }
+    // کلید سری نرخ‌ها تاریخ میلادی ISO است؛ تاریخ شمسی (۱۳xx/۱۴xx) تبدیل می‌شود.
+    function usdDateIso_(v) {
+      var m = usdEnDigits_(v).replace(/<[^>]*>/g, '').trim().match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+      if (!m) return '';
+      var y = +m[1], mo = +m[2], d = +m[3];
+      if (y < 1700) { var g = jalaliToGregorian_(y, mo, d); y = g.y; mo = g.m; d = g.d; }
+      return usdIso_(y, mo, d);
+    }
+    function usdNum_(v) {
+      var t = usdEnDigits_(v).replace(/<[^>]*>/g, '').replace(/[,،٬\s]/g, '');
+      return /^\d+(\.\d+)?$/.test(t) ? +t : 0;
+    }
+    // پاسخ tgju (DataTables): هر ردیف [بازگشایی، کمینه، بیشینه، پایانی، تغییر، درصد، تاریخ میلادی، تاریخ شمسی].
+    // پاسخ سرور (UsdRate.js) هم همین شکل یا { rates: { 'YYYY-MM-DD' یا 'YYYY/MM/DD': ریال } } است.
+    function usdParse_(res) {
+      var out = {};
+      if (!res) return out;
+      if (typeof res === 'string') { try { res = JSON.parse(res); } catch (e) { return out; } }
+      if (res.rates && typeof res.rates === 'object') {
+        Object.keys(res.rates).forEach(function (k) {
+          var iso = usdDateIso_(k), n = usdNum_(res.rates[k]);
+          if (iso && n) out[iso] = n;
+        });
+        return out;
+      }
+      (res.data || []).forEach(function (row) {
+        if (!row || !row.length) return;
+        var iso = '';
+        for (var i = row.length - 1; i >= 0 && !iso; i--) iso = usdDateIso_(row[i]);
+        var nums = [];
+        row.forEach(function (c) { if (!usdDateIso_(c)) { var n = usdNum_(c); if (n > 1000) nums.push(n); } });
+        var close = nums.length >= 4 ? nums[3] : nums[nums.length - 1];
+        if (iso && close) out[iso] = close;
+      });
+      return out;
+    }
+    function usdSet_(rates, at) {
+      var keys = Object.keys(rates || {}).sort();
+      if (!keys.length) return false;
+      usdState.rates = rates; usdState.keys = keys; usdState.at = at || Date.now();
+      return true;
+    }
+    (function () {
+      try {
+        var o = JSON.parse(localStorage.getItem(USD_LS_KEY) || 'null');
+        if (o && o.rates) usdSet_(o.rates, o.t);
+      } catch (e) {}
+    })();
+    function usdFetchDirect_() {
+      if (typeof fetch !== 'function') return Promise.reject(new Error('no fetch'));
+      return fetch(USD_TGJU_URL, { credentials: 'omit' }).then(function (r) {
+        if (!r.ok) throw new Error('tgju ' + r.status);
+        return r.json();
+      });
+    }
+    function usdFetchServer_() {
+      var rpc = window.__GAS_RPC__;
+      if (!rpc || !rpc.call) return Promise.reject(new Error('no rpc'));
+      return rpc.call('getUsdRates', []);
+    }
+    // اول مستقیم از tgju (بدون بار روی سرور)؛ اگر مرورگر اجازه نداد (CORS) از تابع سرور getUsdRates.
+    function loadUsdRates(force) {
+      var now = Date.now();
+      if (!force && usdState.keys && now - usdState.at < USD_TTL) return Promise.resolve(true);
+      if (!force && usdState.failedAt && now - usdState.failedAt < USD_FAIL_TTL) return Promise.resolve(!!usdState.keys);
+      if (usdState.loading) return usdState.loading;
+      var tryParse = function (res) {
+        var r = usdParse_(res);
+        if (!Object.keys(r).length) throw new Error('empty');
+        return r;
+      };
+      usdState.loading = usdFetchDirect_().then(tryParse).catch(function () {
+        return usdFetchServer_().then(tryParse);
+      }).then(function (rates) {
+        usdSet_(rates, Date.now());
+        usdState.failedAt = 0;
+        try { localStorage.setItem(USD_LS_KEY, JSON.stringify({ t: usdState.at, rates: rates })); } catch (e) {}
+        return true;
+      }).catch(function () {
+        usdState.failedAt = Date.now();
+        return !!usdState.keys;
+      }).then(function (ok) {
+        usdState.loading = null;
+        try { if (state.bootstrap && state.bootstrap.fields) applyAgeBadges(); } catch (e) {}
+        return ok;
+      });
+      return usdState.loading;
+    }
+    // نرخ روز iso یا نزدیک‌ترین روزِ پیش از آن (جمعه و تعطیل نرخ ندارند)
+    function usdRateOn_(iso) {
+      var k = usdState.keys;
+      if (!k || !k.length || !iso || iso < k[0]) return null;
+      var lo = 0, hi = k.length - 1;
+      while (lo < hi) { var mid = (lo + hi + 1) >> 1; if (k[mid] <= iso) lo = mid; else hi = mid - 1; }
+      return { iso: k[lo], rate: usdState.rates[k[lo]] };
+    }
+    function usdLatest_() {
+      var k = usdState.keys;
+      return k && k.length ? { iso: k[k.length - 1], rate: usdState.rates[k[k.length - 1]] } : null;
+    }
+    function usdLevel_(pct) { return pct >= USD_BAD_PCT ? 2 : (pct > USD_WARN_PCT ? 1 : 0); }
+    // رشد دلار از تاریخ ثبت قیمت (شمسی) تا امروز
+    function usdChangeInfo(shamsi) {
+      var m = usdEnDigits_(shamsi).match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+      if (!m) return null;
+      var g = jalaliToGregorian_(+m[1], +m[2], +m[3]);
+      var from = usdRateOn_(usdIso_(g.y, g.m, g.d)), to = usdLatest_();
+      if (!from || !to || !from.rate) return null;
+      var raw = (to.rate / from.rate - 1) * 100;
+      // رنگ از درصد گرد نشده (۲٫۹۷٪ نارنجی است نه قرمز)؛ نمایش با یک رقم اعشار
+      var pct = Math.round(raw * 10) / 10;
+      if (raw < USD_BAD_PCT && pct >= USD_BAD_PCT) pct = Math.floor(raw * 10) / 10;
+      if (raw > USD_WARN_PCT && pct <= USD_WARN_PCT) pct = Math.ceil(raw * 10) / 10;
+      return { pct: pct, level: usdLevel_(raw), from: from, to: to };
+    }
+    function usdPctText_(pct) {
+      var a = Math.abs(pct);
+      var t = usdFaDigits_(String(a % 1 ? a.toFixed(1) : a)).replace('.', '٫');
+      return (pct > 0 ? '+' : (pct < 0 ? '−' : '')) + t + '٪';
+    }
+    function usdRialText_(n) { return usdFaDigits_(Math.round(n).toLocaleString('en-US')).replace(/,/g, '٬'); }
+    var AGE_LEVEL_ = { 'age-fresh': 0, 'age-week': 0, 'age-none': 0, 'age-warn': 1, 'age-old': 2 };
+    function renderUsdBanner_(stats) {
+      var el = document.getElementById('usd-banner');
+      if (!el) return;
+      var latest = usdLatest_();
+      if (!latest || !stats.count) { el.hidden = true; return; }
+      var g = latest.iso.split('-');
+      var num = function (t) { return '<bdi dir="ltr">' + escapeHtml(t) + '</bdi>'; };
+      var parts = ['دلار امروز: ' + num(usdRialText_(latest.rate)) + ' ریال'];
+      if (stats.bad) parts.push(num(usdFaDigits_(stats.bad)) + ' قلم با رشد دلار ۳٪ یا بیشتر');
+      if (stats.warn) parts.push(num(usdFaDigits_(stats.warn)) + ' قلم بین ۲ تا ۳٪');
+      if (!stats.bad && !stats.warn) parts.push('رشد دلار همهٔ قلم‌ها ۲٪ یا کمتر');
+      if (stats.max != null) parts.push('بیشترین: ' + num(usdPctText_(stats.max)));
+      el.innerHTML = parts.map(function (t) { return '<span class="usd-part">' + t + '</span>'; }).join('<span class="usd-sep"> | </span>');
+      el.title = 'منبع: tgju · آخرین نرخ ' + latest.iso;
+      el.className = 'usd-banner ' + (stats.bad ? 'usd-bad' : (stats.warn ? 'usd-warn' : 'usd-ok'));
+      el.hidden = false;
+    }
     function freshDate_(key) {
       var map = (state.engine && state.engine.freshness) || {};
       return map[String(key || '').trim()] || '';
@@ -4532,16 +4693,40 @@
 
     function applyAgeBadges() {
       var dates = state.priceDates || {};
+      var stats = { count: 0, warn: 0, bad: 0, max: null };
+      var USD_CLS = ['', 'age-warn', 'age-old'];
       (state.bootstrap.fields || []).forEach(function (f) {
         var el = document.getElementById('age-' + f.key);
         if (!el) return;
         var info = priceAgeInfo(dates[f.key]);
         var na = state.priceNA && state.priceNA[f.key];
+        var usd = null;
         if (na) info = { cls: 'age-old', text: 'ناموجود', title: PU_NA_TEXT + ' · ثبت ' + na + ' — برند دیگری انتخاب کنید' };
-        el.className = 'age ' + info.cls + (el.classList && el.classList.contains('age-hidden') ? ' age-hidden' : '');
+        else if (dates[f.key]) usd = usdChangeInfo(dates[f.key]);
+        var cls = info.cls, title = info.title;
+        if (usd) {
+          // رنگ کپسول = بدترینِ سن قیمت و رشد دلار
+          if (usd.level > (AGE_LEVEL_[cls] || 0)) cls = USD_CLS[usd.level];
+          title += ' · دلار روز ثبت ' + usdRialText_(usd.from.rate) + ' · امروز ' + usdRialText_(usd.to.rate) + ' ریال · ' + usdPctText_(usd.pct);
+          var hidden = el.classList && el.classList.contains('age-hidden');
+          if (!hidden) {
+            stats.count++;
+            if (usd.level === 2) stats.bad++; else if (usd.level === 1) stats.warn++;
+            if (stats.max == null || usd.pct > stats.max) stats.max = usd.pct;
+          }
+        }
+        el.className = 'age ' + cls + (el.classList && el.classList.contains('age-hidden') ? ' age-hidden' : '');
         el.textContent = info.text;
-        el.setAttribute('data-title', info.title);
+        if (usd) {
+          var sub = document.createElement('span');
+          sub.className = 'age-usd';
+          sub.textContent = '$' + usdPctText_(usd.pct);
+          el.appendChild(sub);
+        }
+        el.setAttribute('data-title', title);
       });
+      renderUsdBanner_(stats);
+      loadUsdRates();
     }
 
     function setPrices(prices) {
