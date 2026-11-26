@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261126203410">
+  <meta name="x-build" content="20261126204247">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261126203410" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261126204247" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -4309,7 +4309,7 @@
       var html = '';
       pd.fresh.caps.forEach(function (cap) {
         html += '<div class="pdiff-cap">ظرفیت ' + escapeHtml(cap) + ' نفر <span class="pdiff-unit">(مبالغ به ریال)</span></div><div class="pdiff-wrap"><table class="pdiff-table"><thead><tr>' +
-          '<th>توقف</th><th>درصد افزایش</th><th>' + baseLabel + '</th><th>' + newLabel + '</th><th>تفاوت</th></tr></thead><tbody>';
+          '<th>تفاوت</th><th>درصد افزایش</th><th>' + baseLabel + '</th><th>' + newLabel + '</th><th>توقف</th></tr></thead><tbody>';
         pd.fresh.stops.forEach(function (stop) {
           var key = cap + '|' + stop;
           var nw = pd.fresh.rows[key];
@@ -4317,8 +4317,8 @@
           var oldVal = old ? old.finalRial : 0;
           var ch = pdiffChangeCells(oldVal, nw.finalRial);
           html += '<tr class="pdiff-row" onclick="togglePriceDiffItems(this)" data-key="' + escapeHtml(key) + '">' +
-            '<td><b>' + escapeHtml(stop) + '</b></td>' + ch.pct + '<td dir="ltr">' + pdiffFmt(oldVal) + '</td><td dir="ltr">' + pdiffFmt(nw.finalRial) + '</td>' +
-            ch.diff + '</tr>';
+            ch.diff + ch.pct + '<td dir="ltr">' + pdiffFmt(oldVal) + '</td><td dir="ltr">' + pdiffFmt(nw.finalRial) + '</td>' +
+            '<td><b>' + escapeHtml(stop) + '</b></td></tr>';
         });
         html += '</tbody></table></div>';
       });
