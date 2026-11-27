@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261127130000">
+  <meta name="x-build" content="20261127150000">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261127130000" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261127150000" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -2131,6 +2131,39 @@
       var want = String(values.system || '').trim() === 'هیدرولیک' ? 'هیدرولیک' : 'کششی';
       return 'کارسلینگ/' + want + '/' + String(parseInt(values.caps, 10) || String(values.caps || '').trim());
     }
+    // روزشمار همهٔ قطعات (1405/09/06): هر قلم فرم یک یا چند کلید ستون L تب All دارد؛ تاریخ = قدیمی‌ترینِ آن‌ها
+    // (قیمتی که از دو قیمت ساخته می‌شود، مثل اختلاف با کالای پیش‌فرض، به اندازهٔ کهنه‌ترین جزئش کهنه است).
+    function markFreshAll_(field, keys) {
+      var best = '', na = '';
+      (keys || []).forEach(function (k) {
+        if (!k) return;
+        var d = freshDate_(k);
+        if (d && (!best || d < best)) best = d;
+        var n = naDate_(k);
+        if (n && puNaActive(n, d)) na = n;
+      });
+      if (best) state.priceDates[field] = best;
+      if (na) state.priceNA[field] = na;
+    }
+    // دستمزد: «دستمزد <قلم>/<نوع>/<نفر>» (ALL_SYNC_WAGE_ROWS_ سرور)؛ نفر همان سرستون M2:U2 که pickWage انتخاب کرد
+    var WAGE_MECH_TYPES_ = ['گیربکس', 'MR', 'MRL', 'هیدرولیک', '1:1'];
+    function wageFreshKey_(item, type, caps, cap) {
+      var i = (caps || []).indexOf(String(cap));
+      if (i < 0) i = (caps || []).indexOf(String(parseInt(cap, 10)));
+      if (i < 0) return '';
+      var c = String(caps[i]).replace(/[^0-9۰-۹]/g, '').replace(/[۰-۹]/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); });
+      return c ? 'دستمزد ' + item + '/' + type + '/' + c : '';
+    }
+    // مشخصه‌های تکمیلی: «<جدول>/<گزینه>» (فهرست uuid تب «ملاحظات خرده ریز»)
+    var SPEC_FRESH_FAMILY_ = { wireRope: 'سیم بکسل', weight: 'وزنه', pulley: 'فلکه هرزگرد', travelCable: 'تراول کابل', cabinHeight: 'ارتفاع کابین', doorHeight: 'ارتفاع درب' };
+    function specFreshKeys_(key, option, lux) {
+      var fam = SPEC_FRESH_FAMILY_[key];
+      var table = lux && lux.specTables && lux.specTables[key];
+      if (!fam || !option) return [];
+      var out = [fam + '/' + String(option).trim()];
+      if (table && table.base && String(table.base).trim() !== String(option).trim()) out.push(fam + '/' + String(table.base).trim());
+      return out;
+    }
     // روزشمار کابین: کلید قلم کابین در جدول به‌روزرسانی قیمت (engine.freshness).
     // سرور یا برای هر ظرفیت کلید جدا می‌فرستد (cabin.keys[caps]) یا یک کلید برای ردیف (cabin.key)؛
     // در حالت دوم اول «کلید/ظرفیت» (مثل تابلو «کلید/توان») و بعد خود کلید امتحان می‌شود.
@@ -2209,6 +2242,12 @@
       var v = fp * rF + cp * rC;
       var r = Math.floor(v / 1000000 + 0.5) * 1000000;
       prices.doorHeight = r ? fmtPrice(r) : '0';
+      // ارتفاع درب از قیمت درب‌ها ساخته شد → روزشمارش قدیمی‌ترینِ درب طبقه و درب کابین
+      var pd = typeof state !== 'undefined' && state && state.priceDates;
+      if (pd) {
+        var dd = [pd.floorDoor, pd.cabinDoor].filter(function (x) { return !!x; }).sort();
+        if (dd.length) pd.doorHeight = dd[0]; else delete pd.doorHeight;
+      }
       return prices;
     }
     // === DOOR_HEIGHT_GRID_END ===
@@ -2247,6 +2286,7 @@
       prices.ups = values.ups === 'دارد' ? (upsAmount ? fmtPrice(upsAmount) : '-') : '';
       if (upsAmount) markFresh_('ups', upsFreshKey_(values));
       prices.photocell = values.photocell === 'دارد' ? fmtPrice(eng.photocell) : '';
+      if (values.photocell === 'دارد') markFresh_('photocell', eng.fixedKeys && eng.fixedKeys.photocell);
 
       var stops = parseNum(values.stop) || 0;
       var door = null;
@@ -2321,6 +2361,7 @@
         var dw = isHyd(values) ? eng.doorWage.hydraulic : eng.doorWage.gearbox;
         var per = pickWage(eng.doorWage.caps, dw, values.caps);
         prices.installDoor = fmtPrice(roundToman(per * Math.max(4, stops)));
+        if (per) markFresh_('installDoor', wageFreshKey_('نصب درب و ریل', isHyd(values) ? 'هیدرولیک' : 'کششی', eng.doorWage.caps, values.caps));
       }
 
       if (values.installMech === 'ندارد') prices.installMech = '';
@@ -2328,12 +2369,14 @@
         var row = eng.mechWage.rows[mechRowIndex(values)] || [];
         var mp = pickWage(eng.mechWage.caps, row, values.caps);
         prices.installMech = fmtPrice(roundToman(mp * Math.max(4, stops)));
+        if (mp) markFresh_('installMech', wageFreshKey_('راه‌اندازی', WAGE_MECH_TYPES_[mechRowIndex(values)], eng.mechWage.caps, values.caps));
       }
 
       if (values.installIron === 'ندارد') prices.installIron = '';
       else {
         var ironStops = values.input === 'دو درب مجانب' ? 1 + stops : stops;
         prices.installIron = fmtPrice(roundToman(ironStops * (eng.ironPerStop || 5000000)));
+        markFresh_('installIron', eng.fixedKeys && eng.fixedKeys.ironPerStop);
       }
 
       var lux = eng.luxury || { cabinHeights: {}, doorHeights: {}, doorCovers: {} };
@@ -2352,6 +2395,7 @@
           if (!lux.specTables[key]) return;
           var amount = specFormPrice(key, values[key], values, lux);
           prices[key] = amount === '' ? '' : (amount ? fmtPrice(amount) : '0');
+          if (amount !== '') markFreshAll_(key, specFreshKeys_(key, values[key], lux));
         });
         return applyDoorHeightGrid(values, applyRailBracketOntoRail(values, applyCubePrices(values, prices)), lux);
       }
@@ -3136,7 +3180,7 @@
       return '<div class="pt-row' + (ed != null ? ' dirty' : '') + (err ? ' err' : '') + (r.f ? ' ro' : '') + '" data-pt-id="' + escapeHtml(id) + '">' +
         // کلید کنترلی بالا (خواناتر برای مدیر؛ 1405/09/02) و شرح مدل زیر آن
         '<div>' + (r.n ? '<div class="pt-name" dir="rtl">' + escapeHtml(r.n) + '</div>' : '<div class="pt-name pt-key">' + escapeHtml(r.k) + '</div>') +
-        '<div class="pt-sub">' + (r.l ? '<span class="pt-model">' + ptLabelHtml(r.l) + '</span>' : '') + (r.w ? '' : puAge(r.d)) + (r.s ? '<span class="pt-tag">مسیر کوتاه</span>' : '') + (r.f ? '<span class="pt-tag">فرمول شیت</span>' : '') +
+        '<div class="pt-sub">' + (r.l ? '<span class="pt-model">' + ptLabelHtml(r.l) + '</span>' : '') + (r.w && !r.d ? '' : puAge(r.d)) + (r.s ? '<span class="pt-tag">مسیر کوتاه</span>' : '') + (r.f ? '<span class="pt-tag">فرمول شیت</span>' : '') +
         (ptCanDelete() ? '<button class="pt-del" type="button" data-pt-del="' + escapeHtml(id) + '" title="ردیف کالای منسوخ از تب مبدأ حذف شود">حذف ردیف</button>' : '') + '</div></div>' +
         '<input type="text" inputmode="numeric" data-pt-in="' + escapeHtml(id) + '" value="' + escapeHtml(val) + '" placeholder="بدون قیمت"' + (r.f ? ' readonly title="این خانه در شیت فرمول است"' : '') + ' aria-label="قیمت ' + escapeHtml(r.l || r.k) + '">' +
         (err ? '<div class="pt-err">' + escapeHtml(err) + '</div>' : '') + (warn ? '<div class="pt-warn">' + escapeHtml(warn) + '</div>' : '') +
@@ -3366,7 +3410,7 @@
           var id = (job.wage ? x.cell : x.row) + '|' + x.key;
           var r = ptFindRow(id);
           if (x.status === 'changed' || x.status === 'equal') {
-            if (r) { if (x.status === 'changed') r.p = x.price; if (!r.w) r.d = x.date || today || r.d; }
+            if (r) { if (x.status === 'changed') r.p = x.price; r.d = x.date || today || r.d; }
             // اگر حین ذخیره دوباره ویرایش شده، ویرایش تازه می‌ماند
             if (ptState.edits[id] === sent[id]) delete ptState.edits[id];
             delete ptState.errs[id];
