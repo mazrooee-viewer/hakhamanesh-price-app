@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261127222221">
+  <meta name="x-build" content="20261127223137">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getBasePriceHistory","startBasePriceHistoryArchive","getBasePriceHistoryStatus","getPriceForecast","getUsdRates","saveWageTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getHavePriceMatrix","saveHavePriceMatrix","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getBasePriceHistory","startBasePriceHistoryArchive","getBasePriceHistoryStatus","getPriceForecast","applyPriceForecast","revertPriceForecast","getUsdRates","saveWageTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getHavePriceMatrix","saveHavePriceMatrix","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261127222221" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261127223137" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -409,6 +409,8 @@
     .age-week { background: #bbf7d0; color: #14532d; }
     .age-warn { background: #fdba74; color: #7c2d12; }
     .age-old { background: #fecaca; color: #7f1d1d; }
+    .age-forecast { background: #7c3aed; color: #fff; }
+    .age-hint { display: block; font-size: 10px; font-weight: 700; color: #6d28d9; margin-top: 1px; white-space: nowrap; }
     .age-none { background: #e2e8f0; color: #64748b; }
     .age .age-usd { display: block; font-size: 9px; line-height: 1.3; direction: ltr; unicode-bidi: isolate; opacity: .92; }
     .usd-banner .usd-part { white-space: nowrap; }
@@ -467,7 +469,7 @@
     .hpm-hint { font-size: 12px; color: var(--muted); line-height: 1.8; margin: 0 0 10px; }
     .hpm-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 11.5px; font-weight: 700; color: var(--muted); margin-bottom: 10px; }
     .hpm-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-inline-end: 4px; vertical-align: -1px; }
-    .hpm-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; margin-bottom: 10px; overflow: hidden; }
+    .hpm-card { direction: ltr; text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 16px; margin-bottom: 10px; overflow: hidden; }
     .hpm-card.chg { border-color: #c9a227; }
     .hpm-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #f8fafc; cursor: pointer; }
     .hpm-card.open .hpm-head { border-bottom: 1px solid var(--line); }
@@ -736,6 +738,15 @@
     .pf-c-low { background: #fee2e2; color: #991b1b; }
     .pf-warn { font-size: 11.5px; color: #b45309; font-weight: 700; margin-top: 3px; }
     .pf-how { font-size: 11.5px; color: #475569; margin-top: 3px; line-height: 1.7; }
+    .pf-row.sel { background: #f5f3ff; }
+    .pf-pick { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 800; color: #4c1d95; cursor: pointer; margin-top: 6px; }
+    .pf-pick input { width: 18px; height: 18px; accent-color: #7c3aed; }
+    .pf-bsel { border: 1px solid #c4b5fd; background: #fff; color: #5b21b6; border-radius: 10px; padding: 4px 10px; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer; margin: 8px 14px; }
+    .pf-st { border-radius: 999px; padding: 1px 8px; font-size: 11px; font-weight: 800; }
+    .pf-st-on { background: #7c3aed; color: #fff; }
+    .pf-st-exp { background: #fde68a; color: #78350f; }
+    .pf-st-real { background: #dcfce7; color: #166534; }
+    .pf-revert { border: 1px solid #fca5a5; background: #fff; color: #991b1b; border-radius: 10px; padding: 3px 10px; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
     /* ===== جداول قیمت (PriceTables.js؛ 1405/08/16): همهٔ جداول شیت All با ذخیره از مسیر آینه ===== */
     .home-tables { background: #e0f2f1; color: #134e4a; border-color: #0f766e; }
     .pt-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
@@ -839,7 +850,7 @@
         </button>
         <button class="home-btn home-forecast" type="button" onclick="openPriceForecast()">
           پیش‌بینی قیمت
-          <span class="count">برندهای کهنه یا بی‌قیمت از روی برند هم‌وزن — فقط گزارش</span>
+          <span class="count">برندهای کهنه یا بی‌قیمت از روی برند هم‌وزن — بررسی و تأیید</span>
         </button>
         <button class="home-btn home-prices" type="button" onclick="openPriceUpdate()">
           به روز رسانی قیمت ها
@@ -1152,13 +1163,13 @@
         <div>
           <button class="back" type="button" onclick="event.preventDefault(); showHome();">بازگشت</button>
           <h1>پیش‌بینی قیمت</h1>
-          <div class="meta" id="pf-meta">از روی برند هم‌وزن (شیت Peer Brands) · فقط گزارش</div>
+          <div class="meta" id="pf-meta">از روی برند هم‌وزن (شیت Peer Brands)</div>
         </div>
         <div class="date-badge" data-date-slot></div>
       </div>
     </div>
     <div class="wrap">
-      <div class="pf-note">مرحلهٔ ۱: فقط گزارش است و هیچ قیمتی در شیت، فرم یا PDF عوض نمی‌شود. هم‌وزن‌ها در شیت «Peer Brands»، ضریب‌های تجربی در «Peer Coefficients» و همین فهرست در «Price Forecast» ثبت می‌شود.</div>
+      <div class="pf-note">پیش‌بینی تا تأیید نشود فقط راهنماست (کنار روزشمار فرم) و در محاسبه و PDF نمی‌نشیند. با «تأیید و اعمال» قیمت پیش‌بینی در شیت مبدأ و All نوشته می‌شود ولی تاریخ قیمت واقعی و تاریخچه دست نمی‌خورد؛ روزشمار «پیش‌بینی» (بنفش) نشان می‌دهد. با رسیدن قیمت واقعی خودکار کنار می‌رود و خطایش ثبت می‌شود؛ ۳۰ روز بعد منقضی می‌شود. هم‌وزن‌ها: شیت «Peer Brands».</div>
       <div class="pf-bar">
         <label>قیمت کهنه‌تر از
           <select id="pf-stale" onchange="pfSetStale(this.value)">
@@ -1173,6 +1184,10 @@
       <div class="pt-tabs" id="pf-tabs" role="tablist"></div>
       <div class="pt-info" id="pf-info"></div>
       <div id="pf-body"><div class="empty">در حال بارگذاری...</div></div>
+      <div class="pt-bar" id="pf-bar" hidden>
+        <button class="btn btn-main" id="pf-apply" type="button" onclick="pfApply()">تأیید و اعمال</button>
+        <button class="btn btn-ghost" type="button" onclick="pfState.sel = {}; pfRender();">لغو انتخاب</button>
+      </div>
     </div>
   </section>
 
@@ -2201,7 +2216,20 @@
       var map = (state.engine && state.engine.unavailable) || {};
       return map[String(key || '').trim()] || '';
     }
+    // پیش‌بینی قیمت (PriceForecast.js): کلید تأییدشده ← نشان بنفش «پیش‌بینی»؛ پیشنهاد تأییدنشده ← فقط راهنما کنار روزشمار
+    function markForecast_(field, key) {
+      var fc = state.engine && state.engine.forecast;
+      key = String(key || '').trim();
+      if (!fc || !key) return;
+      state.priceForecast = state.priceForecast || {};
+      var a = fc.active && fc.active[key];
+      if (a) { state.priceForecast[field] = { active: true, p: a.p, real: a.real, d: a.d, s: a.s }; return; }
+      var h = fc.hints && fc.hints[key];
+      var cur = state.priceForecast[field];
+      if (h && !(cur && cur.active)) state.priceForecast[field] = { hint: h };
+    }
     function markFresh_(field, key) {
+      markForecast_(field, key);
       var d = freshDate_(key);
       if (d) state.priceDates[field] = d;
       var n = naDate_(key);
@@ -2234,6 +2262,7 @@
       var best = '', na = '';
       (keys || []).forEach(function (k) {
         if (!k) return;
+        markForecast_(field, k);
         var d = freshDate_(k);
         if (d && (!best || d < best)) best = d;
         var n = naDate_(k);
@@ -2357,6 +2386,7 @@
       });
       state.priceDates = {};
       state.priceNA = {};
+      state.priceForecast = {};
       if (!eng) return prices;
 
       var motor = findMotor(values);
@@ -2710,6 +2740,9 @@
       if (!name) return;
       applyPackageStructure(name);
     }
+
+    // پیش‌فرض فیلد متنی (محل نصب = اصفهان، 1405/09/06)؛ کش قدیمی bootstrap که textDef ندارد هم اصفهان می‌گیرد.
+    function textFieldDef(f) { return (f && f.textDef) || (f && f.key === 'installCity' ? 'اصفهان' : ''); }
 
     function fillSelect(id, options, selected) {
       var el = document.getElementById(id);
@@ -3190,8 +3223,8 @@
     document.addEventListener('change', function (e) { if (e.target && e.target.id === 'sp-swap-cat') spSwapRender(); });
 
     // ===== پیش‌بینی قیمت (سرور: PriceForecast.js؛ مرحلهٔ ۱ فقط گزارش) =====
-    var pfState = { data: null, stale: 14, cat: '', onlyChange: false, open: {}, loading: false };
-    var PF_TAB_SUSPECT = 'قیمت‌های مشکوک', PF_TAB_COEF = 'ضریب‌های تجربی';
+    var pfState = { data: null, stale: 14, cat: '', onlyChange: false, open: {}, loading: false, sel: {}, busy: false };
+    var PF_TAB_SUSPECT = 'قیمت‌های مشکوک', PF_TAB_COEF = 'ضریب‌های تجربی', PF_TAB_ACTIVE = 'تأییدشده‌ها';
     function openPriceForecast() {
       setHeaderDates(todayJalali());
       showScreen('screen-forecast');
@@ -3242,7 +3275,7 @@
       }).map(function (t) { return '<div>' + t + '</div>'; }).join('');
     }
     function pfRowHtml(f) {
-      return '<div class="pf-row">' +
+      return '<div class="pf-row' + (pfState.sel[f.key] ? ' sel' : '') + '">' +
         '<div class="pf-key"><bdi dir="ltr">' + escapeHtml(f.key) + '</bdi></div>' +
         (f.label ? '<div class="pf-sub">' + ptLabelHtml(f.label) + '</div>' : '') +
         '<div class="pf-line" style="margin-top:4px">' +
@@ -3251,7 +3284,73 @@
         '</div>' +
         '<div class="pf-how"><div>' + escapeHtml(f.method) + (f.t0 ? ' · T0 ' + puFa(f.t0) + (f.t0Approx ? ' (تقریبی)' : '') : '') + '</div>' + pfHow(f) + '</div>' +
         (f.warns.length ? '<div class="pf-warn">⚠ ' + f.warns.map(escapeHtml).join(' · ') + '</div>' : '') +
+        '<label class="pf-pick"><input type="checkbox" data-pf-sel="' + escapeHtml(f.key) + '"' + (pfState.sel[f.key] ? ' checked' : '') + '> انتخاب برای تأیید</label>' +
         '</div>';
+    }
+    function pfSelCount() { return Object.keys(pfState.sel).filter(function (k) { return pfState.sel[k]; }).length; }
+    function pfUpdateBar() {
+      var n = pfSelCount();
+      var bar = document.getElementById('pf-bar');
+      bar.hidden = !n;
+      bar.style.display = n ? '' : 'none';
+      var btn = document.getElementById('pf-apply');
+      btn.textContent = pfState.busy ? 'در حال اعمال…' : 'تأیید و اعمال ' + puFa(n) + ' قیمت';
+      btn.disabled = pfState.busy;
+    }
+    function pfApply() {
+      var keys = Object.keys(pfState.sel).filter(function (k) { return pfState.sel[k]; });
+      if (!keys.length || pfState.busy) return;
+      var list = (pfState.data.forecasts || []).filter(function (f) { return pfState.sel[f.key]; });
+      var low = list.filter(function (f) { return f.confidence === 'کم'; }).length;
+      var big = list.filter(function (f) { return f.change != null && Math.abs(f.change) > 0.3; }).length;
+      var msg = puFa(keys.length) + ' قیمت پیش‌بینی در شیت مبدأ و All نوشته می‌شود و در فرم، PDF و پکیج‌ها به کار می‌رود (تاریخ قیمت واقعی و تاریخچه دست نمی‌خورد).';
+      if (low) msg += '\n⚠ ' + puFa(low) + ' قلم اطمینان «کم» دارد.';
+      if (big) msg += '\n⚠ ' + puFa(big) + ' قلم بیش از ۳۰٪ تغییر دارد.';
+      if (!confirm(msg + '\nادامه می‌دهید؟')) return;
+      pfState.busy = true; pfUpdateBar();
+      runGas('applyPriceForecast', { keys: keys, staleDays: pfState.stale }).then(function (r) {
+        pfState.busy = false;
+        var bad = (r.results || []).filter(function (x) { return !x.ok; });
+        pfState.sel = {};
+        bad.forEach(function (x) { pfState.sel[x.key] = true; });
+        toast(puFa(r.applied || 0) + ' قیمت پیش‌بینی اعمال شد' + (bad.length ? ' · ' + puFa(bad.length) + ' قلم ثبت نشد: ' + (bad[0].error || '') : ''), !!bad.length);
+        pfLoad(true);
+      }).catch(function (err) {
+        pfState.busy = false; pfUpdateBar();
+        toast((err && err.message) || 'اعمال انجام نشد', true);
+      });
+    }
+    function pfRevert(key) {
+      if (pfState.busy || !confirm('قیمت واقعی قبلی این قلم برگردانده شود؟')) return;
+      pfState.busy = true;
+      runGas('revertPriceForecast', { keys: [key] }).then(function (r) {
+        pfState.busy = false;
+        toast(r.reverted ? 'قیمت واقعی قبلی برگشت' : 'برگرداندن انجام نشد', !r.reverted);
+        pfLoad(true);
+      }).catch(function (err) { pfState.busy = false; toast((err && err.message) || 'برگرداندن انجام نشد', true); });
+    }
+    function pfActiveHtml(d) {
+      var acc = (d.accuracy || []).filter(function (x) { return x.n; });
+      var rows = (d.active || []).slice().reverse();
+      var stCls = { 'فعال': 'pf-st-on', 'منقضی': 'pf-st-exp', 'جایگزین با قیمت واقعی': 'pf-st-real' };
+      var html = '';
+      if (acc.length) {
+        html += '<div class="pt-brand open"><div class="pf-row"><b>دقت پیش‌بینی‌ها</b> (میانهٔ خطا بعد از رسیدن قیمت واقعی)</div>' + acc.map(function (x) {
+          return '<div class="pf-row"><div class="pf-line"><b>' + escapeHtml(x.brand) + '</b><span class="pf-sub">از ' + escapeHtml(x.peers) + '</span>' +
+            '<span class="pf-new">±' + puFa(Math.round(x.medAbs * 10) / 10) + '٪</span><span class="pf-sub">' + puFa(x.n) + ' قلم · ' + escapeHtml(x.cat) + '</span></div></div>';
+        }).join('') + '</div>';
+      }
+      html += rows.length ? '<div class="pt-brand open">' + rows.map(function (a) {
+        var canRevert = a.status === 'فعال' || a.status === 'منقضی';
+        return '<div class="pf-row"><div class="pf-key"><bdi dir="ltr">' + escapeHtml(a.rawKey) + '</bdi></div>' +
+          '<div class="pf-line" style="margin-top:4px"><span class="pf-st ' + (stCls[a.status] || '') + '">' + escapeHtml(a.status) + '</span>' +
+          '<span class="pf-old">' + (a.real ? pfMil(a.real) : 'بدون قیمت') + '</span><span>←</span><span class="pf-new">' + pfMil(a.forecast) + '</span>' +
+          (a.status === 'جایگزین با قیمت واقعی' ? '<span>واقعی ' + pfMil(a.actual) + '</span>' + (a.error != null ? '<span class="pf-sub">خطا ' + puFa(a.error) + '٪</span>' : '') : '') + '</div>' +
+          '<div class="pf-how">تأیید ' + puFa(a.approved || '') + ' · ' + escapeHtml(a.method) + ' · ' + escapeHtml(a.peers) + (a.arrived ? ' · رسیدن قیمت واقعی ' + puFa(a.arrived) : '') + '</div>' +
+          (canRevert ? '<div style="margin-top:6px"><button class="pf-revert" type="button" data-pf-revert="' + escapeHtml(a.key) + '">برگرداندن قیمت واقعی</button></div>' : '') +
+          '</div>';
+      }).join('') + '</div>' : '<div class="empty">هنوز پیش‌بینی‌ای تأیید نشده</div>';
+      return html;
     }
     function pfRender() {
       var d = pfState.data;
@@ -3259,16 +3358,23 @@
       var list = pfList();
       var cats = [];
       list.forEach(function (f) { if (cats.indexOf(f.cat) < 0) cats.push(f.cat); });
-      var tabs = cats.concat([PF_TAB_SUSPECT, PF_TAB_COEF]);
+      var tabs = cats.concat([PF_TAB_ACTIVE, PF_TAB_SUSPECT, PF_TAB_COEF]);
+      pfUpdateBar();
       if (!pfState.cat || tabs.indexOf(pfState.cat) < 0) pfState.cat = tabs[0];
       document.getElementById('pf-tabs').innerHTML = tabs.map(function (c) {
-        var n = c === PF_TAB_SUSPECT ? (d.suspects || []).length : c === PF_TAB_COEF ? (d.coefs || []).filter(function (x) { return x.n; }).length :
+        var n = c === PF_TAB_ACTIVE ? (d.active || []).filter(function (a) { return a.status === 'فعال' || a.status === 'منقضی'; }).length :
+          c === PF_TAB_SUSPECT ? (d.suspects || []).length : c === PF_TAB_COEF ? (d.coefs || []).filter(function (x) { return x.n; }).length :
           list.filter(function (f) { return f.cat === c; }).length;
         return '<button class="pt-tab' + (c === pfState.cat ? ' on' : '') + '" type="button" data-pf-cat="' + escapeHtml(c) + '">' + escapeHtml(c) + '<small>' + puFa(n) + '</small></button>';
       }).join('');
       document.getElementById('pf-meta').textContent = 'محاسبه ' + puFa(d.stamp || '') + ' · ' + puFa(list.length) + ' پیش‌بینی';
       var body = document.getElementById('pf-body');
       var info = document.getElementById('pf-info');
+      if (pfState.cat === PF_TAB_ACTIVE) {
+        info.textContent = 'پیش‌بینی‌های تأییدشده. «فعال» در محاسبه است؛ «منقضی» (بیش از ۳۰ روز) هنوز در محاسبه است تا دوباره تأیید یا برگردانده شود؛ «جایگزین با قیمت واقعی» یعنی لیست واقعی رسید و خطا ثبت شد.';
+        body.innerHTML = pfActiveHtml(d);
+        return;
+      }
       if (pfState.cat === PF_TAB_SUSPECT) {
         info.textContent = 'قیمت‌هایی که با مدل‌های دیگر همان برند جور نیستند (سرعت یا ظرفیت بالاتر، ارزان‌تر). اول این‌ها را بررسی کنید؛ پیش‌بینی خطای آن‌ها را منتقل می‌کند.';
         body.innerHTML = (d.suspects || []).length ? '<div class="pt-brand open">' + d.suspects.map(function (x) {
@@ -3305,14 +3411,31 @@
         return '<div class="pt-brand' + (open ? ' open' : '') + '">' +
           '<button class="pt-bhead" type="button" data-pf-brand="' + escapeHtml(id) + '"><b>' + escapeHtml(b) + '</b><span>' + puFa(fs.length) + ' مدل' +
           (med != null ? ' · میانهٔ تغییر ' + pfPct(med) : ' · بدون قیمت قبلی') + (warnN ? ' · ⚠ ' + puFa(warnN) : '') + '<span class="pt-chev">▾</span></span></button>' +
-          (open ? fs.map(pfRowHtml).join('') : '') + '</div>';
+          (open ? '<button class="pf-bsel" type="button" data-pf-bsel="' + escapeHtml(id) + '">انتخاب همهٔ مدل‌های ' + escapeHtml(b) + '</button>' + fs.map(pfRowHtml).join('') : '') + '</div>';
       }).join('') : '<div class="empty">در این دسته پیش‌بینی‌ای نیست</div>';
     }
     document.addEventListener('click', function (e) {
       var t = e.target.closest && e.target.closest('[data-pf-cat]');
       if (t) { pfState.cat = t.getAttribute('data-pf-cat'); pfRender(); return; }
       var b = e.target.closest && e.target.closest('[data-pf-brand]');
-      if (b) { var id = b.getAttribute('data-pf-brand'); pfState.open[id] = !pfState.open[id]; pfRender(); }
+      if (b) { var id = b.getAttribute('data-pf-brand'); pfState.open[id] = !pfState.open[id]; pfRender(); return; }
+      var bs = e.target.closest && e.target.closest('[data-pf-bsel]');
+      if (bs) {
+        var bid = bs.getAttribute('data-pf-bsel'), cat = bid.split('|')[0], brand = bid.slice(cat.length + 1);
+        var fs = pfList().filter(function (f) { return f.cat === cat && f.brand === brand; });
+        var all = fs.every(function (f) { return pfState.sel[f.key]; });
+        fs.forEach(function (f) { pfState.sel[f.key] = !all; });
+        pfRender(); return;
+      }
+      var rv = e.target.closest && e.target.closest('[data-pf-revert]');
+      if (rv) { pfRevert(rv.getAttribute('data-pf-revert')); }
+    });
+    document.addEventListener('change', function (e) {
+      var t = e.target;
+      if (!t || !t.getAttribute || t.getAttribute('data-pf-sel') == null) return;
+      pfState.sel[t.getAttribute('data-pf-sel')] = t.checked;
+      var row = t.closest('.pf-row'); if (row) row.classList.toggle('sel', t.checked);
+      pfUpdateBar();
     });
     // ===== جداول قیمت (سرور: PriceTables.js) =====
     // داده از شیت All (همهٔ جداول قیمت). نمایش فوری از localStorage، تازه‌سازی پس‌زمینه بدون پاک‌کردن ویرایش‌های ذخیره‌نشده.
@@ -4517,6 +4640,8 @@
             var v = parseNum(prices[k]);
             sum += v;
             items[k] = { label: labels[k] || k, option: values[k] || '', toman: v };
+            var fcp = state.priceForecast && state.priceForecast[k];
+            if (fcp && fcp.active) items[k].fc = true;
           });
           var profit = packageProfitToman(pkg.packageName || packageName, stop);
           var costToman = Math.round((sum + profit) / 10000) * 10000;
@@ -4598,6 +4723,14 @@
       var newLabel = 'ورژن جدید' + (pd.nextVersion ? ' (' + escapeHtml(pd.nextVersion) + ')' : '');
       var baseLabel = base ? ('ورژن ' + escapeHtml(base.version)) : 'ورژن قبلی';
       var html = '';
+      // قلم‌هایی که قیمت پیش‌بینی تأییدشده دارند (PriceForecast.js)
+      var fcFields = {};
+      Object.keys(pd.fresh.rows || {}).forEach(function (rk) {
+        var its = pd.fresh.rows[rk].items || {};
+        Object.keys(its).forEach(function (k) { if (its[k].fc) fcFields[its[k].label || k] = true; });
+      });
+      var fcNames = Object.keys(fcFields);
+      if (fcNames.length) html += '<div class="pf-note">⚠ قیمت ' + puFa(fcNames.length) + ' قلم این پکیج «پیش‌بینی» است (قطعی نیست): ' + fcNames.map(escapeHtml).join('، ') + '</div>';
       pd.fresh.caps.forEach(function (cap) {
         html += '<div class="pdiff-cap">ظرفیت ' + escapeHtml(cap) + ' نفر <span class="pdiff-unit">(مبالغ به ریال)</span></div><div class="pdiff-wrap"><table class="pdiff-table"><thead><tr>' +
           '<th>تفاوت</th><th>درصد افزایش</th><th>' + baseLabel + '</th><th>' + newLabel + '</th><th>توقف</th></tr></thead><tbody>';
@@ -4639,7 +4772,8 @@
         var cls = d > 0 ? 'pdiff-up' : (d < 0 ? 'pdiff-down' : '');
         var sign = d > 0 ? '+' : (d < 0 ? '−' : '');
         var optOld = o && o.option ? '<div class="pdiff-opt">' + escapeHtml(o.option) + '</div>' : '';
-        var optNew = n.option ? '<div class="pdiff-opt">' + escapeHtml(n.option) + '</div>' : '';
+        var optNew = (n.option ? '<div class="pdiff-opt">' + escapeHtml(n.option) + '</div>' : '') +
+          (n.fc ? '<div class="pdiff-opt" style="color:#6d28d9;font-weight:800">قیمت پیش‌بینی</div>' : '');
         return '<tr><td>' + escapeHtml(n.label || (o && o.label) || k) + '</td>' +
           '<td><span dir="ltr">' + (o ? pdiffFmt(ov) : '—') + '</span>' + optOld + '</td>' +
           '<td><span dir="ltr">' + pdiffFmt(nv) + '</span>' + optNew + '</td>' +
@@ -5143,6 +5277,7 @@
         }
         var initial = (data.values && data.values[f.key]) || '';
         if (f.key === 'model') initial = canonMotorModel(initial);
+        if (f.text && !initial) initial = textFieldDef(f);
         fillSelect('f-' + f.key, opts, initial);
       });
       state.lastPrices = data.prices || {};
@@ -5158,7 +5293,7 @@
       if (autoLocked) applyConditionTable();
       setOutSheet(data.suggestedOutSheet || 'Traction');
       if (state.engine) applyLocalCalc();
-      else { state.priceDates = {}; state.priceNA = {}; applyPriceHighlight(data.values || {}); applyAgeBadges(); }
+      else { state.priceDates = {}; state.priceNA = {}; state.priceForecast = {}; applyPriceHighlight(data.values || {}); applyAgeBadges(); }
       var ageBox = document.getElementById('form-fields');
       if (ageBox && !ageBox._ageBound) {
         ageBox._ageBound = true;
@@ -5417,7 +5552,10 @@
         var info = priceAgeInfo(dates[f.key]);
         var na = state.priceNA && state.priceNA[f.key];
         var usd = null;
+        var fcast = state.priceForecast && state.priceForecast[f.key];
         if (na) info = { cls: 'age-old', text: 'ناموجود', title: PU_NA_TEXT + ' · ثبت ' + na + ' — برند دیگری انتخاب کنید' };
+        else if (fcast && fcast.active) info = { cls: 'age-forecast', text: fcast.s === 'منقضی' ? 'پیش‌بینی منقضی' : 'پیش‌بینی',
+          title: 'قیمت پیش‌بینی (تأیید ' + (fcast.d || '') + ')؛ قیمت واقعی قبلی ' + (fcast.real ? formatShortPathPrice(fcast.real) : 'نداشت') + ' · تاریخ قیمت واقعی ' + (dates[f.key] || '—') };
         else if (dates[f.key]) usd = usdChangeInfo(dates[f.key]);
         var cls = info.cls, title = info.title;
         if (usd) {
@@ -5438,6 +5576,13 @@
           sub.className = 'age-usd';
           sub.textContent = '$' + usdPctText_(usd.pct);
           el.appendChild(sub);
+        }
+        if (fcast && fcast.hint && !na) {
+          var hint = document.createElement('span');
+          hint.className = 'age-hint';
+          hint.textContent = 'پیش‌بینی ' + formatShortPathPrice(fcast.hint);
+          el.appendChild(hint);
+          title += ' · پیش‌بینی تأییدنشده: ' + formatShortPathPrice(fcast.hint) + ' تومان (در محاسبه نیست)';
         }
         el.setAttribute('data-title', title);
       });
