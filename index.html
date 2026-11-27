@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261127120000">
+  <meta name="x-build" content="20261127130000">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","saveWageTable","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest","getUsdRates"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getBasePriceHistory","startBasePriceHistoryArchive","getBasePriceHistoryStatus","saveWageTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getHavePriceMatrix","saveHavePriceMatrix","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest","getUsdRates"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261127120000" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261127130000" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -266,6 +266,30 @@
     }
     .price-rule-q { color: var(--navy); font-weight: 800; margin-top: 6px; }
     .price-rule-card .actions { justify-content: center; }
+    /* جدول تفاوت قیمت قبل از صدور پکیج پایه */
+    .pdiff-modal { display: none; position: fixed; inset: 0; z-index: 410; background: rgba(15, 23, 42, .55); align-items: flex-start; justify-content: center; padding: 12px; overflow-y: auto; }
+    .pdiff-card { width: 100%; max-width: 760px; background: #fff; border-radius: 16px; padding: 14px 10px; font-family: Vazirmatn, Tahoma, sans-serif; box-shadow: 0 20px 40px rgba(15, 23, 42, .25); }
+    .pdiff-card h3 { margin: 0 0 4px; font-size: 17px; color: var(--navy); }
+    .pdiff-sub { margin: 0 0 12px; font-size: 13px; color: var(--muted); line-height: 1.7; }
+    .pdiff-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; font-size: 13px; }
+    .pdiff-bar select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+    .pdiff-cap { margin: 14px 0 6px; font-weight: 800; color: var(--navy); font-size: 14px; }
+    .pdiff-wrap { overflow-x: auto; }
+    .pdiff-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .pdiff-table th { background: #1f3a5f; color: #fff; padding: 6px 4px; font-weight: 700; line-height: 1.5; }
+    .pdiff-table td { border-bottom: 1px solid var(--line); padding: 7px 4px; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .pdiff-unit { font-size: 11px; color: var(--muted); font-weight: 400; }
+    .pdiff-table tr.pdiff-row { cursor: pointer; }
+    .pdiff-table tr.pdiff-row:hover td { background: #f1f5f9; }
+    .pdiff-up { color: #b91c1c; font-weight: 700; }
+    .pdiff-down { color: #15803d; font-weight: 700; }
+    .pdiff-items td { background: #f8fafc; text-align: right; padding: 6px 10px; white-space: normal; }
+    .pdiff-items table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .pdiff-items th { background: #e2e8f0; color: var(--navy); }
+    .pdiff-items td { border-bottom: 1px solid #e2e8f0; text-align: center; background: #fff; }
+    .pdiff-opt { font-size: 11px; color: var(--muted); white-space: normal; margin-top: 2px; }
+    .pdiff-note { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.7; }
+    .pdiff-card .actions { justify-content: center; margin-top: 14px; }
     .form-dock { display: none; }
     #screen-form.active .form-dock {
       display: flex;
@@ -439,14 +463,39 @@
     .home-pkg { background: #efe7f8; color: #3b2060; border-color: #6b4c9a; }
     .home-reset-hp { background: #fde8e8; color: #6b1d1d; border-color: #b91c1c; }
     .home-hp-ex { background: #fef3c7; color: #5b3a06; border-color: #b45309; }
-    .hpx-row { direction: ltr; display: grid; grid-template-columns: 1.3fr 1.5fr 78px 34px; gap: 6px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
-    .hpx-head { font-size: 12px; font-weight: 800; color: var(--muted); text-align: center; }
-    /* جدول استثنای Have Price چپ‌به‌راست (درخواست مدیر 1405/09/01)؛ متن فارسی داخل خانه‌ها راست‌به‌چپ می‌ماند. */
-    .hpx-row select, .hpx-row input { direction: rtl; width: 100%; min-width: 0; height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 0 6px; font: inherit; font-size: 13px; background: #fff; }
-    .hpx-row .hpx-flag.no { background: #fde8e8; color: #7f1d1d; font-weight: 800; }
-    .hpx-row .hpx-flag.yes { background: #dcfce7; color: #14532d; font-weight: 800; }
-    .hpx-del { height: 36px; border: 1px solid #fca5a5; border-radius: 8px; background: #fff; color: #b91c1c; font-weight: 800; cursor: pointer; }
-    .hpx-hint { font-size: 12px; color: var(--muted); line-height: 1.8; margin: 10px 0; }
+    /* Have Price: کارت هر ردیف فرم، پیش‌فرض + گزینه‌ها (1405/09/06) */
+    .hpm-hint { font-size: 12px; color: var(--muted); line-height: 1.8; margin: 0 0 10px; }
+    .hpm-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 11.5px; font-weight: 700; color: var(--muted); margin-bottom: 10px; }
+    .hpm-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-inline-end: 4px; vertical-align: -1px; }
+    .hpm-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; margin-bottom: 10px; overflow: hidden; }
+    .hpm-card.chg { border-color: #c9a227; }
+    .hpm-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #f8fafc; cursor: pointer; }
+    .hpm-card.open .hpm-head { border-bottom: 1px solid var(--line); }
+    .hpm-title { flex: 1; min-width: 0; }
+    .hpm-title b { display: block; font-size: 14px; font-weight: 800; color: var(--navy); }
+    .hpm-title small { font-size: 11px; color: var(--muted); font-weight: 700; }
+    .hpm-title .hpm-n { color: #92400e; }
+    .hpm-base { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .hpm-base > span { font-size: 10px; font-weight: 800; color: var(--muted); }
+    .hpm-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; direction: ltr; flex-shrink: 0; }
+    .hpm-seg button { font-family: inherit; font-size: 12px; font-weight: 800; min-width: 44px; padding: 6px 8px; border: 0; background: #fff; color: #94a3b8; cursor: pointer; }
+    .hpm-seg button + button { border-left: 1px solid var(--line); }
+    .hpm-seg button.on.yes { background: #dcfce7; color: #14532d; }
+    .hpm-seg button.on.no { background: #fde8e8; color: #7f1d1d; }
+    .hpm-seg button.on.auto { background: #e2e8f0; color: #334155; }
+    .hpm-seg button.on.ex.yes { background: #16a34a; color: #fff; }
+    .hpm-seg button.on.ex.no { background: #dc2626; color: #fff; }
+    .hpm-seg.ro button { cursor: default; }
+    .hpm-opt { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+    .hpm-opt:last-child { border-bottom: 0; }
+    .hpm-opt.ex { background: #fffbeb; }
+    .hpm-opt.dirty { background: #fff2cc; }
+    .hpm-opt .hpm-on { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; color: var(--navy); word-break: break-word; }
+    .hpm-opt .hpm-on small { display: block; font-size: 10.5px; font-weight: 700; color: #92400e; }
+    .hpm-add { display: flex; gap: 8px; padding: 8px 12px; background: #f8fafc; }
+    .hpm-add input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; font-family: inherit; font-size: 13px; }
+    .hpm-add button { font-family: inherit; font-size: 12px; font-weight: 800; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--navy); padding: 0 12px; cursor: pointer; }
+    .hpm-tag { font-size: 10.5px; font-weight: 800; border-radius: 999px; padding: 1px 7px; background: #e2e8f0; color: #334155; margin-inline-start: 4px; }
     .pkg-card { cursor: pointer; text-align: center; }
     .pkg-card .name { margin-bottom: 4px; }
     .pkg-meta { color: var(--muted); font-size: 13px; font-weight: 700; line-height: 1.7; }
@@ -778,8 +827,8 @@
           <span class="count">صدور و آرشیو لیست قیمت</span>
         </button>
         <button class="home-btn home-hp-ex" type="button" onclick="openHavePriceEx()">
-          استثنای Have Price
-          <span class="count">جدول ردیف‌ها و ویژگی‌هایی که برعکس ستون Have Price فرم‌اند</span>
+          Have Price
+          <span class="count">پیش‌فرض هر ردیف فرم و YES / NO هر گزینه</span>
         </button>
         <button class="home-btn home-reset-hp" id="reset-have-price" type="button" onclick="resetHavePrice()">
           reset have price
@@ -972,6 +1021,24 @@
     </div>
   </section>
 
+  <div id="pdiff-modal" class="pdiff-modal">
+    <div class="pdiff-card" role="dialog" aria-modal="true">
+      <h3 id="pdiff-title">جدول تفاوت قیمت</h3>
+      <p class="pdiff-sub" id="pdiff-sub"></p>
+      <div class="pdiff-bar">
+        <label for="pdiff-base">مقایسه با:</label>
+        <select id="pdiff-base" onchange="renderPriceDiffTable()"></select>
+        <button class="btn btn-ghost" id="pdiff-archive" type="button" onclick="startPriceHistoryArchive()" style="padding:6px 10px;">ساخت تاریخچه از آرشیو PDF</button>
+      </div>
+      <div id="pdiff-body"><div class="empty">در حال بارگذاری...</div></div>
+      <div class="pdiff-note">قیمت ورژن جدید با موتور قیمت اپ و سود جدول سود همین پکیج حساب شده است. برای دیدن ریز اقلام روی ردیف هر توقف بزنید. ورژن‌های آرشیو PDF فقط قیمت نهایی دارند.</div>
+      <div class="actions">
+        <button class="btn btn-bad" id="pdiff-no" type="button">انصراف</button>
+        <button class="btn btn-main" id="pdiff-yes" type="button">تأیید و صدور</button>
+      </div>
+    </div>
+  </div>
+
   <div id="price-rule-modal" class="price-rule-modal">
     <div class="price-rule-card" role="dialog" aria-modal="true">
       <div id="price-rule-text"></div>
@@ -1033,23 +1100,21 @@
     <div class="top">
       <div class="top-row">
         <div>
-          <button class="back" type="button" onclick="event.preventDefault(); showHome();">بازگشت</button>
-          <h1>استثنای Have Price</h1>
-          <div class="meta">جدول Data_Offers از ستون AZ</div>
+          <button class="back" type="button" onclick="event.preventDefault(); hpmLeave();">بازگشت</button>
+          <h1>Have Price</h1>
+          <div class="meta">پیش‌فرض: ستون Have Price فرم · استثناها: Data_Offers</div>
         </div>
         <div class="date-badge" data-date-slot></div>
       </div>
     </div>
     <div class="wrap">
-      <div class="hpx-hint">ستون Have Price فرم محاسبه پیش‌فرض هر ردیف است. اگر ردیف و ویژگی انتخابی در این جدول باشد، مقدار جدول جای آن می‌نشیند. ویژگی خالی همیشه NO است.</div>
-      <div class="hpx-row hpx-head"><span>ردیف فرم</span><span>ویژگی</span><span>Have Price</span><span></span></div>
-      <div id="hpx-rows"><div class="empty">در حال بارگذاری...</div></div>
-      <div class="actions">
-        <button class="btn btn-ghost" type="button" onclick="hpxAdd()">+ افزودن ردیف</button>
-      </div>
-      <div class="actions">
-        <button class="btn btn-main" id="hpx-save" type="button" onclick="hpxSave()" disabled>ذخیره جدول</button>
-        <button class="btn btn-ghost" type="button" onclick="hpxLoad()">بازخوانی</button>
+      <div class="hpm-hint">پیش‌فرض هر ردیف همان ستون Have Price فرم محاسبه است. هر گزینه‌ای که با پیش‌فرض فرق دارد پررنگ است و در جدول استثنا (Data_Offers) ذخیره می‌شود. ویژگی خالی همیشه NO است.</div>
+      <div class="hpm-legend"><span><i style="background:#dcfce7"></i>همان پیش‌فرض</span><span><i style="background:#16a34a"></i><i style="background:#dc2626"></i>استثنا</span><span><i style="background:#fff2cc"></i>ذخیره‌نشده</span></div>
+      <input class="pt-search" id="hpm-q" type="search" placeholder="جستجو: ردیف یا گزینه…" autocomplete="off">
+      <div id="hpm-body"><div class="empty">در حال بارگذاری...</div></div>
+      <div class="pt-bar">
+        <button class="btn btn-main" id="hpm-save" type="button" onclick="hpmSave()" disabled>ذخیره تغییرات</button>
+        <button class="btn btn-ghost" id="hpm-reset" type="button" onclick="hpmLoad(true)">بازخوانی</button>
       </div>
     </div>
   </section>
@@ -3802,107 +3867,184 @@
     });
 
     // دکمهٔ reset have price: روی فرم محاسبهٔ شیت، قیمت دستی ردیف‌های NO پاک می‌شود (فرمول‌ها دست نمی‌خورند).
-    // ===== استثنای Have Price (سرور: HavePriceExceptions.js) =====
-    var hpx = { rows: [], fields: [], dirty: false, saving: false };
+    // ===== Have Price (سرور: HavePriceExceptions.js → getHavePriceMatrix / saveHavePriceMatrix؛ 1405/09/06) =====
+    // هر ردیف فرم یک کارت: پیش‌فرض (ستون Have Price فرم؛ فرمولی = فقط‌خواندنی) و YES / NO هر گزینه.
+    // گزینه‌ای که با پیش‌فرض یکی است «پیرو پیش‌فرض» است؛ فقط تفاوت‌ها استثنا می‌شوند (همان جدول Data_Offers).
+    var hpm = { rows: [], ver: '', edits: {}, open: {}, q: '', saving: false, loaded: false };
     function openHavePriceEx() {
       setHeaderDates(todayJalali());
       showScreen('screen-hp-ex');
-      hpxLoad();
+      hpmLoad(false);
     }
-    function hpxField(key) {
-      var k = String(key || '').replace(/\s+/g, '').toLowerCase();
-      for (var i = 0; i < hpx.fields.length; i++) if (hpx.fields[i].key.replace(/\s+/g, '').toLowerCase() === k) return hpx.fields[i];
-      return null;
+    function hpmDirtyCount() {
+      var n = 0;
+      Object.keys(hpm.edits).forEach(function (k) { var e = hpm.edits[k]; if (e.base) n++; n += Object.keys(e.opts).length; });
+      return n;
     }
-    function hpxSetDirty(v) {
-      hpx.dirty = v;
-      var b = document.getElementById('hpx-save');
-      if (b) b.disabled = !v || hpx.saving;
+    function hpmRow(key) { for (var i = 0; i < hpm.rows.length; i++) if (hpm.rows[i].key === key) return hpm.rows[i]; return null; }
+    function hpmEdit(key) { return hpm.edits[key] || (hpm.edits[key] = { opts: {} }); }
+    function hpmTidy(key) { var e = hpm.edits[key]; if (e && !e.base && !Object.keys(e.opts).length) delete hpm.edits[key]; }
+    function hpmBase(r) { var e = hpm.edits[r.key]; return (e && e.base) || r.base; }
+    // مقدار صریح یک گزینه ('' = پیرو پیش‌فرض)
+    function hpmExplicit(r, o) {
+      var e = hpm.edits[r.key];
+      if (e && Object.prototype.hasOwnProperty.call(e.opts, o.o)) return e.opts[o.o];
+      return o.ex || '';
     }
-    function hpxRender() {
-      var box = document.getElementById('hpx-rows');
-      if (!hpx.rows.length) { box.innerHTML = '<div class="empty">جدول خالی است؛ با «افزودن ردیف» شروع کنید</div>'; return; }
-      box.innerHTML = hpx.rows.map(function (r, i) {
-        var f = hpxField(r.key);
-        var keyOpts = '<option value="">— انتخاب —</option>' + hpx.fields.map(function (x) {
-          return '<option value="' + escapeHtml(x.key) + '"' + (f && f.key === x.key ? ' selected' : '') + '>' + escapeHtml(x.label) + '</option>';
-        }).join('') + (r.key && !f ? '<option value="' + escapeHtml(r.key) + '" selected>' + escapeHtml(r.key) + ' (در فرم نیست)</option>' : '');
-        var opts = (f && f.options) || [];
-        var spec = opts.length
-          ? '<select data-i="' + i + '" data-k="spec"><option value="">— ویژگی —</option>' + opts.map(function (o) {
-              return '<option value="' + escapeHtml(o) + '"' + (o === r.spec ? ' selected' : '') + '>' + escapeHtml(o) + '</option>';
-            }).join('') + (r.spec && opts.indexOf(r.spec) < 0 ? '<option value="' + escapeHtml(r.spec) + '" selected>' + escapeHtml(r.spec) + '</option>' : '') + '</select>'
-          : '<input data-i="' + i + '" data-k="spec" type="text" placeholder="ویژگی" value="' + escapeHtml(r.spec || '') + '">';
-        var flag = String(r.flag || 'NO').toUpperCase();
-        return '<div class="hpx-row">' +
-          '<select data-i="' + i + '" data-k="key">' + keyOpts + '</select>' + spec +
-          '<select class="hpx-flag ' + (flag === 'YES' ? 'yes' : 'no') + '" data-i="' + i + '" data-k="flag">' +
-            '<option value="NO"' + (flag !== 'YES' ? ' selected' : '') + '>NO</option>' +
-            '<option value="YES"' + (flag === 'YES' ? ' selected' : '') + '>YES</option></select>' +
-          '<button class="hpx-del" type="button" data-del="' + i + '" title="حذف">✕</button>' +
-          '</div>';
-      }).join('');
-      box.querySelectorAll('[data-k]').forEach(function (el) {
-        el.addEventListener('change', function () {
-          var r = hpx.rows[+el.getAttribute('data-i')];
-          var k = el.getAttribute('data-k');
-          r[k] = el.value;
-          if (k === 'key') r.spec = '';
-          hpxSetDirty(true);
-          if (k !== 'spec') hpxRender();
-        });
-        if (el.tagName === 'INPUT') el.addEventListener('input', function () { hpx.rows[+el.getAttribute('data-i')].spec = el.value; hpxSetDirty(true); });
-      });
-      box.querySelectorAll('[data-del]').forEach(function (el) {
-        el.addEventListener('click', function () {
-          hpx.rows.splice(+el.getAttribute('data-del'), 1);
-          hpxSetDirty(true);
-          hpxRender();
-        });
-      });
+    function hpmShown(r, o) {
+      var ex = hpmExplicit(r, o), base = hpmBase(r);
+      if (r.formula) return ex || 'AUTO';
+      return ex && ex !== base ? ex : base;
     }
-    function hpxApply(data) {
-      hpx.fields = (data && data.fields) || [];
-      hpx.rows = ((data && data.rows) || []).map(function (r) { return { key: r.key, spec: r.spec, flag: r.flag || 'NO' }; });
-      hpxSetDirty(false);
-      hpxRender();
+    function hpmIsEx(r, o) { var ex = hpmExplicit(r, o); return !!ex && (r.formula || ex !== hpmBase(r)); }
+    function hpmSeg(vals, cur, attrs, isEx, ro) {
+      return '<span class="hpm-seg' + (ro ? ' ro' : '') + '">' + vals.map(function (v) {
+        var cls = v === 'YES' ? 'yes' : v === 'NO' ? 'no' : 'auto';
+        return '<button type="button" class="' + cls + (cur === v ? ' on' : '') + (cur === v && isEx ? ' ex' : '') + '"' + (ro ? ' disabled' : ' ' + attrs + ' data-v="' + v + '"') + '>' + (v === 'AUTO' ? 'خودکار' : v) + '</button>';
+      }).join('') + '</span>';
     }
-    function hpxLoad() {
-      if (hpx.dirty && !confirm('تغییرات ذخیره‌نشده پاک شود؟')) return;
-      document.getElementById('hpx-rows').innerHTML = '<div class="empty">در حال بارگذاری...</div>';
-      hpxSetDirty(false);
-      runGas('getHavePriceExceptionsTable').then(hpxApply).catch(function (err) {
-        document.getElementById('hpx-rows').innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری انجام نشد') + '</div>';
+    function hpmCard(r, i, q) {
+      var e = hpm.edits[r.key];
+      var base = hpmBase(r);
+      var opts = r.options.filter(function (o) { return !q || ptNorm(r.label + ' ' + r.key + ' ' + o.o).indexOf(q) >= 0; });
+      if (q && !opts.length && ptNorm(r.label + ' ' + r.key).indexOf(q) < 0) return '';
+      if (q && !opts.length) opts = r.options;
+      var nEx = r.options.filter(function (o) { return hpmIsEx(r, o); }).length;
+      var open = !!q || !!hpm.open[r.key];
+      var baseHtml = r.formula
+        ? '<div class="hpm-base"><span>پیش‌فرض (فرمول شیت)</span>' + hpmSeg(['YES', 'NO'], base, '', false, true) + '</div>'
+        : '<div class="hpm-base"><span>پیش‌فرض ردیف</span>' + hpmSeg(['YES', 'NO'], base, 'data-hpm-base="' + i + '"', !!(e && e.base), false) + '</div>';
+      var html = '<section class="hpm-card' + (open ? ' open' : '') + (e ? ' chg' : '') + '">' +
+        '<div class="hpm-head" data-hpm-toggle="' + i + '"><div class="hpm-title"><b>' + escapeHtml(r.label) + '</b><small><bdi>' + escapeHtml(r.key) + '</bdi> · ' +
+        puFa(r.options.length) + ' گزینه' + (nEx ? ' · <span class="hpm-n">' + puFa(nEx) + ' استثنا</span>' : '') + (e ? ' · <span class="hpm-n">ذخیره‌نشده</span>' : '') + '</small></div>' + baseHtml + '</div>';
+      if (open) {
+        if (!base && !r.formula) html += '<div class="hpm-opt"><div class="hpm-on" style="color:var(--muted)">این ردیف در شیت پیش‌فرض ندارد؛ اول پیش‌فرض را YES یا NO کنید.</div></div>';
+        else {
+          html += opts.map(function (o) {
+            var j = r.options.indexOf(o);
+            var dirty = e && Object.prototype.hasOwnProperty.call(e.opts, o.o);
+            var isEx = hpmIsEx(r, o);
+            var vals = r.formula ? ['AUTO', 'YES', 'NO'] : ['YES', 'NO'];
+            return '<div class="hpm-opt' + (isEx ? ' ex' : '') + (dirty ? ' dirty' : '') + '"><div class="hpm-on">' + escapeHtml(o.o) +
+              (o.extra ? '<span class="hpm-tag">در کشوی فرم نیست</span>' : '') + (isEx ? '<small>برعکس پیش‌فرض</small>' : '') + '</div>' +
+              hpmSeg(vals, hpmShown(r, o), 'data-hpm-opt="' + i + ':' + j + '"', isEx, false) + '</div>';
+          }).join('');
+          if (!r.options.length) html += '<div class="hpm-opt"><div class="hpm-on" style="color:var(--muted)">این ردیف کشوی گزینه ندارد؛ فقط پیش‌فرض ردیف حساب می‌شود.</div></div>';
+          html += '<div class="hpm-add"><input type="text" data-hpm-new="' + i + '" placeholder="گزینهٔ دیگر (متن دقیق ستون ویژگی)"><button type="button" data-hpm-addbtn="' + i + '">افزودن</button></div>';
+        }
+      }
+      return html + '</section>';
+    }
+    function hpmRender() {
+      var q = ptNorm(hpm.q);
+      var body = document.getElementById('hpm-body');
+      if (!hpm.loaded) return;
+      var html = hpm.rows.map(function (r, i) { return hpmCard(r, i, q); }).join('');
+      body.innerHTML = html || '<div class="empty">' + (hpm.rows.length ? 'ردیفی با این جستجو پیدا نشد' : 'ردیفی در فرم محاسبه پیدا نشد') + '</div>';
+      hpmSyncBar();
+    }
+    function hpmSyncBar() {
+      var n = hpmDirtyCount();
+      var btn = document.getElementById('hpm-save');
+      btn.disabled = !n || hpm.saving;
+      btn.textContent = hpm.saving ? 'در حال ذخیره…' : (n ? 'ذخیرهٔ ' + puFa(n) + ' تغییر' : 'ذخیره تغییرات');
+      document.getElementById('hpm-reset').textContent = n ? 'لغو و بازخوانی' : 'بازخوانی';
+    }
+    function hpmApply(d) {
+      hpm.rows = (d && d.rows) || [];
+      hpm.ver = (d && d.ver) || '';
+      hpm.edits = {};
+      hpm.loaded = true;
+      hpmRender();
+    }
+    function hpmLoad(ask) {
+      if (ask && hpmDirtyCount() && !confirm('تغییرات ذخیره‌نشده پاک شود و از شیت بازخوانی شود؟')) return;
+      if (!hpm.loaded) document.getElementById('hpm-body').innerHTML = '<div class="empty">در حال بارگذاری...</div>';
+      runGas('getHavePriceMatrix').then(hpmApply).catch(function (err) {
+        if (!hpm.loaded) document.getElementById('hpm-body').innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری انجام نشد') + '</div>';
         toast((err && err.message) || 'بارگذاری انجام نشد', true);
       });
     }
-    function hpxAdd() {
-      hpx.rows.push({ key: '', spec: '', flag: 'NO' });
-      hpxSetDirty(true);
-      hpxRender();
+    function hpmLeave() {
+      if (hpmDirtyCount() && !confirm(puFa(hpmDirtyCount()) + ' تغییر ذخیره نشده است. بدون ذخیره خارج شوید؟')) return;
+      hpm.edits = {};
+      showHome();
     }
-    function hpxSave() {
-      if (hpx.saving) return;
-      var rows = hpx.rows.filter(function (r) { return r.key || r.spec; });
-      for (var i = 0; i < rows.length; i++) {
-        if (!rows[i].key || !String(rows[i].spec || '').trim()) return toast('ردیف ' + (i + 1) + ': ردیف فرم و ویژگی هر دو لازم است', true);
-      }
-      hpx.saving = true;
-      hpxSetDirty(true);
-      var btn = document.getElementById('hpx-save');
-      btn.textContent = 'در حال ذخیره...';
-      runGas('saveHavePriceExceptionsTable', rows).then(function (data) {
-        hpx.saving = false;
-        btn.textContent = 'ذخیره جدول';
-        hpxApply(data);
-        toast('جدول ذخیره شد (' + ((data && data.saved) || 0) + ' ردیف)');
+    function hpmSetBase(i, v) {
+      var r = hpm.rows[i];
+      if (!r || r.formula) return;
+      var e = hpmEdit(r.key);
+      if (v === r.base) delete e.base; else e.base = v;
+      hpmTidy(r.key);
+      hpmRender();
+    }
+    function hpmSetOpt(i, j, v) {
+      var r = hpm.rows[i], o = r && r.options[j];
+      if (!o) return;
+      // همان پیش‌فرض = پیرو پیش‌فرض ('')؛ اگر نتیجه با حالت ذخیره‌شده یکی است، تغییری ثبت نمی‌شود
+      var norm = function (x) { x = x === 'AUTO' ? '' : (x || ''); return (!r.formula && x === hpmBase(r)) ? '' : x; };
+      var want = norm(v);
+      var e = hpmEdit(r.key);
+      if (want === norm(o.ex)) delete e.opts[o.o]; else e.opts[o.o] = want;
+      hpmTidy(r.key);
+      hpmRender();
+    }
+    function hpmAddOpt(i) {
+      var r = hpm.rows[i];
+      var inp = document.querySelector('[data-hpm-new="' + i + '"]');
+      var t = String((inp && inp.value) || '').replace(/\s+/g, ' ').trim();
+      if (!r || !t) return;
+      if (r.options.some(function (o) { return ptNorm(o.o) === ptNorm(t); })) { toast('این گزینه در فهرست هست', true); return; }
+      r.options.push({ o: t, ex: '', extra: true });
+      var base = hpmBase(r);
+      // گزینهٔ تازه برعکس پیش‌فرض اضافه می‌شود (برای همین افزوده شده است)
+      hpmEdit(r.key).opts[t] = r.formula ? 'NO' : (base === 'YES' ? 'NO' : 'YES');
+      hpm.open[r.key] = true;
+      hpmRender();
+    }
+    function hpmSave() {
+      if (hpm.saving || !hpmDirtyCount()) return;
+      var changes = Object.keys(hpm.edits).map(function (key) {
+        var r = hpmRow(key), e = hpm.edits[key];
+        var opts = {};
+        r.options.forEach(function (o) { var ex = hpmExplicit(r, o); if (ex) opts[o.o] = ex; });
+        var c = { key: key, opts: opts };
+        if (e.base) c.base = e.base;
+        return c;
+      });
+      hpm.saving = true;
+      hpmSyncBar();
+      runGas('saveHavePriceMatrix', { ver: hpm.ver, changes: changes }).then(function (d) {
+        hpm.saving = false;
+        hpmApply(d);
+        toast('ذخیره شد · ' + puFa((d && d.saved) || 0) + ' استثنا' + ((d && d.bases) ? ' · ' + puFa(d.bases) + ' پیش‌فرض در فرم' : ''));
       }).catch(function (err) {
-        hpx.saving = false;
-        btn.textContent = 'ذخیره جدول';
-        hpxSetDirty(true);
+        hpm.saving = false;
+        hpmSyncBar();
         toast((err && err.message) || 'ذخیره انجام نشد', true);
       });
     }
+    document.addEventListener('click', function (ev) {
+      var scr = document.getElementById('screen-hp-ex');
+      var t = ev.target.closest && ev.target.closest('[data-hpm-base],[data-hpm-opt],[data-hpm-toggle],[data-hpm-addbtn]');
+      if (!t || !scr.contains(t)) return;
+      if (t.hasAttribute('data-hpm-base')) { ev.stopPropagation(); hpmSetBase(+t.getAttribute('data-hpm-base'), t.getAttribute('data-v')); }
+      else if (t.hasAttribute('data-hpm-opt')) { var p = t.getAttribute('data-hpm-opt').split(':'); hpmSetOpt(+p[0], +p[1], t.getAttribute('data-v')); }
+      else if (t.hasAttribute('data-hpm-addbtn')) hpmAddOpt(+t.getAttribute('data-hpm-addbtn'));
+      else if (t.hasAttribute('data-hpm-toggle')) {
+        if (ev.target.closest('.hpm-base')) return;
+        var r = hpm.rows[+t.getAttribute('data-hpm-toggle')];
+        if (r) { hpm.open[r.key] = !hpm.open[r.key]; hpmRender(); }
+      }
+    });
+    document.addEventListener('input', function (ev) {
+      if (ev.target && ev.target.id === 'hpm-q') { hpm.q = ev.target.value; clearTimeout(hpm.qt); hpm.qt = setTimeout(hpmRender, 150); }
+    });
+    document.addEventListener('keydown', function (ev) {
+      var t = ev.target;
+      if (ev.key === 'Enter' && t && t.getAttribute && t.getAttribute('data-hpm-new')) { ev.preventDefault(); hpmAddOpt(+t.getAttribute('data-hpm-new')); }
+    });
+    window.addEventListener('beforeunload', function (ev) { if (hpm.saving || hpmDirtyCount()) { ev.preventDefault(); ev.returnValue = ''; } });
 
     function resetHavePrice() {
       if (!confirm('قیمت همهٔ ردیف‌های NO در «فرم محاسبه» شیت پاک شود؟')) return;
@@ -4065,8 +4207,209 @@
       btn.textContent = busy ? 'در حال صدور...' : 'صدور لیست قیمت های پایه';
     }
 
+    // صدور پکیج پایه فقط بعد از دیدن و تأیید جدول تفاوت قیمت (درخواست مدیر ۱۴۰۵/۰۹/۰۵)
     function issueBasePricesFromPreview() {
-      issuePackageFromApp(state.previewPackageName);
+      var name = state.previewPackageName;
+      if (!name) return toast('پکیج انتخاب نشده', true);
+      if (state.packageIssuing) return toast('صبر کنید تا صدور پکیج جاری تمام شود', true);
+      openPriceDiff(name).then(function (ok) {
+        if (ok) issuePackageFromApp(name);
+        else toast('صدور انجام نشد');
+      });
+    }
+
+    // قیمت نهایی هر ظرفیت × توقف پکیج با موتور قیمت اپ؛ سود = جدول سود همین پکیج (میلیون تومان)، مثل runSpecialPackage.
+    function packageProfitToman(packageName, stop) {
+      var t = (state.profitTables || {})[packageName];
+      var rows = (state.formMode === 'package' && state.previewPackageName === packageName && (state.profitTableRows || []).length)
+        ? collectProfitTableRows() : ((t && t.rows) || []);
+      for (var i = 0; i < rows.length; i++) {
+        if (String(rows[i].stop).trim() === String(stop).trim()) return (Number(rows[i].value) || 0) * 1000000;
+      }
+      return 0;
+    }
+
+    function computePackageNewPrices(packageName) {
+      var pkg = findPackageStruct(packageName);
+      if (!pkg) return null;
+      var caps = (pkg.caps || []).map(String).filter(String);
+      if (!caps.length && pkg.values && pkg.values.caps) caps = [String(pkg.values.caps)];
+      var stops = (pkg.stops || []).map(String).filter(String);
+      if (!stops.length && pkg.values && pkg.values.stop) stops = [String(pkg.values.stop)];
+      var labels = {};
+      ((state.bootstrap && state.bootstrap.fields) || []).forEach(function (f) { labels[f.key] = f.header || f.key; });
+      var out = {};
+      caps.forEach(function (cap) {
+        stops.forEach(function (stop) {
+          var values = JSON.parse(JSON.stringify(pkg.values || {}));
+          values.caps = cap;
+          values.stop = stop;
+          var prices = dropNeverPriced(computeLocalPrices(values));
+          var sum = 0;
+          var items = {};
+          Object.keys(prices).forEach(function (k) {
+            var v = parseNum(prices[k]);
+            sum += v;
+            items[k] = { label: labels[k] || k, option: values[k] || '', toman: v };
+          });
+          var profit = packageProfitToman(pkg.packageName || packageName, stop);
+          var costToman = Math.round((sum + profit) / 10000) * 10000;
+          items.profit = { label: 'سود', option: '', toman: profit };
+          out[cap + '|' + stop] = { cap: cap, stop: stop, finalRial: mround(costToman, 5000000) * 10, items: items };
+        });
+      });
+      return { caps: caps, stops: stops, rows: out };
+    }
+
+    function openPriceDiff(packageName) {
+      return new Promise(function (resolve) {
+        var modal = document.getElementById('pdiff-modal');
+        var fresh = computePackageNewPrices(packageName);
+        state.priceDiff = { packageName: packageName, fresh: fresh, versions: [], nextVersion: '' };
+        document.getElementById('pdiff-title').textContent = 'جدول تفاوت قیمت — ' + packageDisplayName(packageName);
+        document.getElementById('pdiff-sub').textContent = 'قبل از صدور، قیمت هر توقف ورژن جدید را با ورژن قبلی مقایسه کنید.';
+        document.getElementById('pdiff-base').innerHTML = '';
+        document.getElementById('pdiff-body').innerHTML = '<div class="empty">در حال خواندن تاریخچه...</div>';
+        modal.style.display = 'flex';
+        var noBtn = document.getElementById('pdiff-no');
+        var yesBtn = document.getElementById('pdiff-yes');
+        function close(ok) {
+          modal.style.display = 'none';
+          noBtn.onclick = null;
+          yesBtn.onclick = null;
+          resolve(!!ok);
+        }
+        noBtn.onclick = function () { close(false); };
+        yesBtn.onclick = function () { close(true); };
+        if (!fresh) {
+          document.getElementById('pdiff-body').innerHTML = '<div class="empty">ساختار این پکیج در اپ نیست</div>';
+          return;
+        }
+        loadPriceDiffHistory(packageName);
+      });
+    }
+
+    function loadPriceDiffHistory(packageName) {
+      runGas('getBasePriceHistory', packageName).then(function (data) {
+        if (!state.priceDiff || state.priceDiff.packageName !== packageName) return;
+        state.priceDiff.versions = (data && data.versions) || [];
+        state.priceDiff.nextVersion = (data && data.nextVersion) || '';
+        var sel = document.getElementById('pdiff-base');
+        sel.innerHTML = state.priceDiff.versions.length
+          ? state.priceDiff.versions.map(function (v, i) {
+            return '<option value="' + i + '">ورژن ' + escapeHtml(v.version) + ' — ' + escapeHtml(v.issueDate) + (i === 0 ? ' (آخرین)' : '') + '</option>';
+          }).join('')
+          : '<option value="-1">ورژن قبلی ثبت نشده</option>';
+        renderPriceDiffTable();
+      }).catch(function (err) {
+        document.getElementById('pdiff-body').innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'خواندن تاریخچه انجام نشد') + '</div>';
+        state.priceDiff.versions = [];
+        renderPriceDiffTable();
+      });
+    }
+
+    function pdiffFmt(n) { return n ? fmtPrice(n) : '—'; }
+
+    function pdiffChangeCells(oldVal, newVal) {
+      if (!oldVal || !newVal) return { pct: '<td>—</td>', diff: '<td>—</td>' };
+      var d = newVal - oldVal;
+      var pct = Math.round(d / oldVal * 1000) / 10;
+      var cls = d > 0 ? 'pdiff-up' : (d < 0 ? 'pdiff-down' : '');
+      var sign = d > 0 ? '+' : (d < 0 ? '−' : '');
+      return {
+        pct: '<td class="' + cls + '" dir="ltr">' + sign + Math.abs(pct) + '٪</td>',
+        diff: '<td class="' + cls + '" dir="ltr">' + (d ? sign + fmtPrice(Math.abs(d)) : '0') + '</td>'
+      };
+    }
+
+    function renderPriceDiffTable() {
+      var pd = state.priceDiff;
+      if (!pd || !pd.fresh) return;
+      var idx = Number(document.getElementById('pdiff-base').value);
+      var base = (pd.versions || [])[idx] || null;
+      var baseRows = {};
+      if (base) base.rows.forEach(function (r) { baseRows[r.cap + '|' + r.stop] = r; });
+      var newLabel = 'ورژن جدید' + (pd.nextVersion ? ' (' + escapeHtml(pd.nextVersion) + ')' : '');
+      var baseLabel = base ? ('ورژن ' + escapeHtml(base.version)) : 'ورژن قبلی';
+      var html = '';
+      pd.fresh.caps.forEach(function (cap) {
+        html += '<div class="pdiff-cap">ظرفیت ' + escapeHtml(cap) + ' نفر <span class="pdiff-unit">(مبالغ به ریال)</span></div><div class="pdiff-wrap"><table class="pdiff-table"><thead><tr>' +
+          '<th>تفاوت</th><th>درصد افزایش</th><th>' + baseLabel + '</th><th>' + newLabel + '</th><th>توقف</th></tr></thead><tbody>';
+        pd.fresh.stops.forEach(function (stop) {
+          var key = cap + '|' + stop;
+          var nw = pd.fresh.rows[key];
+          var old = baseRows[key];
+          var oldVal = old ? old.finalRial : 0;
+          var ch = pdiffChangeCells(oldVal, nw.finalRial);
+          html += '<tr class="pdiff-row" onclick="togglePriceDiffItems(this)" data-key="' + escapeHtml(key) + '">' +
+            ch.diff + ch.pct + '<td dir="ltr">' + pdiffFmt(oldVal) + '</td><td dir="ltr">' + pdiffFmt(nw.finalRial) + '</td>' +
+            '<td><b>' + escapeHtml(stop) + '</b></td></tr>';
+        });
+        html += '</tbody></table></div>';
+      });
+      if (!base) html = '<div class="pdiff-note">برای این پکیج هنوز ورژن قبلی در شیت Base Price History نیست؛ با دکمهٔ «ساخت تاریخچه از آرشیو PDF» ساخته می‌شود.</div>' + html;
+      document.getElementById('pdiff-body').innerHTML = html;
+    }
+
+    function togglePriceDiffItems(tr) {
+      var next = tr.nextElementSibling;
+      if (next && next.classList.contains('pdiff-items')) { next.remove(); return; }
+      var pd = state.priceDiff;
+      var key = tr.getAttribute('data-key');
+      var idx = Number(document.getElementById('pdiff-base').value);
+      var base = (pd.versions || [])[idx] || null;
+      var old = null;
+      if (base) base.rows.forEach(function (r) { if (r.cap + '|' + r.stop === key) old = r; });
+      var nw = pd.fresh.rows[key];
+      var oldItems = (old && old.items) || null;
+      var keys = Object.keys(nw.items);
+      if (oldItems) Object.keys(oldItems).forEach(function (k) { if (keys.indexOf(k) < 0) keys.push(k); });
+      var rows = keys.map(function (k) {
+        var n = nw.items[k] || {};
+        var o = oldItems ? (oldItems[k] || null) : null;
+        var nv = Number(n.toman) || 0, ov = o ? (Number(o.toman) || 0) : 0;
+        if (!nv && !ov) return '';
+        var d = o ? nv - ov : 0;
+        var cls = d > 0 ? 'pdiff-up' : (d < 0 ? 'pdiff-down' : '');
+        var sign = d > 0 ? '+' : (d < 0 ? '−' : '');
+        var optOld = o && o.option ? '<div class="pdiff-opt">' + escapeHtml(o.option) + '</div>' : '';
+        var optNew = n.option ? '<div class="pdiff-opt">' + escapeHtml(n.option) + '</div>' : '';
+        return '<tr><td>' + escapeHtml(n.label || (o && o.label) || k) + '</td>' +
+          '<td><span dir="ltr">' + (o ? pdiffFmt(ov) : '—') + '</span>' + optOld + '</td>' +
+          '<td><span dir="ltr">' + pdiffFmt(nv) + '</span>' + optNew + '</td>' +
+          '<td class="' + cls + '" dir="ltr">' + (o ? (d ? sign + fmtPrice(Math.abs(d)) : '0') : '—') + '</td></tr>';
+      }).join('');
+      var extra = '';
+      if (old && (old.coverRial || old.upsRial)) {
+        extra = '<div class="pdiff-note">پیشنهادات ورژن ' + escapeHtml(base.version) + ': ' +
+          (old.coverRial ? 'روکش استیل هر درب ' + fmtPrice(old.coverRial) + ' ریال' : '') +
+          (old.coverRial && old.upsRial ? ' — ' : '') +
+          (old.upsRial ? 'UPS ' + fmtPrice(old.upsRial) + ' ریال' : '') + '</div>';
+      }
+      var note = oldItems ? '' : '<div class="pdiff-note">ورژن مبنا ریز اقلام ندارد (آرشیو PDF)؛ فقط ریز اقلام ورژن جدید نمایش داده می‌شود.</div>';
+      var row = document.createElement('tr');
+      row.className = 'pdiff-items';
+      row.innerHTML = '<td colspan="5"><table><thead><tr><th>قلم</th><th>قبلی (تومان)</th><th>جدید (تومان)</th><th>تفاوت</th></tr></thead><tbody>' +
+        rows + '</tbody></table>' + extra + note + '</td>';
+      tr.parentNode.insertBefore(row, tr.nextSibling);
+    }
+
+    function startPriceHistoryArchive() {
+      var btn = document.getElementById('pdiff-archive');
+      btn.disabled = true;
+      btn.textContent = 'در حال ساخت تاریخچه...';
+      runGas('startBasePriceHistoryArchive').then(function (res) {
+        var st = (res && res.state) || {};
+        if (res && res.ok === false) toast(res.error || 'ساخت تاریخچه انجام نشد', true);
+        else if (st.done) toast('تاریخچه ساخته شد (' + (st.files || 0) + ' PDF)');
+        else toast((st.files || 0) + ' PDF خوانده شد؛ بقیه خودکار در پس‌زمینه ادامه دارد');
+        if (state.priceDiff) loadPriceDiffHistory(state.priceDiff.packageName);
+      }).catch(function (err) {
+        toast((err && err.message) || 'ساخت تاریخچه انجام نشد', true);
+      }).then(function () {
+        btn.disabled = false;
+        btn.textContent = 'ساخت تاریخچه از آرشیو PDF';
+      });
     }
 
     function askPriceRuleConfirm(messages) {
