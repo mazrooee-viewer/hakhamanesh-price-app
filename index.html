@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261127163000">
+  <meta name="x-build" content="20261127230000">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getBasePriceHistory","startBasePriceHistoryArchive","getBasePriceHistoryStatus","saveWageTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getHavePriceMatrix","saveHavePriceMatrix","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest","getUsdRates"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getBasePriceHistory","startBasePriceHistoryArchive","getBasePriceHistoryStatus","saveWageTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getHavePriceMatrix","saveHavePriceMatrix","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest","getUsdRates","getOutputSheetsView"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261127163000" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261127230000" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -463,6 +463,34 @@
     .home-pkg { background: #efe7f8; color: #3b2060; border-color: #6b4c9a; }
     .home-reset-hp { background: #fde8e8; color: #6b1d1d; border-color: #b91c1c; }
     .home-hp-ex { background: #fef3c7; color: #5b3a06; border-color: #b45309; }
+    .home-sheets { background: #e0f2fe; color: #0c3b5c; border-color: #0369a1; }
+    /* نمای زندهٔ شیت‌های خروجی (OutputSheetsView.js) */
+    .osv-tabs { display: flex; gap: 6px; margin: 4px 0 10px; }
+    .osv-tabs button { flex: 1; padding: 10px 4px; border-radius: 12px; border: 1px solid var(--line); background: #fff; font: inherit; font-weight: 700; color: #334155; cursor: pointer; }
+    .osv-tabs button small { display: block; font-weight: 600; font-size: 11px; color: #64748b; margin-top: 2px; }
+    .osv-tabs button.on { background: #0369a1; border-color: #0369a1; color: #fff; }
+    .osv-tabs button.on small { color: #e0f2fe; }
+    .osv-status { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 12px; color: #475569; margin-bottom: 8px; }
+    .osv-live { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+    .osv-live i { width: 9px; height: 9px; border-radius: 50%; background: #94a3b8; display: inline-block; }
+    .osv-live.on i { background: #16a34a; box-shadow: 0 0 0 0 rgba(22,163,74,.6); animation: osvPulse 1.6s infinite; }
+    .osv-live.err i { background: #dc2626; }
+    @keyframes osvPulse { 0% { box-shadow: 0 0 0 0 rgba(22,163,74,.55); } 70% { box-shadow: 0 0 0 7px rgba(22,163,74,0); } 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); } }
+    .osv-tools { display: flex; gap: 6px; }
+    .osv-tools button { padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); background: #fff; font: inherit; font-size: 12px; cursor: pointer; }
+    .osv-chg-note { background: #fef9c3; border: 1px solid #facc15; color: #713f12; border-radius: 10px; padding: 6px 10px; font-size: 12px; margin-bottom: 8px; }
+    .osv-chg-note:empty { display: none; }
+    .osv-scroll { overflow-x: auto; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 6px; -webkit-overflow-scrolling: touch; }
+    .osv-sheet { border-collapse: collapse; table-layout: fixed; font-size: 13.3px; color: #000; background: #fff; }
+    .osv-sheet td { padding: 0 3px; vertical-align: bottom; white-space: nowrap; overflow: visible; line-height: 1.35; border: 1px solid #eef2f7; }
+    .osv-sheet tr.osv-offer td { box-shadow: inset 0 0 0 999px rgba(3,105,161,.07); }
+    .osv-sheet tr.osv-offer td:first-child, .osv-sheet tr.osv-offer-h td:first-child { box-shadow: inset 0 0 0 999px rgba(3,105,161,.07), inset -4px 0 0 #0369a1; }
+    .osv-sheet[dir="ltr"] tr.osv-offer td:first-child, .osv-sheet[dir="ltr"] tr.osv-offer-h td:first-child { box-shadow: inset 0 0 0 999px rgba(3,105,161,.07), inset 4px 0 0 #0369a1; }
+    .osv-sheet td.osv-chg { animation: osvFlash 4s ease-out 1; }
+    @keyframes osvFlash { 0%, 35% { box-shadow: inset 0 0 0 999px rgba(250,204,21,.75); } 100% { box-shadow: inset 0 0 0 999px rgba(250,204,21,0); } }
+    .osv-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: #64748b; margin-top: 8px; }
+    .osv-legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .osv-legend i { width: 14px; height: 10px; border-radius: 3px; display: inline-block; }
     /* Have Price: کارت هر ردیف فرم، پیش‌فرض + گزینه‌ها (1405/09/06) */
     .hpm-hint { font-size: 12px; color: var(--muted); line-height: 1.8; margin: 0 0 10px; }
     .hpm-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 11.5px; font-weight: 700; color: var(--muted); margin-bottom: 10px; }
@@ -830,6 +858,10 @@
           Have Price
           <span class="count">پیش‌فرض هر ردیف فرم و YES / NO هر گزینه</span>
         </button>
+        <button class="home-btn home-sheets" type="button" onclick="openOutputSheets()">
+          شیت‌های خروجی
+          <span class="count">کششی · هیدرولیک · درب و ریل (زنده)</span>
+        </button>
         <button class="home-btn home-reset-hp" id="reset-have-price" type="button" onclick="resetHavePrice()">
           reset have price
           <span class="count">پاک کردن قیمت ردیف‌های NO در فرم محاسبه شیت</span>
@@ -1115,6 +1147,36 @@
       <div class="pt-bar">
         <button class="btn btn-main" id="hpm-save" type="button" onclick="hpmSave()" disabled>ذخیره تغییرات</button>
         <button class="btn btn-ghost" id="hpm-reset" type="button" onclick="hpmLoad(true)">بازخوانی</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-sheets" class="screen">
+    <div class="top">
+      <div class="top-row">
+        <div>
+          <button class="back" type="button" onclick="event.preventDefault(); showHome();">بازگشت</button>
+          <h1>شیت‌های خروجی</h1>
+          <div class="meta">Traction · Hydraulic · Door&amp;Cabin — فقط نمایش، زنده از شیت</div>
+        </div>
+        <div class="date-badge" data-date-slot></div>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="osv-tabs" id="osv-tabs"></div>
+      <div class="osv-status">
+        <span class="osv-live" id="osv-live"><i></i><span id="osv-live-t">در حال اتصال…</span></span>
+        <span class="osv-tools">
+          <button type="button" id="osv-fit" onclick="osvToggleFit()">اندازهٔ واقعی</button>
+          <button type="button" onclick="osvPoll(true)">بازخوانی</button>
+        </span>
+      </div>
+      <div class="osv-chg-note" id="osv-chg"></div>
+      <div class="osv-scroll" id="osv-scroll"><div id="osv-body"><div class="empty">در حال بارگذاری...</div></div></div>
+      <div class="osv-legend">
+        <span><i style="background:rgba(3,105,161,.18);border-right:3px solid #0369a1"></i>پیشنهادات تکمیلی (از Data_Offers)</span>
+        <span><i style="background:#fde047"></i>خانهٔ تازه عوض‌شده</span>
+        <span>هر چند ثانیه از شیت خوانده می‌شود؛ ویرایش Data_Offers بعد از بازنویسی شیت (معمولاً چند ثانیه) اینجا دیده می‌شود.</span>
       </div>
     </div>
   </section>
@@ -2549,6 +2611,7 @@
       if (id !== 'screen-form') {
         resetFormDockPanels();
       }
+      if (id !== 'screen-sheets' && typeof osvStop === 'function') osvStop();
       updateBackFab();
     }
 
@@ -3955,6 +4018,148 @@
     // هر ردیف فرم یک کارت: پیش‌فرض (ستون Have Price فرم؛ فرمولی = فقط‌خواندنی) و YES / NO هر گزینه.
     // گزینه‌ای که با پیش‌فرض یکی است «پیرو پیش‌فرض» است؛ فقط تفاوت‌ها استثنا می‌شوند (همان جدول Data_Offers).
     var hpm = { rows: [], ver: '', edits: {}, open: {}, q: '', saving: false, loaded: false };
+    // ---------- شیت‌های خروجی (نمای زنده؛ OutputSheetsView.js) ----------
+    var OSV_TABS = [
+      { name: 'Traction', label: 'کششی', sub: 'Traction' },
+      { name: 'Hydraulic', label: 'هیدرولیک', sub: 'Hydraulic' },
+      { name: 'Door&Cabin', label: 'درب و ریل', sub: 'Door&Cabin' }
+    ];
+    var OSV_LS_KEY = 'osvCacheV1';
+    var OSV_POLL_MS = 5000, OSV_ERR_MS = 15000;
+    var osv = { tab: 'Traction', views: {}, timer: null, busy: false, fit: true, lastAt: 0, err: '', chg: {} };
+    (function () {
+      try { var t = localStorage.getItem(OSV_LS_KEY); if (t) osv.views = JSON.parse(t) || {}; } catch (e) { osv.views = {}; }
+      try { var tab = localStorage.getItem(OSV_LS_KEY + ':tab'); if (tab) osv.tab = tab; } catch (e2) {}
+    })();
+    function osvLsWrite() { try { localStorage.setItem(OSV_LS_KEY, JSON.stringify(osv.views)); } catch (e) {} }
+    function osvActive() { var s = document.getElementById('screen-sheets'); return !!(s && s.classList.contains('active')); }
+    function openOutputSheets() {
+      setHeaderDates(todayJalali());
+      showScreen('screen-sheets');
+      osvRenderTabs();
+      osvRender();
+      osvPoll(true);
+    }
+    function osvStop() { if (osv.timer) { clearTimeout(osv.timer); osv.timer = null; } }
+    function osvSchedule(ms) {
+      osvStop();
+      if (!osvActive() || document.hidden) return;
+      osv.timer = setTimeout(function () { osvPoll(false); }, ms);
+    }
+    function osvSetTab(name) {
+      if (osv.tab === name) return;
+      osv.tab = name;
+      try { localStorage.setItem(OSV_LS_KEY + ':tab', name); } catch (e) {}
+      osv.chg = {};
+      document.getElementById('osv-chg').textContent = '';
+      osvRenderTabs();
+      osvRender();
+      osvPoll(true);
+    }
+    function osvToggleFit() { osv.fit = !osv.fit; osvApplyFit(); }
+    function osvApplyFit() {
+      var btn = document.getElementById('osv-fit');
+      if (btn) btn.textContent = osv.fit ? 'اندازهٔ واقعی' : 'هم‌اندازهٔ صفحه';
+      var tbl = document.querySelector('#osv-body .osv-sheet'), box = document.getElementById('osv-scroll');
+      if (!tbl || !box) return;
+      tbl.style.zoom = '';
+      if (!osv.fit) return;
+      var avail = box.clientWidth - 14, w = tbl.offsetWidth;
+      if (w > avail && avail > 0) tbl.style.zoom = String(Math.max(0.3, avail / w));
+    }
+    window.addEventListener('resize', function () { if (osvActive()) osvApplyFit(); });
+    document.addEventListener('visibilitychange', function () {
+      if (!osvActive()) return;
+      if (document.hidden) osvStop(); else osvPoll(true);
+    });
+    function osvRenderTabs() {
+      document.getElementById('osv-tabs').innerHTML = OSV_TABS.map(function (t) {
+        var v = osv.views[t.name];
+        var n = v && v.offerCount != null ? puFa(v.offerCount) + ' پیشنهاد' : t.sub;
+        return '<button type="button" class="' + (t.name === osv.tab ? 'on' : '') + '" onclick="osvSetTab(\'' + t.name + '\')">' +
+          escapeHtml(t.label) + '<small><bdi>' + escapeHtml(n) + '</bdi></small></button>';
+      }).join('');
+    }
+    function osvStatus() {
+      var el = document.getElementById('osv-live'), t = document.getElementById('osv-live-t');
+      if (!el || !t) return;
+      el.className = 'osv-live' + (osv.err ? ' err' : (osv.lastAt ? ' on' : ''));
+      if (osv.err) t.textContent = 'قطع: ' + osv.err + ' — تلاش دوباره…';
+      else if (osv.lastAt) t.textContent = 'زنده · آخرین بررسی ' + new Date(osv.lastAt).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      else t.textContent = 'در حال اتصال…';
+    }
+    function osvPoll(now) {
+      if (!osvActive()) { osvStop(); return; }
+      if (osv.busy) { if (now) osv.again = true; return; }
+      osvStop();
+      osv.busy = true;
+      var tab = osv.tab, vers = {};
+      Object.keys(osv.views).forEach(function (k) { if (osv.views[k] && osv.views[k].ver) vers[k] = osv.views[k].ver; });
+      runGas('getOutputSheetsView', { sheet: tab, vers: vers }).then(function (d) {
+        osv.busy = false;
+        osv.err = '';
+        osv.lastAt = Date.now();
+        var changed = false;
+        ((d && d.sheets) || []).forEach(function (s) {
+          if (s.same) { if (osv.views[s.name]) osv.views[s.name].offerCount = s.offerCount; return; }
+          if (s.missing) { osv.views[s.name] = { name: s.name, missing: true }; changed = true; return; }
+          var old = osv.views[s.name];
+          if (old && old.rows && s.name === osv.tab) osv.chg = osvDiff(old, s); else osv.chg = {};
+          osv.views[s.name] = s;
+          changed = true;
+        });
+        if (changed) { osvLsWrite(); osvRenderTabs(); if (tab === osv.tab) osvRender(); }
+        osvStatus();
+        if (osv.again) { osv.again = false; osvPoll(true); } else osvSchedule(OSV_POLL_MS);
+      }).catch(function (err) {
+        osv.busy = false;
+        osv.err = (err && err.message) || 'خطای شبکه';
+        osvStatus();
+        if (!osv.views[tab]) document.getElementById('osv-body').innerHTML = '<div class="empty">' + escapeHtml(osv.err) + '</div>';
+        osvSchedule(OSV_ERR_MS);
+      });
+    }
+    // متن هر خانه با شمارهٔ ردیف شیت + ستون → فهرست خانه‌های عوض‌شده
+    function osvTextMap(v) {
+      var m = {};
+      (v.rows || []).forEach(function (r) { (r.c || []).forEach(function (c, j) { if (c) m[r.n + ':' + j] = c.t; }); });
+      return m;
+    }
+    function osvDiff(a, b) {
+      var ma = osvTextMap(a), mb = osvTextMap(b), out = {}, n = 0, offers = 0;
+      var offerRows = {};
+      (b.rows || []).forEach(function (r) { if (r.o) offerRows[r.n] = true; });
+      Object.keys(mb).forEach(function (k) {
+        if ((ma[k] || '') !== (mb[k] || '') && (mb[k] || '') !== '') { out[k] = true; n++; if (offerRows[k.split(':')[0]]) offers++; }
+      });
+      Object.keys(ma).forEach(function (k) { if (!(k in mb) || ((ma[k] || '') !== '' && (mb[k] || '') === '')) { if (!out[k]) { n++; if (offerRows[k.split(':')[0]]) offers++; } } });
+      var note = document.getElementById('osv-chg');
+      if (note) note.textContent = n ? ('🔄 ' + puFa(n) + ' خانه عوض شد' + (offers ? ' (' + puFa(offers) + ' در پیشنهادات تکمیلی)' : '') + ' · ' +
+        new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })) : '';
+      return out;
+    }
+    function osvRender() {
+      var body = document.getElementById('osv-body');
+      var v = osv.views[osv.tab];
+      if (!v) { body.innerHTML = '<div class="empty">در حال بارگذاری...</div>'; return; }
+      if (v.missing) { body.innerHTML = '<div class="empty">شیت ' + escapeHtml(osv.tab) + ' در فایل قیمت پیدا نشد</div>'; return; }
+      var total = 0;
+      var cols = (v.cols || []).map(function (w) { total += w; return '<col style="width:' + w + 'px">'; }).join('');
+      var html = '<table class="osv-sheet" dir="' + (v.rtl ? 'rtl' : 'ltr') + '" style="width:' + total + 'px"><colgroup>' + cols + '</colgroup><tbody>';
+      (v.rows || []).forEach(function (r) {
+        html += '<tr' + (r.o === 1 ? ' class="osv-offer"' : r.o === 2 ? ' class="osv-offer-h"' : '') + ' style="height:' + r.h + 'px">';
+        (r.c || []).forEach(function (c, j) {
+          if (!c) return;
+          var css = c.s ? v.styles[c.s - 1] : '';
+          html += '<td' + (c.rs ? ' rowspan="' + c.rs + '"' : '') + (c.cs ? ' colspan="' + c.cs + '"' : '') +
+            (osv.chg[r.n + ':' + j] ? ' class="osv-chg"' : '') + (css ? ' style="' + escapeHtml(css) + '"' : '') + '>' + escapeHtml(c.t) + '</td>';
+        });
+        html += '</tr>';
+      });
+      body.innerHTML = html + '</tbody></table>';
+      osvApplyFit();
+    }
+
     function openHavePriceEx() {
       setHeaderDates(todayJalali());
       showScreen('screen-hp-ex');
