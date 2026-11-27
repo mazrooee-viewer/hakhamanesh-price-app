@@ -4065,7 +4065,7 @@
       tbl.style.zoom = '';
       if (!osv.fit) return;
       var avail = box.clientWidth - 14, w = tbl.offsetWidth;
-      if (w > avail && avail > 0) tbl.style.zoom = String(Math.max(0.3, avail / w));
+      if (w > avail && avail > 0) tbl.style.zoom = String(Math.max(0.2, avail / w));
     }
     window.addEventListener('resize', function () { if (osvActive()) osvApplyFit(); });
     document.addEventListener('visibilitychange', function () {
