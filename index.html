@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261126201039">
+  <meta name="x-build" content="20261127120000">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261126201039" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261127120000" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -2045,6 +2045,27 @@
       var n = naDate_(key);
       if (n && puNaActive(n, d)) state.priceNA[field] = n;
     }
+    // روزشمار UPS / کارسلینگ (کلید ستون L تب All): «UPS/برند/توان/ظرفیت» یا «UPS/برند/هیدرولیک»، «کارسلینگ/کششی|هیدرولیک/ظرفیت»
+    function upsFreshKey_(values) {
+      var panel = String(values.panelBrand || '');
+      var brand = panel.indexOf('پارس') >= 0 ? 'پارس' : (panel.indexOf('آریان') >= 0 ? 'آریان' : ((panel.indexOf('آرکل') >= 0 || panel.indexOf('ارکل') >= 0) ? 'آرکل' : ''));
+      if (!brand) return '';
+      var hyd = String(values.system || '').trim() === 'هیدرولیک' || String(values.panelType || '').trim() === 'هیدرولیک';
+      if (hyd) return 'UPS/' + brand + '/هیدرولیک';
+      var cap = String(parseInt(values.caps, 10) || '');
+      var map = (state.engine && state.engine.freshness) || {};
+      var pre = 'UPS/' + brand + '/', hit = '';
+      Object.keys(map).some(function (k) {
+        var t = String(k).trim();
+        if (t.indexOf(pre) === 0 && t.split('/').length === 4 && t.split('/')[3] === cap) { hit = t; return true; }
+        return false;
+      });
+      return hit;
+    }
+    function carSlingFreshKey_(values) {
+      var want = String(values.system || '').trim() === 'هیدرولیک' ? 'هیدرولیک' : 'کششی';
+      return 'کارسلینگ/' + want + '/' + String(parseInt(values.caps, 10) || String(values.caps || '').trim());
+    }
     // روزشمار کابین: کلید قلم کابین در جدول به‌روزرسانی قیمت (engine.freshness).
     // سرور یا برای هر ظرفیت کلید جدا می‌فرستد (cabin.keys[caps]) یا یک کلید برای ردیف (cabin.key)؛
     // در حالت دوم اول «کلید/ظرفیت» (مثل تابلو «کلید/توان») و بعد خود کلید امتحان می‌شود.
@@ -2159,6 +2180,7 @@
 
       var upsAmount = lookupUpsPrice(values, eng);
       prices.ups = values.ups === 'دارد' ? (upsAmount ? fmtPrice(upsAmount) : '-') : '';
+      if (upsAmount) markFresh_('ups', upsFreshKey_(values));
       prices.photocell = values.photocell === 'دارد' ? fmtPrice(eng.photocell) : '';
 
       var stops = parseNum(values.stop) || 0;
@@ -2202,6 +2224,7 @@
       }
       // کارسلینگ ردیف مستقل فرم محاسبه است (کلید carSling): فقط هیدرولیک یا دو درب مجانب؛ در جمع حساب می‌شود
       prices.carSling = fmtPrice(roundToman(carSlingForCabin(values, eng)));
+      if (parseNum(prices.carSling) > 0) markFresh_('carSling', carSlingFreshKey_(values));
 
       var railSize = values.requestedRail === 'پیش فرض' ? (eng.railSizes[0] || '') : values.requestedRail;
       var rail = null;
@@ -2225,6 +2248,7 @@
         });
         var col = partTypeCol(values);
         prices.smallParts = fmtPrice(roundToman(part && part.prices[col] ? part.prices[col] : 0));
+        if (part && part.prices[col]) markFresh_('smallParts', 'خرده ریز/' + col + '/' + String(values.caps).trim() + '/' + String(values.stop).trim());
       } else if (values.smallParts === 'ندارد') prices.smallParts = '';
 
       if (values.installDoor === 'ندارد') prices.installDoor = '';
@@ -2254,6 +2278,7 @@
       if (values.doorCover && values.doorCover !== 'ندارد') {
          var dc = lux.doorCovers[values.doorCover] || 0;
          prices.doorCover = fmtPrice(roundToman(dc * doorMul * doorCoverFactor(values, lux)));
+         if (dc) markFresh_('doorCover', 'روکش درب/' + String(values.doorCover).trim() + '/80/200');
       } else if (values.doorCover) prices.doorCover = '0';
 
       // مشخصه‌های تکمیلی (سیم بکسل، وزنه، فلکه، تراول، ارتفاع کابین/درب): جدول قیمت با ستون «مدل» (همان فرمول ستون D فرم)
