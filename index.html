@@ -3606,7 +3606,7 @@
     // قیمت‌های جدول (یا فقط ردیف‌های جستجو) به‌صورت «تغییر ذخیره‌نشده» زرد می‌شوند؛ با «ذخیره» ثبت می‌شوند. گرد به هزار تومان.
     function ptPctBarHtml(key, filtered) {
       return '<div class="pt-pct"><label>افزایش قیمت‌های این جدول' +
-        '<small>' + (filtered ? 'فقط ' + puFa(filtered) + ' ردیف جستجو' : 'همهٔ ردیف‌های قیمت‌دار') + ' · برای کاهش عدد منفی بزنید</small></label>' +
+        '<small>' + (filtered ? 'فقط ' + puFa(filtered) + ' ردیف جستجو' : 'همهٔ ردیف‌های قیمت‌دار') + ' · برای کاهش عدد منفی، برای به‌روزرسانی بدون تغییر ۰ بزنید</small></label>' +
         '<div class="pt-pct-box"><input type="text" inputmode="decimal" data-pt-pct-in="' + escapeHtml(key) + '" placeholder="۰" aria-label="درصد افزایش"><span>٪</span></div>' +
         '<button type="button" data-pt-pct="' + escapeHtml(key) + '">اعمال</button></div>';
     }
@@ -3618,7 +3618,8 @@
     function ptApplyPct(key) {
       var inp = document.querySelector('[data-pt-pct-in="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]');
       var pct = ptPctParse(inp ? inp.value : '');
-      if (!isFinite(pct) || pct === 0) { toast('درصد را وارد کنید (مثلاً ۱۰)', true); if (inp) inp.focus(); return; }
+      // صفر هم مجاز است: قیمت‌ها همان می‌مانند ولی با «ذخیره» تاریخ به‌روزرسانی ثبت می‌شود (درخواست مدیر)
+      if (!isFinite(pct)) { toast('درصد را وارد کنید (مثلاً ۱۰ یا ۰)', true); if (inp) inp.focus(); return; }
       if (pct <= -90 || pct > 300) { toast('درصد باید بین −۹۰ و ۳۰۰ باشد', true); return; }
       var cut = key.indexOf('|');
       var t = ptCatTable(key.slice(0, cut)), brand = key.slice(cut + 1);
@@ -3632,13 +3633,15 @@
         if (!isFinite(cur) || cur <= 0) return;
         var next = ptPctRound(cur * (1 + pct / 100));
         if (!(next > 0)) return;
-        if (next === Number(r.p)) delete ptState.edits[id]; else ptState.edits[id] = formatShortPathPrice(next);
+        if (next === Number(r.p) && pct !== 0) delete ptState.edits[id]; else ptState.edits[id] = formatShortPathPrice(next);
         delete ptState.errs[id];
         n++;
       });
       ptState.open[key] = true;
       ptRender();
-      toast(n ? puFa(n) + ' قیمت ' + puFa(Math.abs(pct)) + '٪ ' + (pct > 0 ? 'افزایش' : 'کاهش') + ' یافت؛ برای ثبت «ذخیره» را بزنید' : 'ردیف قیمت‌داری در این جدول نیست', !n);
+      toast(!n ? 'ردیف قیمت‌داری در این جدول نیست'
+        : pct === 0 ? puFa(n) + ' قیمت بدون تغییر علامت خورد؛ برای ثبت تاریخ به‌روزرسانی «ذخیره» را بزنید'
+        : puFa(n) + ' قیمت ' + puFa(Math.abs(pct)) + '٪ ' + (pct > 0 ? 'افزایش' : 'کاهش') + ' یافت؛ برای ثبت «ذخیره» را بزنید', !n);
     }
     function ptRender() {
       ptRenderTabs();
