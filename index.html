@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261127163000">
+  <meta name="x-build" content="20261127222221">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getBasePriceHistory","startBasePriceHistoryArchive","getBasePriceHistoryStatus","saveWageTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getHavePriceMatrix","saveHavePriceMatrix","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest","getUsdRates"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getBasePriceHistory","startBasePriceHistoryArchive","getBasePriceHistoryStatus","getPriceForecast","getUsdRates","saveWageTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getHavePriceMatrix","saveHavePriceMatrix","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261127163000" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261127222221" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -713,6 +713,29 @@
     .pu-old { font-size: 11px; color: var(--muted); }
     .pu-dtag { background: #e0e7ff; color: #3730a3; border-radius: 999px; padding: 0 7px; font-size: 10.5px; font-weight: 800; vertical-align: middle; }
 
+    /* ===== پیش‌بینی قیمت (PriceForecast.js؛ 1405/09/06): مرحلهٔ ۱ فقط گزارش ===== */
+    .home-forecast { background: #ede9fe; color: #4c1d95; border-color: #7c3aed; }
+    .pf-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; font-size: 13px; font-weight: 700; color: var(--navy); }
+    .pf-bar select { font-family: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--navy); }
+    .pf-bar label { display: inline-flex; gap: 5px; align-items: center; }
+    .pf-note { background: #f5f3ff; border: 1px solid #ddd6fe; color: #4c1d95; border-radius: 12px; padding: 9px 12px; font-size: 12px; font-weight: 700; line-height: 1.8; margin-bottom: 10px; }
+    .pf-row { padding: 10px 14px; border-top: 1px solid #f1f5f9; }
+    .pf-row:first-child { border-top: 0; }
+    .pf-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; }
+    .pf-key { font-weight: 800; color: var(--navy); font-size: 13px; }
+    .pf-sub { font-size: 11.5px; color: var(--muted); font-weight: 700; margin-top: 2px; }
+    .pf-old { color: #64748b; font-weight: 700; }
+    .pf-new { color: #4c1d95; font-weight: 800; }
+    .pf-chg { font-weight: 800; border-radius: 8px; padding: 1px 6px; font-size: 12px; }
+    .pf-up { background: #fee2e2; color: #991b1b; }
+    .pf-down { background: #dcfce7; color: #166534; }
+    .pf-zero { background: #f1f5f9; color: #475569; }
+    .pf-conf { border-radius: 999px; padding: 1px 8px; font-size: 11px; font-weight: 800; }
+    .pf-c-high { background: #dcfce7; color: #166534; }
+    .pf-c-mid { background: #fef3c7; color: #92400e; }
+    .pf-c-low { background: #fee2e2; color: #991b1b; }
+    .pf-warn { font-size: 11.5px; color: #b45309; font-weight: 700; margin-top: 3px; }
+    .pf-how { font-size: 11.5px; color: #475569; margin-top: 3px; line-height: 1.7; }
     /* ===== جداول قیمت (PriceTables.js؛ 1405/08/16): همهٔ جداول شیت All با ذخیره از مسیر آینه ===== */
     .home-tables { background: #e0f2f1; color: #134e4a; border-color: #0f766e; }
     .pt-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
@@ -813,6 +836,10 @@
         <button class="home-btn home-tables" type="button" onclick="openPriceTables()">
           جداول قیمت
           <span class="count">موتور، تابلو، درب، ریل، کابین و … — ویرایش همهٔ جداول</span>
+        </button>
+        <button class="home-btn home-forecast" type="button" onclick="openPriceForecast()">
+          پیش‌بینی قیمت
+          <span class="count">برندهای کهنه یا بی‌قیمت از روی برند هم‌وزن — فقط گزارش</span>
         </button>
         <button class="home-btn home-prices" type="button" onclick="openPriceUpdate()">
           به روز رسانی قیمت ها
@@ -1116,6 +1143,36 @@
         <button class="btn btn-main" id="hpm-save" type="button" onclick="hpmSave()" disabled>ذخیره تغییرات</button>
         <button class="btn btn-ghost" id="hpm-reset" type="button" onclick="hpmLoad(true)">بازخوانی</button>
       </div>
+    </div>
+  </section>
+
+  <section id="screen-forecast" class="screen">
+    <div class="top">
+      <div class="top-row">
+        <div>
+          <button class="back" type="button" onclick="event.preventDefault(); showHome();">بازگشت</button>
+          <h1>پیش‌بینی قیمت</h1>
+          <div class="meta" id="pf-meta">از روی برند هم‌وزن (شیت Peer Brands) · فقط گزارش</div>
+        </div>
+        <div class="date-badge" data-date-slot></div>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="pf-note">مرحلهٔ ۱: فقط گزارش است و هیچ قیمتی در شیت، فرم یا PDF عوض نمی‌شود. هم‌وزن‌ها در شیت «Peer Brands»، ضریب‌های تجربی در «Peer Coefficients» و همین فهرست در «Price Forecast» ثبت می‌شود.</div>
+      <div class="pf-bar">
+        <label>قیمت کهنه‌تر از
+          <select id="pf-stale" onchange="pfSetStale(this.value)">
+            <option value="7">۷ روز</option>
+            <option value="14" selected>۱۴ روز</option>
+            <option value="30">۳۰ روز</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="pf-changed" onchange="pfState.onlyChange = this.checked; pfRender();"> فقط قیمت‌های تغییرکرده</label>
+        <button class="btn btn-ghost" type="button" onclick="pfLoad(true)">محاسبهٔ دوباره</button>
+      </div>
+      <div class="pt-tabs" id="pf-tabs" role="tablist"></div>
+      <div class="pt-info" id="pf-info"></div>
+      <div id="pf-body"><div class="empty">در حال بارگذاری...</div></div>
     </div>
   </section>
 
@@ -3132,6 +3189,131 @@
     });
     document.addEventListener('change', function (e) { if (e.target && e.target.id === 'sp-swap-cat') spSwapRender(); });
 
+    // ===== پیش‌بینی قیمت (سرور: PriceForecast.js؛ مرحلهٔ ۱ فقط گزارش) =====
+    var pfState = { data: null, stale: 14, cat: '', onlyChange: false, open: {}, loading: false };
+    var PF_TAB_SUSPECT = 'قیمت‌های مشکوک', PF_TAB_COEF = 'ضریب‌های تجربی';
+    function openPriceForecast() {
+      setHeaderDates(todayJalali());
+      showScreen('screen-forecast');
+      if (pfState.data) pfRender();
+      pfLoad(false);
+    }
+    function pfSetStale(v) { pfState.stale = Number(v) || 14; pfLoad(false); }
+    function pfLoad(fresh) {
+      if (pfState.loading) return;
+      pfState.loading = true;
+      if (!pfState.data || fresh) document.getElementById('pf-body').innerHTML = '<div class="empty">در حال محاسبه...</div>';
+      runGas('getPriceForecast', { staleDays: pfState.stale, fresh: !!fresh }).then(function (d) {
+        pfState.loading = false;
+        if (!d || !d.forecasts) throw new Error('پاسخ نامعتبر');
+        pfState.data = d;
+        pfRender();
+      }).catch(function (err) {
+        pfState.loading = false;
+        document.getElementById('pf-body').innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'محاسبه انجام نشد') + '</div>';
+      });
+    }
+    function pfMil(v) {
+      if (v == null || v === '') return '—';
+      var m = Math.round(Number(v) / 1e5) / 10;
+      var parts = String(m).split('.');
+      return puFa(parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (parts[1] ? '.' + parts[1] : '')) + ' م';
+    }
+    function pfPct(c) {
+      if (c == null) return '';
+      var p = Math.round(c * 1000) / 10;
+      var cls = p > 0 ? 'pf-up' : (p < 0 ? 'pf-down' : 'pf-zero');
+      return '<span class="pf-chg ' + cls + '" dir="ltr">' + puFa((p > 0 ? '+' : '') + p) + '٪</span>';
+    }
+    function pfConf(c) {
+      var cls = c === 'بالا' ? 'pf-c-high' : (c === 'متوسط' ? 'pf-c-mid' : 'pf-c-low');
+      return '<span class="pf-conf ' + cls + '">اطمینان ' + escapeHtml(c) + '</span>';
+    }
+    function pfList() {
+      var d = pfState.data;
+      return ((d && d.forecasts) || []).filter(function (f) { return !pfState.onlyChange || f.change == null || Math.abs(f.change) >= 0.0005; });
+    }
+    function pfHow(f) {
+      return f.peers.map(function (p) {
+        if (p.coef != null) return escapeHtml(p.brand) + ' ' + pfMil(p.now) + ' × ضریب ' + puFa(Math.round(p.coef * 100) / 100) + ' (' + escapeHtml(p.src) + ')';
+        var t = escapeHtml(p.brand) + ' رشد ' + puFa(Math.round((p.g - 1) * 1000) / 10) + '٪';
+        if (p.at != null) t += ' (' + pfMil(p.at) + ' ← ' + pfMil(p.now) + ')';
+        return t;
+      }).map(function (t) { return '<div>' + t + '</div>'; }).join('');
+    }
+    function pfRowHtml(f) {
+      return '<div class="pf-row">' +
+        '<div class="pf-key"><bdi dir="ltr">' + escapeHtml(f.key) + '</bdi></div>' +
+        (f.label ? '<div class="pf-sub">' + ptLabelHtml(f.label) + '</div>' : '') +
+        '<div class="pf-line" style="margin-top:4px">' +
+          '<span class="pf-old">' + (f.price ? pfMil(f.price) : 'بدون قیمت') + '</span>' + (f.price ? puAge(f.date) : '') +
+          '<span>←</span><span class="pf-new">' + pfMil(f.forecast) + '</span>' + pfPct(f.change) + pfConf(f.confidence) +
+        '</div>' +
+        '<div class="pf-how"><div>' + escapeHtml(f.method) + (f.t0 ? ' · T0 ' + puFa(f.t0) + (f.t0Approx ? ' (تقریبی)' : '') : '') + '</div>' + pfHow(f) + '</div>' +
+        (f.warns.length ? '<div class="pf-warn">⚠ ' + f.warns.map(escapeHtml).join(' · ') + '</div>' : '') +
+        '</div>';
+    }
+    function pfRender() {
+      var d = pfState.data;
+      if (!d) return;
+      var list = pfList();
+      var cats = [];
+      list.forEach(function (f) { if (cats.indexOf(f.cat) < 0) cats.push(f.cat); });
+      var tabs = cats.concat([PF_TAB_SUSPECT, PF_TAB_COEF]);
+      if (!pfState.cat || tabs.indexOf(pfState.cat) < 0) pfState.cat = tabs[0];
+      document.getElementById('pf-tabs').innerHTML = tabs.map(function (c) {
+        var n = c === PF_TAB_SUSPECT ? (d.suspects || []).length : c === PF_TAB_COEF ? (d.coefs || []).filter(function (x) { return x.n; }).length :
+          list.filter(function (f) { return f.cat === c; }).length;
+        return '<button class="pt-tab' + (c === pfState.cat ? ' on' : '') + '" type="button" data-pf-cat="' + escapeHtml(c) + '">' + escapeHtml(c) + '<small>' + puFa(n) + '</small></button>';
+      }).join('');
+      document.getElementById('pf-meta').textContent = 'محاسبه ' + puFa(d.stamp || '') + ' · ' + puFa(list.length) + ' پیش‌بینی';
+      var body = document.getElementById('pf-body');
+      var info = document.getElementById('pf-info');
+      if (pfState.cat === PF_TAB_SUSPECT) {
+        info.textContent = 'قیمت‌هایی که با مدل‌های دیگر همان برند جور نیستند (سرعت یا ظرفیت بالاتر، ارزان‌تر). اول این‌ها را بررسی کنید؛ پیش‌بینی خطای آن‌ها را منتقل می‌کند.';
+        body.innerHTML = (d.suspects || []).length ? '<div class="pt-brand open">' + d.suspects.map(function (x) {
+          return '<div class="pf-row"><div class="pf-key"><bdi dir="ltr">' + escapeHtml(x.key) + '</bdi></div>' +
+            '<div class="pf-line"><span class="pf-old">' + pfMil(x.price) + '</span>' + puAge(x.date) + '</div>' +
+            '<div class="pf-warn">⚠ ' + escapeHtml(x.why) + ' از:</div>' +
+            '<div class="pf-how"><bdi dir="ltr">' + escapeHtml(x.refKey) + '</bdi></div>' +
+            '<div class="pf-line"><span class="pf-old">' + pfMil(x.refPrice) + '</span>' + puAge(x.refDate) + '</div></div>';
+        }).join('') + '</div>' : '<div class="empty">قیمت مشکوکی پیدا نشد</div>';
+        return;
+      }
+      if (pfState.cat === PF_TAB_COEF) {
+        info.textContent = 'ضریب = قیمت برند ÷ قیمت هم‌وزن در مدل‌های هم‌تا، وقتی هر دو قیمت واقعی هم‌زمان دارند (حداکثر ۱۴ روز فاصله). با هر لیست واقعی تازه دقیق‌تر می‌شود. ستون «ضریب دستی» شیت Peer Coefficients اگر پر شود جای آن می‌نشیند.';
+        var cs = (d.coefs || []).filter(function (x) { return x.n || x.manual; });
+        body.innerHTML = cs.length ? '<div class="pt-brand open">' + cs.map(function (x) {
+          return '<div class="pf-row"><div class="pf-line"><b>' + escapeHtml(x.brand) + '</b><span>نسبت به</span><b>' + escapeHtml(x.peer) + '</b>' +
+            '<span class="pf-new" dir="ltr">' + puFa(x.manual ? x.manual : Math.round(x.coef * 100) / 100) + '</span>' +
+            '<span class="pf-sub">' + (x.manual ? 'دستی' : 'از ' + puFa(x.n) + ' مدل') + ' · ' + escapeHtml(x.cat) + '</span></div>' +
+            (x.outliers.length ? '<div class="pf-warn">کنار گذاشته (پرت): ' + escapeHtml(x.outliers.join('، ')) + '</div>' : '') + '</div>';
+        }).join('') + '</div>' : '<div class="empty">هنوز تجربه‌ای ثبت نشده</div>';
+        return;
+      }
+      var rows = list.filter(function (f) { return f.cat === pfState.cat; });
+      var byBrand = {}, brands = [];
+      rows.forEach(function (f) { if (!byBrand[f.brand]) { byBrand[f.brand] = []; brands.push(f.brand); } byBrand[f.brand].push(f); });
+      info.textContent = 'برند با قیمت کهنه‌تر از ' + puFa(pfState.stale) + ' روز یا بدون قیمت، که هم‌وزن تازه‌تر دارد. روی برند بزنید تا مدل‌ها باز شود.';
+      body.innerHTML = brands.length ? brands.map(function (b) {
+        var fs = byBrand[b];
+        var ch = fs.map(function (f) { return f.change; }).filter(function (c) { return c != null; }).sort(function (x, y) { return x - y; });
+        var med = ch.length ? ch[Math.floor(ch.length / 2)] : null;
+        var warnN = fs.filter(function (f) { return f.warns.length; }).length;
+        var id = pfState.cat + '|' + b;
+        var open = !!pfState.open[id];
+        return '<div class="pt-brand' + (open ? ' open' : '') + '">' +
+          '<button class="pt-bhead" type="button" data-pf-brand="' + escapeHtml(id) + '"><b>' + escapeHtml(b) + '</b><span>' + puFa(fs.length) + ' مدل' +
+          (med != null ? ' · میانهٔ تغییر ' + pfPct(med) : ' · بدون قیمت قبلی') + (warnN ? ' · ⚠ ' + puFa(warnN) : '') + '<span class="pt-chev">▾</span></span></button>' +
+          (open ? fs.map(pfRowHtml).join('') : '') + '</div>';
+      }).join('') : '<div class="empty">در این دسته پیش‌بینی‌ای نیست</div>';
+    }
+    document.addEventListener('click', function (e) {
+      var t = e.target.closest && e.target.closest('[data-pf-cat]');
+      if (t) { pfState.cat = t.getAttribute('data-pf-cat'); pfRender(); return; }
+      var b = e.target.closest && e.target.closest('[data-pf-brand]');
+      if (b) { var id = b.getAttribute('data-pf-brand'); pfState.open[id] = !pfState.open[id]; pfRender(); }
+    });
     // ===== جداول قیمت (سرور: PriceTables.js) =====
     // داده از شیت All (همهٔ جداول قیمت). نمایش فوری از localStorage، تازه‌سازی پس‌زمینه بدون پاک‌کردن ویرایش‌های ذخیره‌نشده.
     var PT_LS_KEY = 'plPriceTables:v1';
