@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261127150000">
+  <meta name="x-build" content="20261127163000">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261127150000" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261127163000" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -1935,14 +1935,17 @@
       return { cls: 'age-old', text: n + ' روز', title: title };
     }
     // PRICE_AGE_END
-    // ===== هشدار دلار: نسبت نرخ دلار (ریال، tgju) روز امروز به روز ثبت قیمت هر قلم =====
+    // ===== هشدار دلار: نرخ دلار (ریال، tgju) روز ثبت قیمت هر قلم در برابر نرخ همین لحظه =====
     // ≤۲٪ سبز · بیشتر از ۲٪ و کمتر از ۳٪ نارنجی · ۳٪ و بیشتر قرمز (درخواست مدیر 1405/09/05).
     // رنگ کپسول سن قیمت = بدترینِ «سن قیمت» و «رشد دلار».
+    // نرخ لحظه‌ای (widget tgju) با هر باز شدن اپ و برگشت به آن تازه می‌شود، حداکثر هر ۵ دقیقه یک بار (1405/09/06)؛
+    // سری روزانه (نرخ روز ثبت قیمت) روزی یک بار عوض می‌شود و ۳ ساعت نگه داشته می‌شود.
     var USD_WARN_PCT = 2, USD_BAD_PCT = 3;
-    var USD_LS_KEY = 'usdRates:v1';
-    var USD_TTL = 3 * 3600000, USD_FAIL_TTL = 15 * 60000;
+    var USD_LS_KEY = 'usdRates:v2';
+    var USD_TTL = 3 * 3600000, USD_LIVE_TTL = 5 * 60000, USD_FAIL_TTL = 60000;
     var USD_TGJU_URL = 'https://api.tgju.org/v1/market/indicator/summary-table-data/price_dollar_rl?lang=fa&order_dir=desc&start=0&length=500';
-    var usdState = { rates: null, keys: null, at: 0, loading: null, failedAt: 0 };
+    var USD_LIVE_URL = 'https://api.tgju.org/v1/widget/tmp?keys=137203';
+    var usdState = { rates: null, keys: null, at: 0, live: null, liveAt: 0, loading: null, failedAt: 0 };
     function usdFaDigits_(s) { return String(s).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; }); }
     function usdEnDigits_(s) {
       return String(s == null ? '' : s).replace(/[۰-۹]/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); })
@@ -1962,7 +1965,7 @@
       return /^\d+(\.\d+)?$/.test(t) ? +t : 0;
     }
     // پاسخ tgju (DataTables): هر ردیف [بازگشایی، کمینه، بیشینه، پایانی، تغییر، درصد، تاریخ میلادی، تاریخ شمسی].
-    // پاسخ سرور (UsdRate.js) هم همین شکل یا { rates: { 'YYYY-MM-DD' یا 'YYYY/MM/DD': ریال } } است.
+    // پاسخ سرور (UsdRate.js): { rates: { 'YYYY-MM-DD': ریال }, live: { rate, at } }.
     function usdParse_(res) {
       var out = {};
       if (!res) return out;
@@ -1985,58 +1988,87 @@
       });
       return out;
     }
+    // widget tgju: { response: { indicators: [{ name: 'price_dollar_rl', p: '2928900', updated_at: '2026-11-27 19:17:05' }] } }
+    function usdParseLive_(res) {
+      if (!res) return null;
+      if (typeof res === 'string') { try { res = JSON.parse(res); } catch (e) { return null; } }
+      if (res.live && res.live.rate) return { rate: usdNum_(res.live.rate), at: String(res.live.at || '') };
+      var list = (res.response && res.response.indicators) || [];
+      for (var i = 0; i < list.length; i++) {
+        var it = list[i] || {};
+        if (it.name && it.name !== 'price_dollar_rl') continue;
+        var n = usdNum_(it.p);
+        if (n > 1000) return { rate: n, at: String(it.updated_at || '') };
+      }
+      return null;
+    }
     function usdSet_(rates, at) {
       var keys = Object.keys(rates || {}).sort();
       if (!keys.length) return false;
       usdState.rates = rates; usdState.keys = keys; usdState.at = at || Date.now();
       return true;
     }
+    function usdSave_() {
+      try { localStorage.setItem(USD_LS_KEY, JSON.stringify({ t: usdState.at, rates: usdState.rates, live: usdState.live, lt: usdState.liveAt })); } catch (e) {}
+    }
     (function () {
       try {
         var o = JSON.parse(localStorage.getItem(USD_LS_KEY) || 'null');
         if (o && o.rates) usdSet_(o.rates, o.t);
+        if (o && o.live && o.live.rate) { usdState.live = o.live; usdState.liveAt = o.lt || 0; }
       } catch (e) {}
     })();
-    function usdFetchDirect_() {
+    function usdGetJson_(url) {
       if (typeof fetch !== 'function') return Promise.reject(new Error('no fetch'));
-      return fetch(USD_TGJU_URL, { credentials: 'omit' }).then(function (r) {
+      return fetch(url, { credentials: 'omit', cache: 'no-store' }).then(function (r) {
         if (!r.ok) throw new Error('tgju ' + r.status);
         return r.json();
       });
     }
-    function usdFetchServer_() {
-      var rpc = window.__GAS_RPC__;
-      if (!rpc || !rpc.call) return Promise.reject(new Error('no rpc'));
-      return rpc.call('getUsdRates', []);
-    }
-    // اول مستقیم از tgju (بدون بار روی سرور)؛ اگر مرورگر اجازه نداد (CORS) از تابع سرور getUsdRates.
+    // اول مستقیم از tgju (بدون بار روی سرور)؛ اگر مرورگر اجازه نداد از تابع سرور getUsdRates (همان دو منبع، کش ۵ دقیقه).
     function loadUsdRates(force) {
       var now = Date.now();
-      if (!force && usdState.keys && now - usdState.at < USD_TTL) return Promise.resolve(true);
+      var needHist = force || !usdState.keys || now - usdState.at >= USD_TTL;
+      var needLive = force || !usdState.live || now - usdState.liveAt >= USD_LIVE_TTL;
+      if (!needHist && !needLive) return Promise.resolve(true);
       if (!force && usdState.failedAt && now - usdState.failedAt < USD_FAIL_TTL) return Promise.resolve(!!usdState.keys);
       if (usdState.loading) return usdState.loading;
-      var tryParse = function (res) {
-        var r = usdParse_(res);
-        if (!Object.keys(r).length) throw new Error('empty');
-        return r;
-      };
-      usdState.loading = usdFetchDirect_().then(tryParse).catch(function () {
-        return usdFetchServer_().then(tryParse);
-      }).then(function (rates) {
-        usdSet_(rates, Date.now());
+      var direct = Promise.all([
+        needHist ? usdGetJson_(USD_TGJU_URL).then(usdParse_) : Promise.resolve(null),
+        needLive ? usdGetJson_(USD_LIVE_URL).then(usdParseLive_) : Promise.resolve(null)
+      ]).then(function (r) {
+        if (needHist && !Object.keys(r[0] || {}).length) throw new Error('empty');
+        if (needLive && !r[1]) throw new Error('no live');
+        return { rates: r[0], live: r[1] };
+      });
+      usdState.loading = direct.catch(function () {
+        return runGas('getUsdRates').then(function (res) {
+          var rates = usdParse_(res), live = usdParseLive_(res);
+          if (!Object.keys(rates).length && !live) throw new Error('empty');
+          return { rates: Object.keys(rates).length ? rates : null, live: live };
+        });
+      }).then(function (got) {
+        var t = Date.now();
+        if (got.rates) usdSet_(got.rates, t);
+        if (got.live) { usdState.live = got.live; usdState.liveAt = t; }
         usdState.failedAt = 0;
-        try { localStorage.setItem(USD_LS_KEY, JSON.stringify({ t: usdState.at, rates: rates })); } catch (e) {}
+        usdSave_();
         return true;
       }).catch(function () {
         usdState.failedAt = Date.now();
         return !!usdState.keys;
       }).then(function (ok) {
         usdState.loading = null;
-        try { if (state.bootstrap && state.bootstrap.fields) applyAgeBadges(); } catch (e) {}
+        try { if (state.bootstrap && state.bootstrap.fields) applyAgeBadges(true); } catch (e) {}
         return ok;
       });
       return usdState.loading;
     }
+    // با باز شدن اپ و هر بار برگشت به آن (گوشی) نرخ لحظه‌ای تازه می‌شود
+    try {
+      loadUsdRates();
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) loadUsdRates(); });
+    } catch (e) {}
     // نرخ روز iso یا نزدیک‌ترین روزِ پیش از آن (جمعه و تعطیل نرخ ندارند)
     function usdRateOn_(iso) {
       var k = usdState.keys;
@@ -2045,12 +2077,14 @@
       while (lo < hi) { var mid = (lo + hi + 1) >> 1; if (k[mid] <= iso) lo = mid; else hi = mid - 1; }
       return { iso: k[lo], rate: usdState.rates[k[lo]] };
     }
+    // نرخ همین لحظه (widget)؛ اگر نبود آخرین نرخ پایانی سری روزانه
     function usdLatest_() {
+      if (usdState.live && usdState.live.rate) return { iso: '', rate: usdState.live.rate, at: usdState.live.at, live: true };
       var k = usdState.keys;
       return k && k.length ? { iso: k[k.length - 1], rate: usdState.rates[k[k.length - 1]] } : null;
     }
     function usdLevel_(pct) { return pct >= USD_BAD_PCT ? 2 : (pct > USD_WARN_PCT ? 1 : 0); }
-    // رشد دلار از تاریخ ثبت قیمت (شمسی) تا امروز
+    // رشد دلار از تاریخ ثبت قیمت (شمسی) تا همین لحظه
     function usdChangeInfo(shamsi) {
       var m = usdEnDigits_(shamsi).match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
       if (!m) return null;
@@ -2070,21 +2104,27 @@
       return (pct > 0 ? '+' : (pct < 0 ? '−' : '')) + t + '٪';
     }
     function usdRialText_(n) { return usdFaDigits_(Math.round(n).toLocaleString('en-US')).replace(/,/g, '٬'); }
+    // «2026-11-27 19:17:05» (ساعت تهران) ← «۱۹:۱۷»
+    function usdTimeText_(at) {
+      var m = String(at || '').match(/(\d{1,2}):(\d{2})/);
+      return m ? usdFaDigits_(m[1] + ':' + m[2]) : '';
+    }
     var AGE_LEVEL_ = { 'age-fresh': 0, 'age-week': 0, 'age-none': 0, 'age-warn': 1, 'age-old': 2 };
     function renderUsdBanner_(stats) {
       var el = document.getElementById('usd-banner');
       if (!el) return;
       var latest = usdLatest_();
       if (!latest || !stats.count) { el.hidden = true; return; }
-      var g = latest.iso.split('-');
       var num = function (t) { return '<bdi dir="ltr">' + escapeHtml(t) + '</bdi>'; };
-      var parts = ['دلار امروز: ' + num(usdRialText_(latest.rate)) + ' ریال'];
+      var head = latest.live ? 'دلار الان: ' : 'دلار (آخرین پایانی): ';
+      var tm = latest.live ? usdTimeText_(latest.at) : '';
+      var parts = [head + num(usdRialText_(latest.rate)) + ' ریال' + (tm ? ' · ساعت ' + num(tm) : '')];
       if (stats.bad) parts.push(num(usdFaDigits_(stats.bad)) + ' قلم با رشد دلار ۳٪ یا بیشتر');
       if (stats.warn) parts.push(num(usdFaDigits_(stats.warn)) + ' قلم بین ۲ تا ۳٪');
       if (!stats.bad && !stats.warn) parts.push('رشد دلار همهٔ قلم‌ها ۲٪ یا کمتر');
       if (stats.max != null) parts.push('بیشترین: ' + num(usdPctText_(stats.max)));
       el.innerHTML = parts.map(function (t) { return '<span class="usd-part">' + t + '</span>'; }).join('<span class="usd-sep"> | </span>');
-      el.title = 'منبع: tgju · آخرین نرخ ' + latest.iso;
+      el.title = 'منبع: tgju · ' + (latest.live ? 'نرخ لحظه‌ای ' + (latest.at || '') : 'آخرین نرخ پایانی ' + latest.iso);
       el.className = 'usd-banner ' + (stats.bad ? 'usd-bad' : (stats.warn ? 'usd-warn' : 'usd-ok'));
       el.hidden = false;
     }
@@ -5185,7 +5225,7 @@
       setPriceCell(document.getElementById('costRial'), t.costRial);
     }
 
-    function applyAgeBadges() {
+    function applyAgeBadges(fromUsd) {
       var dates = state.priceDates || {};
       var stats = { count: 0, warn: 0, bad: 0, max: null };
       var USD_CLS = ['', 'age-warn', 'age-old'];
@@ -5201,7 +5241,7 @@
         if (usd) {
           // رنگ کپسول = بدترینِ سن قیمت و رشد دلار
           if (usd.level > (AGE_LEVEL_[cls] || 0)) cls = USD_CLS[usd.level];
-          title += ' · دلار روز ثبت ' + usdRialText_(usd.from.rate) + ' · امروز ' + usdRialText_(usd.to.rate) + ' ریال · ' + usdPctText_(usd.pct);
+          title += ' · دلار روز ثبت ' + usdRialText_(usd.from.rate) + ' · ' + (usd.to.live ? 'الان ' : 'آخرین ') + usdRialText_(usd.to.rate) + ' ریال · ' + usdPctText_(usd.pct);
           var hidden = el.classList && el.classList.contains('age-hidden');
           if (!hidden) {
             stats.count++;
@@ -5220,7 +5260,7 @@
         el.setAttribute('data-title', title);
       });
       renderUsdBanner_(stats);
-      loadUsdRates();
+      if (!fromUsd) loadUsdRates();
     }
 
     function setPrices(prices) {
