@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261127163000">
+  <meta name="x-build" content="20261127222755">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getBasePriceHistory","startBasePriceHistoryArchive","getBasePriceHistoryStatus","saveWageTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getHavePriceMatrix","saveHavePriceMatrix","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest","getUsdRates"];
+  var FNS = ["getUsdRates","getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getBasePriceHistory","startBasePriceHistoryArchive","getBasePriceHistoryStatus","saveWageTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","saveWageTable","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getHavePriceMatrix","saveHavePriceMatrix","getDataOffersTables","saveDataOffersTable","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261127163000" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261127222755" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -463,6 +463,31 @@
     .home-pkg { background: #efe7f8; color: #3b2060; border-color: #6b4c9a; }
     .home-reset-hp { background: #fde8e8; color: #6b1d1d; border-color: #b91c1c; }
     .home-hp-ex { background: #fef3c7; color: #5b3a06; border-color: #b45309; }
+    /* ===== جداول Data_Offers (DataOffersTables.js؛ 1405/09/07) ===== */
+    .home-do { background: #e0e7ff; color: #1e1b4b; border-color: #4338ca; }
+    .do-row { background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; margin-bottom: 10px; }
+    .do-row.new { border-color: #4338ca; border-style: dashed; }
+    .do-head { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 11px 14px; background: #f8fafc; border: 0; font-family: inherit; color: var(--navy); cursor: pointer; text-align: right; font-size: 13.5px; font-weight: 800; }
+    .do-row.open .do-head { border-bottom: 1px solid var(--line); }
+    .do-head .do-t { word-break: break-word; line-height: 1.6; }
+    .do-head .do-n { flex-shrink: 0; font-size: 11px; color: var(--muted); font-weight: 700; display: inline-flex; gap: 6px; align-items: center; }
+    .do-head .do-n b { background: var(--gold); color: #111; border-radius: 999px; padding: 0 7px; font-size: 11px; }
+    .do-body { display: none; padding: 10px 14px; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+    .do-row.open .do-body { display: grid; }
+    .do-f { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .do-f > span { font-size: 11.5px; font-weight: 800; color: #334155; unicode-bidi: plaintext; }
+    .do-f select, .do-f textarea { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 13px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--navy); }
+    .do-f textarea { resize: vertical; min-height: 36px; line-height: 1.6; unicode-bidi: plaintext; }
+    .do-f.dirty select, .do-f.dirty textarea, .do-f.dirty .do-chips, .do-f.dirty .do-chk { background: #fff2cc; }
+    .do-f.ro textarea { background: #f1f5f9; color: var(--muted); }
+    .do-chk { display: inline-flex; align-items: center; gap: 8px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .do-chk input { width: 18px; height: 18px; }
+    .do-chips { display: flex; flex-wrap: wrap; gap: 5px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; }
+    .do-chip { font-family: inherit; font-size: 12px; font-weight: 700; border: 1px solid var(--line); background: #fff; color: #475569; border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+    .do-chip.on { background: #4338ca; border-color: #4338ca; color: #fff; }
+    .do-chip.odd.on { background: #b45309; border-color: #b45309; }
+    .do-tools { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+    .do-add { width: 100%; margin: 4px 0 10px; }
     /* Have Price: کارت هر ردیف فرم، پیش‌فرض + گزینه‌ها (1405/09/06) */
     .hpm-hint { font-size: 12px; color: var(--muted); line-height: 1.8; margin: 0 0 10px; }
     .hpm-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 11.5px; font-weight: 700; color: var(--muted); margin-bottom: 10px; }
@@ -830,6 +855,10 @@
           Have Price
           <span class="count">پیش‌فرض هر ردیف فرم و YES / NO هر گزینه</span>
         </button>
+        <button class="home-btn home-do" type="button" onclick="openDataOffers()">
+          جداول Data_Offers
+          <span class="count">پیشنهادات تکمیلی، پکیج‌ها، شرط‌ها و Have Price — ویرایش و ردیف تازه</span>
+        </button>
         <button class="home-btn home-reset-hp" id="reset-have-price" type="button" onclick="resetHavePrice()">
           reset have price
           <span class="count">پاک کردن قیمت ردیف‌های NO در فرم محاسبه شیت</span>
@@ -1115,6 +1144,29 @@
       <div class="pt-bar">
         <button class="btn btn-main" id="hpm-save" type="button" onclick="hpmSave()" disabled>ذخیره تغییرات</button>
         <button class="btn btn-ghost" id="hpm-reset" type="button" onclick="hpmLoad(true)">بازخوانی</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-do-tables" class="screen">
+    <div class="top">
+      <div class="top-row">
+        <div>
+          <button class="back" type="button" onclick="event.preventDefault(); doLeave();">بازگشت</button>
+          <h1>جداول Data_Offers</h1>
+          <div class="meta">همهٔ جدول‌های شیت Data_Offers · ذخیره مستقیم در همان شیت</div>
+        </div>
+        <div class="date-badge" data-date-slot></div>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="pt-tabs" id="do-tabs" role="tablist"></div>
+      <input class="pt-search" id="do-q" type="search" placeholder="جستجو در ردیف‌های این جدول…" autocomplete="off">
+      <div class="pt-info" id="do-info"></div>
+      <div id="do-body"><div class="empty">در حال بارگذاری...</div></div>
+      <div class="pt-bar">
+        <button class="btn btn-main" id="do-save" type="button" onclick="doSave()" disabled>ذخیره تغییرات</button>
+        <button class="btn btn-ghost" id="do-reset" type="button" onclick="doLoad(true)">بازخوانی</button>
       </div>
     </div>
   </section>
@@ -2570,6 +2622,7 @@
       if (id === 'screen-form') backFromForm();
       else if (id === 'screen-uploader') closeUploader();
       else if (id === 'screen-tables') ptLeave();
+      else if (id === 'screen-do-tables') doLeave();
       else showHome();
     }
 
@@ -3948,6 +4001,232 @@
       if (document.visibilityState !== 'visible') return;
       var active = document.querySelector('.screen.active');
       if (active && active.id === 'screen-prices') loadPriceUpdate(true);
+    });
+
+    // ===== جداول Data_Offers (سرور: DataOffersTables.js → getDataOffersTables / saveDataOffersTable؛ 1405/09/07) =====
+    // هر جدول شیت یک زبانه، هر ردیف یک کارت با همهٔ ستون‌ها؛ فقط خانه‌های عوض‌شده و ردیف‌های تازه ذخیره می‌شوند.
+    var dot = { tables: [], tab: '', edits: {}, adds: {}, open: {}, q: '', saving: false, loaded: false };
+    function openDataOffers() {
+      setHeaderDates(todayJalali());
+      showScreen('screen-do-tables');
+      doLoad(false);
+    }
+    function doTable(id) { for (var i = 0; i < dot.tables.length; i++) if (dot.tables[i].id === id) return dot.tables[i]; return null; }
+    function doDirtyOf(id) {
+      var n = Object.keys(dot.edits[id] || {}).length;
+      (dot.adds[id] || []).forEach(function (row) { if (doAddUsed(row)) n++; });
+      return n;
+    }
+    function doDirtyCount() { var n = 0; dot.tables.forEach(function (t) { n += doDirtyOf(t.id); }); return n; }
+    function doAddUsed(row) { return row.some(function (v) { return v === true || (v !== false && String(v == null ? '' : v).trim() !== ''); }); }
+    function doSplit(v) { return String(v == null ? '' : v).split(/\s*[,،]\s*/).map(function (x) { return x.trim(); }).filter(Boolean); }
+    function doIsMulti(t, j) {
+      var col = t.cols[j];
+      if (col.kind !== 'list' || !col.options.length) return false;
+      if (col.multi != null) return col.multi;
+      col.multi = t.rows.some(function (r) { return doSplit(r.v[j]).length > 1; });
+      return col.multi;
+    }
+    function doApply(d) {
+      dot.tables = (d && d.tables) || [];
+      dot.loaded = true;
+      if (!doTable(dot.tab)) dot.tab = dot.tables.length ? dot.tables[0].id : '';
+      doRender();
+    }
+    function doLoad(ask) {
+      if (ask && doDirtyCount() && !confirm('تغییرات ذخیره‌نشده پاک شود و از شیت بازخوانی شود؟')) return;
+      if (ask) { dot.edits = {}; dot.adds = {}; }
+      if (!dot.loaded) document.getElementById('do-body').innerHTML = '<div class="empty">در حال بارگذاری...</div>';
+      runGas('getDataOffersTables').then(doApply).catch(function (err) {
+        if (!dot.loaded) document.getElementById('do-body').innerHTML = '<div class="empty">' + escapeHtml((err && err.message) || 'بارگذاری انجام نشد') + '</div>';
+        toast((err && err.message) || 'بارگذاری انجام نشد', true);
+      });
+    }
+    function doLeave() {
+      if (doDirtyCount() && !confirm(puFa(doDirtyCount()) + ' تغییر ذخیره نشده است. بدون ذخیره خارج شوید؟')) return;
+      dot.edits = {}; dot.adds = {};
+      showHome();
+    }
+    // مقدار فعلی خانه (ویرایش‌شده یا شیت). ri: شمارهٔ ردیف شیت یا 'n' + اندیس ردیف تازه
+    function doVal(t, ri, j) {
+      if (String(ri).charAt(0) === 'n') return (dot.adds[t.id] || [])[+String(ri).slice(1)][j];
+      var e = dot.edits[t.id] || {}, k = ri + ':' + t.cols[j].c;
+      if (Object.prototype.hasOwnProperty.call(e, k)) return e[k];
+      var r = doRowOf(t, ri);
+      return r ? r.v[j] : '';
+    }
+    function doRowOf(t, ri) { for (var i = 0; i < t.rows.length; i++) if (t.rows[i].r === +ri) return t.rows[i]; return null; }
+    function doSet(t, ri, j, v) {
+      if (String(ri).charAt(0) === 'n') { dot.adds[t.id][+String(ri).slice(1)][j] = v; return true; }
+      var r = doRowOf(t, ri); if (!r) return false;
+      var e = dot.edits[t.id] || (dot.edits[t.id] = {}), k = ri + ':' + t.cols[j].c;
+      var orig = r.v[j], same = t.cols[j].kind === 'check' ? (!!v === !!orig) : String(v) === String(orig == null ? '' : orig);
+      if (same) delete e[k]; else e[k] = v;
+      return !same;
+    }
+    function doField(t, ri, j) {
+      var col = t.cols[j], v = doVal(t, ri, j), isNew = String(ri).charAt(0) === 'n';
+      var r = isNew ? null : doRowOf(t, ri);
+      var ro = r && r.f[j];
+      var dirty = !isNew && Object.prototype.hasOwnProperty.call(dot.edits[t.id] || {}, ri + ':' + col.c);
+      var at = ' data-do-cell="' + ri + ':' + j + '"';
+      var h = '<label class="do-f' + (dirty ? ' dirty' : '') + (ro ? ' ro' : '') + '"><span>' + escapeHtml(col.name) + '</span>';
+      if (ro) h += '<textarea rows="1" readonly title="فرمول — فقط در شیت">' + escapeHtml(v) + '</textarea>';
+      else if (col.kind === 'check') h += '<span class="do-chk"><input type="checkbox"' + at + (v ? ' checked' : '') + '> ' + (v ? 'بله' : 'خیر') + '</span>';
+      else if (doIsMulti(t, j)) {
+        var parts = doSplit(v), opts = col.options.slice();
+        parts.forEach(function (p) { if (opts.indexOf(p) < 0) opts.push(p); });
+        h += '<span class="do-chips">' + opts.map(function (o) {
+          return '<button type="button" class="do-chip' + (parts.indexOf(o) >= 0 ? ' on' : '') + (col.options.indexOf(o) < 0 ? ' odd' : '') + '" data-do-chip="' + ri + ':' + j + '" data-v="' + escapeHtml(o) + '">' + escapeHtml(o) + '</button>';
+        }).join('') + '</span>';
+      } else if (col.kind === 'list' && col.options.length) {
+        var sv = String(v == null ? '' : v), list = col.options.slice();
+        if (sv && list.indexOf(sv) < 0) list.unshift(sv);
+        h += '<select' + at + '><option value=""' + (sv ? '' : ' selected') + '>—</option>' + list.map(function (o) {
+          return '<option value="' + escapeHtml(o) + '"' + (o === sv ? ' selected' : '') + '>' + escapeHtml(o) + (col.options.indexOf(o) < 0 ? ' (خارج از کشو)' : '') + '</option>';
+        }).join('') + '</select>';
+      } else {
+        var sv2 = String(v == null ? '' : v);
+        h += '<textarea rows="' + Math.min(Math.max(sv2.split('\n').length, 1), 6) + '"' + at + '>' + escapeHtml(sv2) + '</textarea>';
+      }
+      return h + '</label>';
+    }
+    function doRowHtml(t, ri, title, nDirty, isNew) {
+      var key = t.id + '|' + ri, open = !!dot.open[key] || isNew;
+      var h = '<div class="do-row' + (open ? ' open' : '') + (isNew ? ' new' : '') + '" data-do-row="' + escapeHtml(key) + '">';
+      h += '<button type="button" class="do-head" data-do-toggle="' + escapeHtml(key) + '"><span class="do-t">' + escapeHtml(title || '(بدون نام)') + '</span><span class="do-n">' +
+        (nDirty ? '<b>' + puFa(nDirty) + '</b>' : '') + (isNew ? 'ردیف تازه' : 'ردیف ' + puFa(ri)) + ' ▾</span></button>';
+      h += '<div class="do-body">';
+      if (open) {
+        for (var j = 0; j < t.cols.length; j++) h += doField(t, ri, j);
+        if (isNew) h += '<div class="do-tools"><button type="button" class="pt-del" data-do-drop="' + ri + '">حذف این ردیف تازه</button></div>';
+      }
+      return h + '</div></div>';
+    }
+    function doRender() {
+      var tabs = document.getElementById('do-tabs'), body = document.getElementById('do-body'), info = document.getElementById('do-info');
+      if (!dot.tables.length) { tabs.innerHTML = ''; body.innerHTML = '<div class="empty">جدولی در شیت Data_Offers پیدا نشد</div>'; doSyncBar(); return; }
+      tabs.innerHTML = dot.tables.map(function (t) {
+        var n = doDirtyOf(t.id);
+        return '<button type="button" class="pt-tab' + (t.id === dot.tab ? ' on' : '') + '" role="tab" data-do-tab="' + t.id + '">' + escapeHtml(t.title) + ' (' + puFa(t.rows.length) + ')' + (n ? '<span class="pt-dot">' + puFa(n) + '</span>' : '') + '</button>';
+      }).join('');
+      var t = doTable(dot.tab);
+      var q = ptNorm(dot.q || '');
+      var edits = dot.edits[t.id] || {};
+      var html = '';
+      var shown = 0;
+      t.rows.forEach(function (r) {
+        if (q && !r.v.some(function (v) { return ptNorm(String(v)).indexOf(q) >= 0; })) return;
+        var nDirty = 0;
+        t.cols.forEach(function (c) { if (Object.prototype.hasOwnProperty.call(edits, r.r + ':' + c.c)) nDirty++; });
+        html += doRowHtml(t, r.r, doVal(t, r.r, 0), nDirty, false);
+        shown++;
+      });
+      (dot.adds[t.id] || []).forEach(function (row, i) { html += doRowHtml(t, 'n' + i, row[0], 0, true); });
+      html += '<button type="button" class="btn btn-ghost do-add" data-do-addrow="1">+ افزودن ردیف تازه به «' + escapeHtml(t.title) + '»</button>';
+      body.innerHTML = html;
+      info.textContent = puFa(t.cols.length) + ' ستون · ' + puFa(shown) + ' ردیف' + (q ? ' (جستجو)' : '') + ' · خانه‌های زرد ذخیره نشده‌اند · ردیف تازه زیر آخرین ردیف همین جدول در شیت نوشته می‌شود';
+      doSyncBar();
+    }
+    function doSyncBar() {
+      var n = doDirtyCount(), b = document.getElementById('do-save');
+      b.disabled = !n || dot.saving;
+      b.textContent = dot.saving ? 'در حال ذخیره…' : (n ? 'ذخیره ' + puFa(n) + ' تغییر' : 'ذخیره تغییرات');
+    }
+    function doRefreshRowBadge(t, ri) {
+      var tabs = document.getElementById('do-tabs');
+      var tab = tabs.querySelector('[data-do-tab="' + t.id + '"]');
+      if (tab) { var n = doDirtyOf(t.id); tab.innerHTML = escapeHtml(t.title) + ' (' + puFa(t.rows.length) + ')' + (n ? '<span class="pt-dot">' + puFa(n) + '</span>' : ''); }
+      doSyncBar();
+    }
+    function doOnCell(el, v) {
+      var p = el.getAttribute('data-do-cell').split(':'), t = doTable(dot.tab);
+      if (!t) return;
+      var dirty = doSet(t, p[0], +p[1], v);
+      var lab = el.closest('.do-f');
+      if (lab && String(p[0]).charAt(0) !== 'n') lab.classList.toggle('dirty', dirty);
+      if (+p[1] === 0 || el.type === 'checkbox') {
+        doRender();
+        var again = document.querySelector('[data-do-cell="' + p[0] + ':' + p[1] + '"]');
+        if (again && again.tagName === 'TEXTAREA') { again.focus(); try { again.setSelectionRange(again.value.length, again.value.length); } catch (e) {} }
+      } else doRefreshRowBadge(t, p[0]);
+    }
+    function doSave() {
+      if (dot.saving || !doDirtyCount()) return;
+      var jobs = dot.tables.filter(function (t) { return doDirtyOf(t.id); }).map(function (t) {
+        var e = dot.edits[t.id] || {};
+        return {
+          table: t.id, ver: t.ver,
+          changes: Object.keys(e).map(function (k) { var p = k.split(':'); return { r: +p[0], c: +p[1], v: e[k] }; }),
+          add: (dot.adds[t.id] || []).filter(doAddUsed)
+        };
+      });
+      dot.saving = true;
+      doSyncBar();
+      var saved = 0, added = 0, last = null, warns = [];
+      var step = function (i) {
+        if (i >= jobs.length) return Promise.resolve();
+        return runGas('saveDataOffersTable', jobs[i]).then(function (d) {
+          last = d; saved += (d && d.saved) || 0; added += (d && d.added) || 0;
+          if (d && d.warn) warns.push(d.warn);
+          delete dot.edits[jobs[i].table]; delete dot.adds[jobs[i].table];
+          return step(i + 1);
+        });
+      };
+      step(0).then(function () {
+        dot.saving = false;
+        if (last) doApply(last); else doSyncBar();
+        toast('ذخیره شد · ' + puFa(saved) + ' خانه' + (added ? ' · ' + puFa(added) + ' ردیف تازه' : '') + (warns.length ? ' · ' + warns[0] : ''), !!warns.length);
+      }).catch(function (err) {
+        dot.saving = false;
+        if (last) doApply(last); else doSyncBar();
+        toast((err && err.message) || 'ذخیره انجام نشد', true);
+      });
+    }
+    document.addEventListener('click', function (ev) {
+      var scr = document.getElementById('screen-do-tables');
+      var el = ev.target.closest && ev.target.closest('[data-do-tab],[data-do-toggle],[data-do-chip],[data-do-addrow],[data-do-drop]');
+      if (!el || !scr.contains(el)) return;
+      var t = doTable(dot.tab);
+      if (el.hasAttribute('data-do-tab')) { dot.tab = el.getAttribute('data-do-tab'); doRender(); }
+      else if (el.hasAttribute('data-do-toggle')) { var k = el.getAttribute('data-do-toggle'); dot.open[k] = !dot.open[k]; doRender(); }
+      else if (el.hasAttribute('data-do-addrow') && t) {
+        var arr = dot.adds[t.id] || (dot.adds[t.id] = []);
+        arr.push(t.cols.map(function (c) { return c.kind === 'check' ? false : ''; }));
+        doRender();
+        var rows = document.querySelectorAll('#do-body .do-row.new');
+        if (rows.length) { rows[rows.length - 1].scrollIntoView({ block: 'start', behavior: 'smooth' }); var f = rows[rows.length - 1].querySelector('textarea,select'); if (f) f.focus(); }
+      } else if (el.hasAttribute('data-do-drop') && t) {
+        dot.adds[t.id].splice(+String(el.getAttribute('data-do-drop')).slice(1), 1);
+        doRender();
+      } else if (el.hasAttribute('data-do-chip') && t) {
+        var p = el.getAttribute('data-do-chip').split(':'), o = el.getAttribute('data-v');
+        var parts = doSplit(doVal(t, p[0], +p[1]));
+        var at = parts.indexOf(o);
+        if (at >= 0) parts.splice(at, 1); else parts.push(o);
+        doSet(t, p[0], +p[1], parts.join(', '));
+        dot.open[t.id + '|' + p[0]] = true;
+        doRender();
+      }
+    });
+    document.addEventListener('input', function (ev) {
+      var el = ev.target;
+      if (!el) return;
+      if (el.id === 'do-q') { dot.q = el.value; clearTimeout(dot.qt); dot.qt = setTimeout(doRender, 150); return; }
+      if (el.tagName === 'TEXTAREA' && el.hasAttribute('data-do-cell')) {
+        var p = el.getAttribute('data-do-cell').split(':'), t = doTable(dot.tab);
+        if (!t) return;
+        var dirty = doSet(t, p[0], +p[1], el.value);
+        var lab = el.closest('.do-f');
+        if (lab && String(p[0]).charAt(0) !== 'n') lab.classList.toggle('dirty', dirty);
+        if (+p[1] === 0) { var head = el.closest('.do-row').querySelector('.do-t'); if (head) head.textContent = el.value || '(بدون نام)'; }
+        doRefreshRowBadge(t, p[0]);
+      }
+    });
+    document.addEventListener('change', function (ev) {
+      var el = ev.target;
+      if (!el || !el.hasAttribute || !el.hasAttribute('data-do-cell') || el.tagName === 'TEXTAREA') return;
+      doOnCell(el, el.type === 'checkbox' ? el.checked : el.value);
     });
 
     // دکمهٔ reset have price: روی فرم محاسبهٔ شیت، قیمت دستی ردیف‌های NO پاک می‌شود (فرمول‌ها دست نمی‌خورند).
