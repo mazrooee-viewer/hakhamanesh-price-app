@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./assets/app-icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
-  <meta name="x-build" content="20261127223548">
+  <meta name="x-build" content="20261128001000">
 <script>
 /* شِیم google.script.run → API JSON (https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec) */
 (function () {
   var API = "https://script.google.com/macros/s/AKfycbzifEJPIIfzedIdg1i58q5Bphu_iGb-_mMRZCO2ZMR2su7qvXNMTL_nol8fmAikr7szKg/exec";
-  var FNS = ["getUsdRates","getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getBasePriceHistory","startBasePriceHistoryArchive","getBasePriceHistoryStatus","saveWageTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","saveWageTable","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getHavePriceMatrix","saveHavePriceMatrix","getDataOffersTables","saveDataOffersTable","getPriceForecast","applyPriceForecast","revertPriceForecast","getOutputSheetsView","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest"];
+  var FNS = ["getSalesBootstrap","getPriceEngineData","getMazroueiInbox","getMazroueiInquiry","previewMazroueiTotals","getInquiryDescRows","issuePriceList","issueCustomInquiry","recordIssueFailure","finishInquiry","suspendInquiry","resumeSuspendedInquiry","markInquiryIncomplete","revokeOfferInquiry","reopenInquiryToQueue","removeInquiryPdf","submitInquiry","getSalespersonCards","getSalespersonInquiry","updateSalespersonInquiry","deleteSalespersonInquiry","getShortPathTable","saveShortPathPrices","previewPackageForm","issuePackagePrice","getPackageCatalog","archiveBasePrice","getBasePriceLists","getPackageProfitTable","savePackageProfitTable","getBasePriceHistory","startBasePriceHistoryArchive","getBasePriceHistoryStatus","getPriceForecast","applyPriceForecast","revertPriceForecast","getUsdRates","saveWageTable","getNotifyStatus","getPendingAppNotices","webListProblemTickets","webSubmitProblemTicket","getFastLayerConfig","getPriceUpdateBoard","savePriceUpdateDaily","confirmPriceUpdateGroup","getPriceUpdateGroupRows","savePriceUpdateWeeklyRow","markPriceUpdateGroupNa","getPriceTables","savePriceTables","replaceShortPathItem","resetHavePriceRows","getHavePriceExceptionsTable","saveHavePriceExceptionsTable","getHavePriceMatrix","saveHavePriceMatrix","getUploaderPage","previewImageCatalog","listCatalogBrands","commitMatchedCatalogPrices","saveUploaderReviewImage","listUploaderReviewImages","removeUploaderReviewImage","findLiveRowsForDelete","deleteLiveSourceRow","getUploaderReviewImageData","setUploaderReviewStatus","recordUploaderReviewRetest","getOutputSheetsView"];
   var TTL = { getPriceEngineData: 600000, getFastLayerConfig: 3600000 };
   var KEY_STORE = "plApiToken";
   function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
@@ -120,7 +120,7 @@
   window.google.script.run = run;
   window.google.script.host = window.google.script.host || { close: function () {}, setHeight: function () {}, setWidth: function () {} };
   window.__FAST_LAYER__ = window.__FAST_LAYER__ || {};
-  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261127223548" };
+  window.__GAS_RPC__ = { call: call, cachedCall: cachedCall, api: API, build: "20261128001000" };
   // تنظیمات لایهٔ سریع (Supabase) در پس‌زمینه؛ FastLayerClient هر بار window.__FAST_LAYER__ را می‌خواند
   cachedCall("getFastLayerConfig", []).then(function (cfg) {
     if (cfg && typeof cfg === "object") Object.assign(window.__FAST_LAYER__, cfg);
@@ -465,31 +465,6 @@
     .home-pkg { background: #efe7f8; color: #3b2060; border-color: #6b4c9a; }
     .home-reset-hp { background: #fde8e8; color: #6b1d1d; border-color: #b91c1c; }
     .home-hp-ex { background: #fef3c7; color: #5b3a06; border-color: #b45309; }
-    /* ===== جداول Data_Offers (DataOffersTables.js؛ 1405/09/07) ===== */
-    .home-do { background: #e0e7ff; color: #1e1b4b; border-color: #4338ca; }
-    .do-row { background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; margin-bottom: 10px; }
-    .do-row.new { border-color: #4338ca; border-style: dashed; }
-    .do-head { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 11px 14px; background: #f8fafc; border: 0; font-family: inherit; color: var(--navy); cursor: pointer; text-align: right; font-size: 13.5px; font-weight: 800; }
-    .do-row.open .do-head { border-bottom: 1px solid var(--line); }
-    .do-head .do-t { word-break: break-word; line-height: 1.6; }
-    .do-head .do-n { flex-shrink: 0; font-size: 11px; color: var(--muted); font-weight: 700; display: inline-flex; gap: 6px; align-items: center; }
-    .do-head .do-n b { background: var(--gold); color: #111; border-radius: 999px; padding: 0 7px; font-size: 11px; }
-    .do-body { display: none; padding: 10px 14px; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
-    .do-row.open .do-body { display: grid; }
-    .do-f { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-    .do-f > span { font-size: 11.5px; font-weight: 800; color: #334155; unicode-bidi: plaintext; }
-    .do-f select, .do-f textarea { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 13px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--navy); }
-    .do-f textarea { resize: vertical; min-height: 36px; line-height: 1.6; unicode-bidi: plaintext; }
-    .do-f.dirty select, .do-f.dirty textarea, .do-f.dirty .do-chips, .do-f.dirty .do-chk { background: #fff2cc; }
-    .do-f.ro textarea { background: #f1f5f9; color: var(--muted); }
-    .do-chk { display: inline-flex; align-items: center; gap: 8px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
-    .do-chk input { width: 18px; height: 18px; }
-    .do-chips { display: flex; flex-wrap: wrap; gap: 5px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; }
-    .do-chip { font-family: inherit; font-size: 12px; font-weight: 700; border: 1px solid var(--line); background: #fff; color: #475569; border-radius: 999px; padding: 3px 10px; cursor: pointer; }
-    .do-chip.on { background: #4338ca; border-color: #4338ca; color: #fff; }
-    .do-chip.odd.on { background: #b45309; border-color: #b45309; }
-    .do-tools { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
-    .do-add { width: 100%; margin: 4px 0 10px; }
     .home-sheets { background: #e0f2fe; color: #0c3b5c; border-color: #0369a1; }
     /* نمای زندهٔ شیت‌های خروجی (OutputSheetsView.js) */
     .osv-tabs { display: flex; gap: 6px; margin: 4px 0 10px; }
@@ -925,10 +900,6 @@
           شیت‌های خروجی
           <span class="count">کششی · هیدرولیک · درب و ریل (زنده)</span>
         </button>
-        <button class="home-btn home-do" type="button" onclick="openDataOffers()">
-          جداول Data_Offers
-          <span class="count">پیشنهادات تکمیلی، پکیج‌ها، شرط‌ها و Have Price — ویرایش و ردیف تازه</span>
-        </button>
         <button class="home-btn home-reset-hp" id="reset-have-price" type="button" onclick="resetHavePrice()">
           reset have price
           <span class="count">پاک کردن قیمت ردیف‌های NO در فرم محاسبه شیت</span>
@@ -1278,29 +1249,6 @@
         <span><i style="background:rgba(3,105,161,.18);border-right:3px solid #0369a1"></i>پیشنهادات تکمیلی (از Data_Offers)</span>
         <span><i style="background:#fde047"></i>خانهٔ تازه عوض‌شده</span>
         <span>هر چند ثانیه از شیت خوانده می‌شود؛ ویرایش Data_Offers بعد از بازنویسی شیت (معمولاً چند ثانیه) اینجا دیده می‌شود.</span>
-      </div>
-    </div>
-  </section>
-
-  <section id="screen-do-tables" class="screen">
-    <div class="top">
-      <div class="top-row">
-        <div>
-          <button class="back" type="button" onclick="event.preventDefault(); doLeave();">بازگشت</button>
-          <h1>جداول Data_Offers</h1>
-          <div class="meta">همهٔ جدول‌های شیت Data_Offers · ذخیره مستقیم در همان شیت</div>
-        </div>
-        <div class="date-badge" data-date-slot></div>
-      </div>
-    </div>
-    <div class="wrap">
-      <div class="pt-tabs" id="do-tabs" role="tablist"></div>
-      <input class="pt-search" id="do-q" type="search" placeholder="جستجو در ردیف‌های این جدول…" autocomplete="off">
-      <div class="pt-info" id="do-info"></div>
-      <div id="do-body"><div class="empty">در حال بارگذاری...</div></div>
-      <div class="pt-bar">
-        <button class="btn btn-main" id="do-save" type="button" onclick="doSave()" disabled>ذخیره تغییرات</button>
-        <button class="btn btn-ghost" id="do-reset" type="button" onclick="doLoad(true)">بازخوانی</button>
       </div>
     </div>
   </section>
@@ -3659,7 +3607,7 @@
     // قیمت‌های جدول (یا فقط ردیف‌های جستجو) به‌صورت «تغییر ذخیره‌نشده» زرد می‌شوند؛ با «ذخیره» ثبت می‌شوند. گرد به هزار تومان.
     function ptPctBarHtml(key, filtered) {
       return '<div class="pt-pct"><label>افزایش قیمت‌های این جدول' +
-        '<small>' + (filtered ? 'فقط ' + puFa(filtered) + ' ردیف جستجو' : 'همهٔ ردیف‌های قیمت‌دار') + ' · برای کاهش عدد منفی بزنید</small></label>' +
+        '<small>' + (filtered ? 'فقط ' + puFa(filtered) + ' ردیف جستجو' : 'همهٔ ردیف‌های قیمت‌دار') + ' · برای کاهش عدد منفی، برای به‌روزرسانی بدون تغییر ۰ بزنید</small></label>' +
         '<div class="pt-pct-box"><input type="text" inputmode="decimal" data-pt-pct-in="' + escapeHtml(key) + '" placeholder="۰" aria-label="درصد افزایش"><span>٪</span></div>' +
         '<button type="button" data-pt-pct="' + escapeHtml(key) + '">اعمال</button></div>';
     }
@@ -3671,7 +3619,8 @@
     function ptApplyPct(key) {
       var inp = document.querySelector('[data-pt-pct-in="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]');
       var pct = ptPctParse(inp ? inp.value : '');
-      if (!isFinite(pct) || pct === 0) { toast('درصد را وارد کنید (مثلاً ۱۰)', true); if (inp) inp.focus(); return; }
+      // صفر هم مجاز است: قیمت‌ها همان می‌مانند ولی با «ذخیره» تاریخ به‌روزرسانی ثبت می‌شود (درخواست مدیر)
+      if (!isFinite(pct)) { toast('درصد را وارد کنید (مثلاً ۱۰ یا ۰)', true); if (inp) inp.focus(); return; }
       if (pct <= -90 || pct > 300) { toast('درصد باید بین −۹۰ و ۳۰۰ باشد', true); return; }
       var cut = key.indexOf('|');
       var t = ptCatTable(key.slice(0, cut)), brand = key.slice(cut + 1);
@@ -3685,13 +3634,15 @@
         if (!isFinite(cur) || cur <= 0) return;
         var next = ptPctRound(cur * (1 + pct / 100));
         if (!(next > 0)) return;
-        if (next === Number(r.p)) delete ptState.edits[id]; else ptState.edits[id] = formatShortPathPrice(next);
+        if (next === Number(r.p) && pct !== 0) delete ptState.edits[id]; else ptState.edits[id] = formatShortPathPrice(next);
         delete ptState.errs[id];
         n++;
       });
       ptState.open[key] = true;
       ptRender();
-      toast(n ? puFa(n) + ' قیمت ' + puFa(Math.abs(pct)) + '٪ ' + (pct > 0 ? 'افزایش' : 'کاهش') + ' یافت؛ برای ثبت «ذخیره» را بزنید' : 'ردیف قیمت‌داری در این جدول نیست', !n);
+      toast(!n ? 'ردیف قیمت‌داری در این جدول نیست'
+        : pct === 0 ? puFa(n) + ' قیمت بدون تغییر علامت خورد؛ برای ثبت تاریخ به‌روزرسانی «ذخیره» را بزنید'
+        : puFa(n) + ' قیمت ' + puFa(Math.abs(pct)) + '٪ ' + (pct > 0 ? 'افزایش' : 'کاهش') + ' یافت؛ برای ثبت «ذخیره» را بزنید', !n);
     }
     function ptRender() {
       ptRenderTabs();
